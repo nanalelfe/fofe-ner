@@ -212,9 +212,9 @@ def gazetteer( filename, mode = 'CoNLL2003' ):
 
     elif mode == "OntoNotes":
         logger.info( 'Loading OntoNotes 18-type gazetteer' )
-        result = [ set() for _ in xrange(18) ]
+        result = [ set() for _ in xrange(17) ]
 
-        entity2cls = { 'PERSON': 0, 'FAC': 1, 'ORG': 2, 'GPE': 3, 'LOC': 4, 'PRODUCT': 5,
+        ner2cls = { 'PERSON': 0, 'FAC': 1, 'ORG': 2, 'GPE': 3, 'LOC': 4, 'PRODUCT': 5,
         'DATE': 6, 'TIME': 7, 'PERCENT': 8, 'MONEY': 9, 'QUANTITY': 10, 'ORDINAL': 11,
         'CARDINAL': 12, 'EVENT': 13, 'WORK_OF_ART': 14, 'LAW': 15, 'LANGUAGE': 16,
         'NORP': 17
