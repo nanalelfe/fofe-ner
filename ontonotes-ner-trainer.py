@@ -316,7 +316,7 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------
     # Training set
     # ----------------------------------------------------------------------------------
-    train = batch_constructor(OntoNotes(training_path),
+    train = batch_constructor(OntoNotes(directory, training_path),
                               numericizer1, numericizer2,
                               gazetteer=ontonotes_gazetteer,
                               alpha=config.word_alpha,
