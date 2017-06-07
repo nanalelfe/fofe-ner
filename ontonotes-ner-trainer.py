@@ -1,6 +1,5 @@
 #!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 
-
 import numpy, logging, argparse, time, copy, os, cPickle, sys
 from subprocess import Popen, PIPE, call
 from Queue import Queue
@@ -327,7 +326,7 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------
     # Validation set
     # ----------------------------------------------------------------------------------
-    valid = batch_constructor(OntoNotes(valid_path),
+    valid = batch_constructor(OntoNotes(directory, valid_path),
                               numericizer1, numericizer2,
                               gazetteer=ontonotes_gazetteer,
                               alpha=config.word_alpha,
@@ -338,7 +337,7 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------
     # Test set
     # ----------------------------------------------------------------------------------
-    test = batch_constructor(OntoNotes(test_path),
+    test = batch_constructor(OntoNotes(directory, test_path),
                              numericizer1, numericizer2,
                              gazetteer=ontonotes_gazetteer,
                              alpha=config.word_alpha,
@@ -487,7 +486,7 @@ if __name__ == '__main__':
 
         if decode_test:
 
-            pp = [p for p in PredictionParser(OntoNotes(valid_path),
+            pp = [p for p in PredictionParser(OntoNotes(directory, valid_path),
                                               valid_file,
                                               config.n_window)]
 
@@ -524,14 +523,14 @@ if __name__ == '__main__':
             logger.info( 'test, global threshold\n' + out )
             test_fb1 = float(out.split('\n')[1].split()[-1])
         else:
-            pp = [p for p in PredictionParser(OntoNotes(valid_path),
+            pp = [p for p in PredictionParser(OntoNotes(directory, valid_path),
                                               valid_file,
                                               config.n_window)]
             _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True)
             logger.info('validation:\n' + info)
 
             if decode_test:
-                pp = [p for p in PredictionParser(OntoNotes(test_path),
+                pp = [p for p in PredictionParser(OntoNotes(directory, test_path),
                                                   test_file,
                                                   config.n_window)]
                 _, _, _, out = evaluation(pp, best_threshold, best_algorithm, True)
