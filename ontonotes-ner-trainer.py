@@ -229,7 +229,9 @@ if __name__ == '__main__':
 
     from fofe_mention_net import *
     config = mention_config(args)
-    logger.info("Here is config: " + str(config.n_label_type))
+    from pprint import pprint
+    logger.info("Here is config: ")
+    pprint (vars(config))
 
     ################################################################################
 
