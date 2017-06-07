@@ -280,7 +280,7 @@ def CoNLL2003( filename ):
 ################################################################################
 
 
-def OntoNotes(files):
+def OntoNotes(directory , files):
     """
     Parameters
     ----------
@@ -325,7 +325,7 @@ def OntoNotes(files):
     file = open(files, 'r')
     for filename in file: 
         # only english
-        textfile = open(filename.strip(), "r")
+        textfile = open(directory + filename[2:].strip(), "r")
         for line in textfile:
             sentence, ner_begin, ner_end, ner_label = [], [], [], []
 
