@@ -210,6 +210,22 @@ def gazetteer( filename, mode = 'CoNLL2003' ):
                 if len(tokens) == 2:
                     result[ ner2cls[tokens[0]] ].add( tokens[1] )
 
+    elif mode == "OntoNotes":
+        logger.info( 'Loading OntoNotes 18-type gazetteer' )
+        result = [ set() for _ in xrange(18) ]
+
+        entity2cls = { 'PERSON': 0, 'FAC': 1, 'ORG': 2, 'GPE': 3, 'LOC': 4, 'PRODUCT': 5,
+        'DATE': 6, 'TIME': 7, 'PERCENT': 8, 'MONEY': 9, 'QUANTITY': 10, 'ORDINAL': 11,
+        'CARDINAL': 12, 'EVENT': 13, 'WORK_OF_ART': 14, 'LAW': 15, 'LANGUAGE': 16,
+        'NORP': 17
+        }
+
+        with codecs.open(filename, 'rb', 'utf8') as text_file:
+            for line in text_file:
+                tokens = line.strip().rsplit( None, 1 )
+                if len(tokens) == 2 and tokens[1] in ner2cls:
+                    result[ ner2cls[tokens[1]] ].add( HanziConv.toSimplified(tokens[0][1:-1]) )
+    
     else:
         logger.info( 'Loading KBP 6-type gazetteer' )
         result = [ set() for _ in xrange(7) ]
