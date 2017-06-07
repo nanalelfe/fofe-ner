@@ -322,6 +322,7 @@ if __name__ == '__main__':
                               gazetteer=ontonotes_gazetteer,
                               alpha=config.word_alpha,
                               window=config.n_window,
+                              n_label_type = config.n_label_type,
                               is2ndPass=args.is_2nd_pass)
     logger.info('train: ' + str(train))
 
@@ -333,6 +334,7 @@ if __name__ == '__main__':
                               gazetteer=ontonotes_gazetteer,
                               alpha=config.word_alpha,
                               window=config.n_window,
+                              n_label_type = config.n_label_type,
                               is2ndPass=args.is_2nd_pass)
     logger.info('valid: ' + str(valid))
 
@@ -344,6 +346,7 @@ if __name__ == '__main__':
                              gazetteer=ontonotes_gazetteer,
                              alpha=config.word_alpha,
                              window=config.n_window,
+                             n_label_type = config.n_label_type,
                              is2ndPass=args.is_2nd_pass)
     logger.info('test: ' + str(test))
 
