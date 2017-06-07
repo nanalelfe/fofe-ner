@@ -150,6 +150,8 @@ class fofe_mention_net( object ):
         #     self.config = copy.deepcopy( config )
         # else:
         #     self.config = mention_config()
+
+        # WHY
         self.config = mention_config()
         if config is not None:
             self.config.__dict__.update( config.__dict__ )
@@ -277,68 +279,99 @@ class fofe_mention_net( object ):
         logger.info( 'n_out: ' + str(n_out) )
 
         with self.graph.as_default():
-            ################################################################################
-            #################### placeholder ###############################################
-            ################################################################################
 
-            self.lw1_values = tf.placeholder( tf.float32, [None], 
+            ###########################
+            ### WORD-LEVEL FEATURES ###
+            ###########################
+
+            # CASE INSENSITIVE
+            # ----------------
+
+            # case insensitive excluding fragment
+            self.lw1_values = tf.placeholder( dtype = tf.float32, shape = [None], 
                                               name = 'left-context-values' )
             self.lw1_indices = tf.placeholder( tf.int64, [None, 2], 
                                                name = 'left-context-indices' )
 
+            # case insensitive excluding fragment
             self.rw1_values = tf.placeholder( tf.float32, [None], 
                                               name = 'right-context-values' )
             self.rw1_indices = tf.placeholder( tf.int64, [None, 2], 
                                                name = 'right-context-indices' )
 
+            # case insensitive including fragment
             self.lw2_values = tf.placeholder( tf.float32, [None], 
                                               name = 'left-context-values' )
             self.lw2_indices = tf.placeholder( tf.int64, [None, 2], 
                                                name = 'left-context-indices' )
 
+            # case insensitive including fragment
             self.rw2_values = tf.placeholder( tf.float32, [None], 
                                               name = 'right-context-values' )
             self.rw2_indices = tf.placeholder( tf.int64, [None, 2], 
                                                name = 'right-context-indices' )
 
+            # case insensitive bow fragment
             self.bow1_values = tf.placeholder( tf.float32, [None], 
                                                name = 'bow-values' )
             self.bow1_indices = tf.placeholder( tf.int64, [None, 2], 
                                                 name = 'bow-indices' )
 
+            # CASE SENSITIVE
+            # --------------
+
+            # value vectors in FOFE code
+
+            # case sensitive excluding fragment
             self.lw3_values = tf.placeholder( tf.float32, [None], 
                                               name = 'left-context-values' )
             self.lw3_indices = tf.placeholder( tf.int64, [None, 2], 
                                                name = 'left-context-indices' )
 
+            # case sensitive excluding fragment
             self.rw3_values = tf.placeholder( tf.float32, [None], 
                                               name = 'right-context-values' )
             self.rw3_indices = tf.placeholder( tf.int64, [None, 2], 
                                                name = 'right-context-indices' )
 
+            # case sensitive including fragment
             self.lw4_values = tf.placeholder( tf.float32, [None], 
                                               name = 'left-context-values' )
             self.lw4_indices = tf.placeholder( tf.int64, [None, 2], 
                                                name = 'left-context-indices' )
 
+            # case sensitive including fragment
             self.rw4_values = tf.placeholder( tf.float32, [None], 
                                               name = 'right-context-values' )
             self.rw4_indices = tf.placeholder( tf.int64, [None, 2], 
                                                name = 'right-context-indices' )
 
+            # case sensitive bow fragment
             self.bow2_values = tf.placeholder( tf.float32, [None], 
                                                name = 'bow-values' )
             self.bow2_indices = tf.placeholder( tf.int64, [None, 2], 
                                                 name = 'bow-indices' )
 
+            # Shape of the index matrices
+            # ===========================
+
+            # case insensitive (rows)
             self.shape1 = tf.placeholder( tf.int64, [2], name = 'bow-shape1' )
+            # case sensitive (rows)
             self.shape2 = tf.placeholder( tf.int64, [2], name = 'bow-shape2' )
+
+
+            ################################
+            ### CHARACTER-LEVEL FEATURES ###
+            ################################
 
             self.lc_fofe = tf.placeholder( tf.float32, [None, n_char], name = 'left-char' )
             self.rc_fofe = tf.placeholder( tf.float32, [None, n_char], name = 'right-char' )
 
             self.li_fofe = tf.placeholder( tf.float32, [None, n_char], name = 'left-initial' )
             self.ri_fofe = tf.placeholder( tf.float32, [None, n_char], name = 'right-initial' )
+
+            ################################################################################
 
             self.ner_cls_match = tf.placeholder( tf.float32, [None, n_label_type + 1], name = 'gazetteer' )
 
@@ -356,11 +389,11 @@ class fofe_mention_net( object ):
             self.rbc_values = tf.placeholder( tf.float32, [None], name = 'bigram-values' )
             self.rbc_indices = tf.placeholder( tf.int64, [None, 2], name = 'bigram-indices' )
 
+            ################################################################################
+
             self.shape3 = tf.placeholder( tf.int64, [2], name = 'shape3' )
 
             logger.info( 'placeholder defined' )
-
-            ################################################################################
             #################### model parameters ##########################################
             ################################################################################
 
@@ -373,6 +406,8 @@ class fofe_mention_net( object ):
             self.param = []
 
             if initialize_method == 'uniform':
+
+                # Character-level network weights initialization
                 val_rng = numpy.float32(2.5 / numpy.sqrt(n_char + n_char_embedding))
                 self.char_embedding = tf.Variable( tf.random_uniform( 
                                         [n_char, n_char_embedding], minval = -val_rng, maxval = val_rng ) )
@@ -380,6 +415,8 @@ class fofe_mention_net( object ):
                 self.conv_embedding = tf.Variable( tf.random_uniform( 
                                         [n_char, n_char_embedding], minval = -val_rng, maxval = val_rng ) )
 
+
+                # Word-level network weights initialization
                 val_rng = numpy.float32(2.5 / numpy.sqrt(n_label_type + n_ner_embedding + 1))
                 self.ner_embedding = tf.Variable( tf.random_uniform( 
                                         [n_label_type + 1 ,n_ner_embedding], minval = -val_rng, maxval = val_rng ) )
@@ -964,8 +1001,6 @@ class fofe_mention_net( object ):
 
     def __del__( self ):
         self.session.close()
-
-
 
 ########################################################################
 
