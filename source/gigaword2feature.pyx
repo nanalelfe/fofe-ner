@@ -29,6 +29,7 @@ from threading import Thread
 from itertools import izip, islice, imap, combinations, chain
 from hanziconv import HanziConv
 import numpy, re, random, logging, codecs, copy
+from lxml import etree
 
 logger = logging.getLogger()
 
@@ -208,6 +209,7 @@ def gazetteer( filename, mode = 'CoNLL2003' ):
                 tokens = line.strip().split( None, 1 )
                 if len(tokens) == 2:
                     result[ ner2cls[tokens[0]] ].add( tokens[1] )
+
     else:
         logger.info( 'Loading KBP 6-type gazetteer' )
         result = [ set() for _ in xrange(7) ]
@@ -278,6 +280,101 @@ def CoNLL2003( filename ):
 ################################################################################
 
 
+def OntoNotes(files):
+    """
+    Parameters
+    ----------
+        filename : str
+            path to a file containing all of the paths to files containing NER-annotated
+            data
+
+    Yields
+    ------
+        sentence  : list of str
+            original sentence
+        ner_begin : list of int
+            start indices of NER, inclusive
+        ner_end   : list of int
+            end indices of NER, excusive
+        ner_label : list of int
+            The entity type of sentence[ner_begin[i]:ner_end[i]] is label[i]
+    """
+
+    entity2cls = {
+        # OntoNotes labels
+        'PERSON': 0,
+        'FAC': 1,
+        'ORG': 2,
+        'GPE': 3,
+        'LOC': 4,
+        'PRODUCT': 5,
+        'DATE': 6,
+        'TIME': 7,
+        'PERCENT': 8,
+        'MONEY': 9,
+        'QUANTITY': 10,
+        'ORDINAL': 11,
+        'CARDINAL': 12,
+        'EVENT': 13,
+        'WORK_OF_ART': 14,
+        'LAW': 15,
+        'LANGUAGE': 16,
+        'NORP': 17
+    }
+
+    file = open(files, 'r')
+    for filename in file: 
+        # only english
+        textfile = open(filename, "r")
+        for line in textfile:
+            sentence, ner_begin, ner_end, ner_label = [], [], [], []
+
+            try:
+                tree = etree.fromstring("<text>" + line + "</text>")
+            except Exception:
+                continue
+
+            text = etree.tostring(tree, encoding='utf8', method='text').decode("utf-8")
+
+            text_arr = text.split()
+            sentence = text_arr
+
+            for child in tree:
+                if (child.tag != "ENAMEX") or (child.text is None):
+                    continue
+                mention = child.text.strip()
+                label = child.attrib.get("TYPE")
+                mention_arr = mention.split()
+                found = False
+                if len(mention_arr) > 1:
+                    while not found:
+                        i = text_arr.index(mention_arr[0]) + 1
+                        j = 1
+                        broke = False
+                        while j < len(mention_arr):
+                            if mention_arr[j] != text_arr[i]:
+                                found = False
+                                broke = True
+                                break
+                            i += 1
+                            j += 1
+                        if not broke:
+                            found = True
+                        else:
+                            text_arr[text_arr.index(mention_arr[0])] = ""
+
+                beg = text_arr.index(mention_arr[0])
+                end = beg + len(mention_arr)
+                ner_begin.append(beg)
+                ner_end.append(end)
+                ner_label.append(entity2cls.get(label))
+
+            yield sentence, ner_begin, ner_end, ner_label
+
+
+################################################################################
+
+
 def prepare_mini_batch( batch_generator, batch_buffer, timeout ):
     """
     Put every single element that 'batch_generator' yields into 'batch_buffer'. 
@@ -305,8 +402,6 @@ class chinese_char_vocab( object ):
             for c in self.char2idx.keys():
                 if c != '<unk>' and self.char2idx[c] >= self.n_char:
                     self.char2idx.pop( c, None )
-
-
 
     def __len__( self ):
         return self.n_char
