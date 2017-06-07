@@ -325,7 +325,7 @@ def OntoNotes(files):
     file = open(files, 'r')
     for filename in file: 
         # only english
-        textfile = open(filename, "r")
+        textfile = open(filename.strip(), "r")
         for line in textfile:
             sentence, ner_begin, ner_end, ner_label = [], [], [], []
 
