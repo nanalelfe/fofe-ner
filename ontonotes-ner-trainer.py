@@ -228,7 +228,6 @@ if __name__ == '__main__':
     ################################################################################
 
     from fofe_mention_net import *
-
     config = mention_config(args)
 
     ################################################################################
@@ -268,7 +267,7 @@ if __name__ == '__main__':
                               n_label_type=nt)
 
     if args.feature_choice & 256 > 0:
-        ontonotes_gazetteer = gazetteer(args.data_path + '/ner-lst')
+        ontonotes_gazetteer = gazetteer(args.data_path + '/ner-lst', mode = "OntoNotes")
     else:
         ontonotes_gazetteer = [set() for _ in xrange(args.n_label_type)]
 
@@ -373,15 +372,16 @@ if __name__ == '__main__':
         # phar is used to observe training progress
         logger.info('epoch %2d, learning-rate: %f' % \
                     (n_epoch + 1, mention_net.config.learning_rate))
-        # if config.enable_distant_supervision:
-        #     train = batch_constructor(  # gigaword( 'gigaword/' + filelist[n_epoch] ),
-        #         CoNLL2003(os.path.join(folder, filelist[n_epoch])),
-        #         numericizer1, numericizer2,
-        #         gazetteer=conll2003_gazetteer,
-        #         alpha=config.word_alpha,
-        #         window=config.n_window,
-        #         is2ndPass=args.is_2nd_pass)
-        #     logger.info('train: ' + str(train))
+
+        if config.enable_distant_supervision:
+            train = batch_constructor(  # gigaword( 'gigaword/' + filelist[n_epoch] ),
+                CoNLL2003(os.path.join(folder, filelist[n_epoch])),
+                numericizer1, numericizer2,
+                gazetteer=conll2003_gazetteer,
+                alpha=config.word_alpha,
+                window=config.n_window,
+                is2ndPass=args.is_2nd_pass)
+            logger.info('train: ' + str(train))
 
         pbar = tqdm(total=len(train.positive) +
                           int(len(train.overlap) * config.overlap_rate) +
