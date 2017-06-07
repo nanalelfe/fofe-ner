@@ -206,7 +206,7 @@ if __name__ == '__main__':
     # set a logging file at DEBUG level, TODO: windows doesn't allow ":" appear in a file name
     logging.basicConfig( format = '%(asctime)s : %(levelname)s : %(message)s', 
                          level= logging.DEBUG,
-                         filename = ('log/conll2003 ' + time.ctime() + '.log').replace(' ', '-'), 
+                         filename = ('log/ontonotes ' + time.ctime() + '.log').replace(' ', '-'), 
                          filemode = 'w' )
 
     # direct the INFO-level logging to the screen
@@ -255,7 +255,7 @@ if __name__ == '__main__':
     ################################################################################
 
     mention_net = fofe_mention_net( config, args.gpu_fraction )
-    mention_net.tofile( './conll2003-model/' + args.model )
+    mention_net.tofile( './ontonotes-model/' + args.model )
 
     ################################################################################
 
@@ -274,8 +274,50 @@ if __name__ == '__main__':
         ontonotes_gazetteer = [ set() for _ in xrange( args.n_label_type ) ]
 
 
+    #==================================================================================
+    # Split the data 80:10:10: training set, validation set and test set
+    #==================================================================================
+
+    directory = args.dir_path
+    textfile = args.text_path
+
+    training_path = "/local/scratch/nana/processed-data/eng_train_paths"
+    valid_path = "/local/scratch/nana/processed-data/eng_valid_paths"
+    test_path = "/local/scratch/nana/processed-data/eng_test_paths"
+
+    train_file = codecs.open(training_path, 'w', 'utf8')
+    valid_file = codecs.open(valid_path, 'w', 'utf8')
+    test_file = codecs.open(test_path, 'w', 'utf8')
+
+    if directory[-1] != '/':
+        directory = directory + '/'
+
+    file = codecs.open(textfile, 'r', 'utf8' )
+
+    # 2910 documents for training
+    # 72 documents for validation and test
+
+    i = 0
+    for filename in file:
+        if ("english" in filename) and (filename[2:] is not None):
+            if i < 2910:
+                train_file.write(filename)
+            elif i < 2982:
+                valid_file.write(filename)
+            else:
+                test_file.write(filename)
+            i += 1
+
+    train_file.close()
+    valid_file.close()
+    test_file.close()
+
+    #==================================================================================
+
+    #----------------------------------------------------------------------------------
     # Training set
-    train = batch_constructor( OntoNotes( args.dir_path, args.text_path ), 
+    #----------------------------------------------------------------------------------
+    train = batch_constructor( OntoNotes( training_path ), 
                                numericizer1, numericizer2, 
                                gazetteer = ontonotes_gazetteer, 
                                alpha = config.word_alpha, 
@@ -283,8 +325,10 @@ if __name__ == '__main__':
                                is2ndPass = args.is_2nd_pass )
     logger.info( 'train: ' + str(train) )
 
+    #----------------------------------------------------------------------------------
     # Validation set
-    valid = batch_constructor( OntoNotes( args.dir_path, args.text_path ), 
+    #----------------------------------------------------------------------------------
+    valid = batch_constructor( OntoNotes( valid_path ), 
                                numericizer1, numericizer2, 
                                gazetteer = ontonotes_gazetteer, 
                                alpha = config.word_alpha, 
@@ -292,8 +336,10 @@ if __name__ == '__main__':
                                is2ndPass = args.is_2nd_pass )
     logger.info( 'valid: ' + str(valid) )
 
+    #----------------------------------------------------------------------------------
     # Test set
-    test  = batch_constructor( OntoNotes( args.dir_path, args.text_path ), 
+    #----------------------------------------------------------------------------------
+    test  = batch_constructor( OntoNotes( test_path ), 
                                numericizer1, numericizer2, 
                                gazetteer = ontonotes_gazetteer, 
                                alpha = config.word_alpha, 
@@ -302,6 +348,8 @@ if __name__ == '__main__':
     logger.info( 'test: ' + str(test) )
 
     logger.info( 'data set loaded' )
+
+    #==================================================================================
 
     ################### let's compute ####################
 
@@ -317,8 +365,8 @@ if __name__ == '__main__':
 
     for n_epoch in xrange( config.max_iter ):
 
-        if not os.path.exists( 'conll2003-result' ):
-            os.makedirs( 'conll2003-result' )
+        if not os.path.exists( 'ontonotes-result' ):
+            os.makedirs( 'ontonotes-result' )
 
         #############################################
         ########## go through training set ##########
@@ -328,14 +376,14 @@ if __name__ == '__main__':
         logger.info( 'epoch %2d, learning-rate: %f' % \
                         (n_epoch + 1, mention_net.config.learning_rate) )
         if config.enable_distant_supervision:
-            train = batch_constructor( # gigaword( 'gigaword/' + filelist[n_epoch] ), 
-                                       CoNLL2003( os.path.join(folder, filelist[n_epoch]) ), 
-                                       numericizer1, numericizer2, 
-                                       gazetteer = ontonotes_gazetteer, 
-                                       alpha = config.word_alpha, 
-                                       window = config.n_window,
-                                       is2ndPass = args.is_2nd_pass )
-            logger.info( 'train: ' + str(train) )
+            # train = batch_constructor( # gigaword( 'gigaword/' + filelist[n_epoch] ), 
+            #                            CoNLL2003( os.path.join(folder, filelist[n_epoch]) ), 
+            #                            numericizer1, numericizer2, 
+            #                            gazetteer = ontonotes_gazetteer, 
+            #                            alpha = config.word_alpha, 
+            #                            window = config.n_window,
+            #                            is2ndPass = args.is_2nd_pass )
+            # logger.info( 'train: ' + str(train) )
 
         pbar = tqdm( total = len(train.positive) + 
                              int(len(train.overlap) * config.overlap_rate) +
@@ -371,9 +419,9 @@ if __name__ == '__main__':
         ###############################################
 
         if args.buffer_dir is None:
-            valid_file = 'conll2003-result/conll2003-valid.predicted'
+            valid_file = 'ontonotes-result/ontonotes-valid.predicted'
         else:
-            valid_file = os.path.join( args.buffer_dir, 'conll2003-valid.predicted' )
+            valid_file = os.path.join( args.buffer_dir, 'ontonotes-valid.predicted' )
         valid_predicted = open( valid_file, 'wb' )
         cost, cnt = 0, 0
         to_print = [] 
@@ -404,9 +452,9 @@ if __name__ == '__main__':
 
         if args.offical_eval or decode_test:
             if args.buffer_dir is None:
-                test_file = 'conll2003-result/conll2003-test.predicted'
+                test_file = 'ontonotes-result/ontonotes-test.predicted'
             else:
-                test_file = os.path.join( args.buffer_dir, 'conll2003-test.predicted' )
+                test_file = os.path.join( args.buffer_dir, 'ontonotes-test.predicted' )
             test_predicted = open( test_file, 'wb' )
             cost, cnt= 0, 0
             to_print = []
@@ -440,7 +488,7 @@ if __name__ == '__main__':
 
         if decode_test:
 
-            pp = [ p for p in PredictionParser( CoNLL2003( config.data_path + '/eng.testa' ), 
+            pp = [ p for p in PredictionParser( OntoNotes( valid_path ), 
                                                 valid_file, 
                                                 config.n_window ) ]
 
@@ -460,31 +508,31 @@ if __name__ == '__main__':
         ###############################################
 
         if args.offical_eval:
-            cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d --config=%s ' \
-                            % ( best_threshold, best_algorithm, config.n_window, 
-                                'conll2003-model/%s.config' % args.model ) ) + \
-                  ('%s/eng.testa %s | conlleval' % (config.data_path, valid_file) )
-            process = Popen( cmd, shell = True, stdout = PIPE, stderr = PIPE)
-            (out, err) = process.communicate()
-            exit_code = process.wait()
-            logger.info( 'validation\n' + out )
+            # cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d --config=%s ' \
+            #                 % ( best_threshold, best_algorithm, config.n_window, 
+            #                     'conll2003-model/%s.config' % args.model ) ) + \
+            #       ('%s/eng.testa %s | conlleval' % (config.data_path, valid_file) )
+            # process = Popen( cmd, shell = True, stdout = PIPE, stderr = PIPE)
+            # (out, err) = process.communicate()
+            # exit_code = process.wait()
+            # logger.info( 'validation\n' + out )
 
-            cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d ' \
-                            % ( best_threshold, best_algorithm, config.n_window ) ) + \
-                  ('%s/eng.testb %s | conlleval' % (config.data_path, test_file) )
-            process = Popen( cmd, shell = True, stdout = PIPE, stderr = PIPE)
-            (out, err) = process.communicate()
-            logger.info( 'test, global threshold\n' + out )
-            test_fb1 = float(out.split('\n')[1].split()[-1])
+            # cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d ' \
+            #                 % ( best_threshold, best_algorithm, config.n_window ) ) + \
+            #       ('%s/eng.testb %s | conlleval' % (config.data_path, test_file) )
+            # process = Popen( cmd, shell = True, stdout = PIPE, stderr = PIPE)
+            # (out, err) = process.communicate()
+            # logger.info( 'test, global threshold\n' + out )
+            # test_fb1 = float(out.split('\n')[1].split()[-1])
         else:
-            pp = [ p for p in PredictionParser( CoNLL2003( config.data_path + '/eng.testa' ), 
+            pp = [ p for p in PredictionParser( OntoNotes( valid_path ), 
                                                 valid_file, 
                                                 config.n_window ) ]
             _, _, test_fb1, info = evaluation( pp, best_threshold, best_algorithm, True )
             logger.info ( 'validation:\n' + info )
 
             if decode_test:
-                pp = [ p for p in PredictionParser( CoNLL2003( config.data_path + '/eng.testb' ), 
+                pp = [ p for p in PredictionParser( OntoNotes( test_path ), 
                                                     test_file, 
                                                     config.n_window ) ]
                 _, _, _, out = evaluation( pp, best_threshold, best_algorithm, True )
@@ -496,7 +544,7 @@ if __name__ == '__main__':
             best_test_fb1 = test_fb1
             mention_net.config.threshold = best_threshold
             mention_net.config.algorithm = best_algorithm
-            mention_net.tofile( './conll2003-model/' + args.model )
+            mention_net.tofile( './ontonotes-model/' + args.model )
 
         # cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d --config=%s ' \
         #                 % ( best_threshold, best_algorithm, config.n_window,
@@ -526,5 +574,5 @@ if __name__ == '__main__':
         if config.drop_rate > 0:
             mention_net.config.drop_rate *= 0.5 ** (2./ config.max_iter)
 
-    logger.info( 'results are written in conll2003-{valid,test}.predicted' )
+    logger.info( 'results are written in ontonotes-{valid,test}.predicted' )
 
