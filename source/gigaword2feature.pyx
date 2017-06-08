@@ -212,7 +212,7 @@ def gazetteer( filename, mode = 'CoNLL2003' ):
 
     elif mode == "OntoNotes":
         logger.info( 'Loading OntoNotes 18-type gazetteer' )
-        result = [ set() for _ in xrange(17) ]
+        result = [ set() for _ in xrange(18) ]
 
         ner2cls = { 'PERSON': 0, 'FAC': 1, 'ORG': 2, 'GPE': 3, 'LOC': 4, 'PRODUCT': 5,
         'DATE': 6, 'TIME': 7, 'PERCENT': 8, 'MONEY': 9, 'QUANTITY': 10, 'ORDINAL': 11,
@@ -1409,6 +1409,12 @@ def PredictionParser( sample_generator, result, ner_max_length,
     """
     if n_label_type == 4:
         idx2ner = [ 'PER', 'LOC', 'ORG', 'MISC', 'O' ]
+
+    elif n_label_type == 18:
+
+        idx2ner = ['PERSON', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'DATE', 'TIME', 'PERCENT',
+                    'MONEY', 'QUANTITY', 'ORDINAL', 'CARDINAL', 'EVENT', 'WORK_OF_ART', 'LAW',
+                    'LANGUAGE', 'NORP', 'O']
     else:
         # idx2ner = [ 'PER_NAM', 'PER_NOM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'TTL_NAM', 'O'  ]
         idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
@@ -1707,6 +1713,12 @@ def evaluation( prediction_parser, threshold, algorithm,
 
     if n_label_type == 4:
         idx2ner = [ 'PER', 'LOC', 'ORG', 'MISC', 'O' ]
+
+    elif n_label_type == 18:
+        idx2ner = ['PERSON', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'DATE', 'TIME', 'PERCENT',
+                    'MONEY', 'QUANTITY', 'ORDINAL', 'CARDINAL', 'EVENT', 'WORK_OF_ART', 'LAW',
+                    'LANGUAGE', 'NORP', 'O']
+
     else:
         # idx2ner = [ 'PER_NAM', 'PER_NOM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'TTL_NAM', 'O'  ]
         idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
