@@ -423,10 +423,10 @@ if __name__ == '__main__':
         ###############################################
 
         if args.buffer_dir is None:
-            valid_file = 'ontonotes-result/ontonotes-valid.predicted'
+            validation_file = 'ontonotes-result/ontonotes-valid.predicted'
         else:
-            valid_file = os.path.join(args.buffer_dir, 'ontonotes-valid.predicted')
-        valid_predicted = open(valid_file, 'wb')
+            validation_file = os.path.join(args.buffer_dir, 'ontonotes-valid.predicted')
+        valid_predicted = open(validation_file, 'wb')
         cost, cnt = 0, 0
         to_print = []
 
@@ -456,10 +456,10 @@ if __name__ == '__main__':
 
         if args.offical_eval or decode_test:
             if args.buffer_dir is None:
-                test_file = 'ontonotes-result/ontonotes-test.predicted'
+                testing_file = 'ontonotes-result/ontonotes-test.predicted'
             else:
-                test_file = os.path.join(args.buffer_dir, 'ontonotes-test.predicted')
-            test_predicted = open(test_file, 'wb')
+                testing_file = os.path.join(args.buffer_dir, 'ontonotes-test.predicted')
+            test_predicted = open(testing_file, 'wb')
             cost, cnt = 0, 0
             to_print = []
 
@@ -493,12 +493,12 @@ if __name__ == '__main__':
         if decode_test:
 
             pp = [p for p in PredictionParser(OntoNotes(directory, valid_path),
-                                              valid_file,
-                                              config.n_window)]
+                                              validation_file,
+                                              config.n_window, n_label_type = config.n_label_type)]
 
             for algorithm, name in zip([1, 2, 3], algo_list):
                 for threshold in numpy.arange(0.3, 1, 0.1).tolist():
-                    precision, recall, f1, _ = evaluation(pp, threshold, algorithm, True)
+                    precision, recall, f1, _ = evaluation(pp, threshold, algorithm, True, n_label_type = config.n_label_type)
                     logger.debug(('cut-off: %f, algorithm: %-20s' %
                                   (threshold, name)) +
                                  (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)))
@@ -515,7 +515,7 @@ if __name__ == '__main__':
             cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d --config=%s ' \
                             % ( best_threshold, best_algorithm, config.n_window,
                                 'conll2003-model/%s.config' % args.model ) ) + \
-                  ('%s/eng.testa %s | conlleval' % (config.data_path, valid_file) )
+                  ('%s/eng.testa %s | conlleval' % (config.data_path, validation_file) )
             process = Popen( cmd, shell = True, stdout = PIPE, stderr = PIPE)
             (out, err) = process.communicate()
             exit_code = process.wait()
@@ -523,23 +523,23 @@ if __name__ == '__main__':
 
             cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d ' \
                             % ( best_threshold, best_algorithm, config.n_window ) ) + \
-                  ('%s/eng.testb %s | conlleval' % (config.data_path, test_file) )
+                  ('%s/eng.testb %s | conlleval' % (config.data_path, testing_file) )
             process = Popen( cmd, shell = True, stdout = PIPE, stderr = PIPE)
             (out, err) = process.communicate()
             logger.info( 'test, global threshold\n' + out )
             test_fb1 = float(out.split('\n')[1].split()[-1])
         else:
             pp = [p for p in PredictionParser(OntoNotes(directory, valid_path),
-                                              valid_file,
-                                              config.n_window)]
-            _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True)
+                                              validation_file,
+                                              config.n_window, n_label_type = config.n_label_type)]
+            _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
             logger.info('validation:\n' + info)
 
             if decode_test:
                 pp = [p for p in PredictionParser(OntoNotes(directory, test_path),
-                                                  test_file,
-                                                  config.n_window)]
-                _, _, _, out = evaluation(pp, best_threshold, best_algorithm, True)
+                                                  testing_file,
+                                                  config.n_window, n_label_type = config.n_label_type)]
+                _, _, _, out = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
                 logger.info('evaluation:\n' + out)
 
         if test_fb1 > best_test_fb1:
