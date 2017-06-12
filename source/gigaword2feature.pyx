@@ -1158,8 +1158,9 @@ class batch_constructor:
             if feature_choice & 128 > 0:
                 logger.info("sentence.sentence[begin_idx:end_idx]")
                 logger.info(sentence.sentence[begin_idx:end_idx])
+                str_list = list(filter(None, sentence.sentence[begin_idx:end_idx]))
                 left_init, right_init = self.numericizer1.char_fofe_of_word(
-                            ''.join( [ w[0] for w in sentence.sentence[begin_idx:end_idx] ] ) )
+                            ''.join( [ w[0] for w in str_list ] ) )
                 dense_buffer[cnt,256:384] = left_init
                 dense_buffer[cnt,384:512] = right_init
 
