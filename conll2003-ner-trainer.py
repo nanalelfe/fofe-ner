@@ -384,7 +384,7 @@ if __name__ == '__main__':
             best_test_fb1 = test_fb1
             mention_net.config.threshold = best_threshold
             mention_net.config.algorithm = best_algorithm
-            mention_net.tofile( './conll2003-model/' + args.model )
+            mention_net.tofile( './ontonotes-model/' + args.model )
 
         # cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d --config=%s ' \
         #                 % ( best_threshold, best_algorithm, config.n_window,
@@ -414,5 +414,5 @@ if __name__ == '__main__':
         if config.drop_rate > 0:
             mention_net.config.drop_rate *= 0.5 ** (2./ config.max_iter)
 
-    logger.info( 'results are written in conll2003-{valid,test}.predicted' )
+    logger.info( 'results are written in ontonotes-{valid,test}.predicted' )
 

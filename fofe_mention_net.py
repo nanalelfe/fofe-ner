@@ -49,7 +49,6 @@ def load_word_embedding( filename ):
         embedding = numpy.fromfile( fp, dtype = numpy.float32 ).reshape( shape )
     return embedding
 
-
 ########################################################################
 
 
@@ -161,37 +160,53 @@ class fofe_mention_net( object ):
         # TODO: create a graph instead of using default graph
         #       otherwise, we cannot instantiate multiple fofe_mention_nets
         # tf.reset_default_graph()
+
         if gpu_option is not None:
             gpu_option = tf.GPUOptions( per_process_gpu_memory_fraction = gpu_option )
             self.session = tf.Session( config = tf.ConfigProto( 
                                                 gpu_options = gpu_option ),
                                                 # log_device_placement = True ),
                                        graph = self.graph )
+
         else:
              self.session = tf.Session( graph = self.graph )
 
+        # NON-CHINESE WORD EMBEDDINGS
         if os.path.exists( self.config.word_embedding + '-case-insensitive.word2vec' ) \
             and os.path.exists( self.config.word_embedding + '-case-sensitive.word2vec' ):
 
+            # Matrix with row word vectors for insensitive case
             projection1 = load_word_embedding( self.config.word_embedding + \
                                                '-case-insensitive.word2vec' )
+
+            # Matrix with row word vectors for sensitive case
             projection2 = load_word_embedding( self.config.word_embedding + \
                                                '-case-sensitive.word2vec' )
 
+
+            # Number of words in insensitive case
             self.n_word1 = projection1.shape[0]
+
+            # Number of words in sensitive case
             self.n_word2 = projection2.shape[0]
+
             n_word1 = projection1.shape[0]
             n_word2 = projection2.shape[0]
 
+            # Length of the word embedding for insensitive case
             n_word_embedding1 = projection1.shape[1]
+
+            # Length of the word embedding for sensitive case
             n_word_embedding2 = projection2.shape[1]
 
+            # Update the configuation
             self.config.n_word1 = self.n_word1
             self.config.n_word2 = self.n_word2
             self.config.n_word_embedding1 = n_word_embedding1
             self.config.n_word_embedding2 = n_word_embedding2
             logger.info( 'non-Chinese embeddings loaded' )
 
+        # CHINESE CHARACTER EMBEDDINGS
         elif os.path.exists( self.config.word_embedding + '-char.word2vec' ) \
             and os.path.exists( self.config.word_embedding + '-word.word2vec' ):
 
@@ -355,9 +370,10 @@ class fofe_mention_net( object ):
             # Shape of the index matrices
             # ===========================
 
-            # case insensitive (rows)
+            # case insensitive bow shape, vector of size 2
+            # first value # of rows and second value # of cols
             self.shape1 = tf.placeholder( tf.int64, [2], name = 'bow-shape1' )
-            # case sensitive (rows)
+            # case sensitive
             self.shape2 = tf.placeholder( tf.int64, [2], name = 'bow-shape2' )
 
 
@@ -372,20 +388,27 @@ class fofe_mention_net( object ):
             self.ri_fofe = tf.placeholder( tf.float32, [None, n_char], name = 'right-initial' )
 
             ################################################################################
-
+            # A grid like matrix where each row represents a token, and a 0/1 in a particular
+            # column means that the token is a mention with entity type corresponding to 
+            # column number:
             self.ner_cls_match = tf.placeholder( tf.float32, [None, n_label_type + 1], name = 'gazetteer' )
 
+            # Each entity type is associated with a label
             self.label = tf.placeholder( tf.int64, [None], 'label' )
 
+            # A constant value
             self.lr = tf.placeholder( tf.float32, [], 'learning-rate' )
 
             self.keep_prob = tf.placeholder( tf.float32, [], 'keep-prob' )
             
             self.char_idx = tf.placeholder( tf.int32, [None, None], name = 'char-idx' )
 
+            # Bigrams
+            # left context 
             self.lbc_values = tf.placeholder( tf.float32, [None], name = 'bigram-values' )
             self.lbc_indices = tf.placeholder( tf.int64, [None, 2], name = 'bigram-indices' )
 
+            # right context
             self.rbc_values = tf.placeholder( tf.float32, [None], name = 'bigram-values' )
             self.rbc_indices = tf.placeholder( tf.int64, [None, 2], name = 'bigram-indices' )
 
@@ -397,14 +420,19 @@ class fofe_mention_net( object ):
             #################### model parameters ##########################################
             ################################################################################
 
+            # projection1 and projection2 are one-hot word vectors (?)
             self.word_embedding_1 = tf.Variable( projection1 )
             self.word_embedding_2 = tf.Variable( projection2 )
             del projection1, projection2
 
+            # weights & bias of fully-connected layers
+            # Weights
             self.W = []
-            self.b = []   # weights & bias of fully-connected layers
+            # Bias
+            self.b = []   
             self.param = []
 
+            # network weights are randomly initialized based on the uniform distribution
             if initialize_method == 'uniform':
 
                 # Character-level network weights initialization
@@ -417,7 +445,11 @@ class fofe_mention_net( object ):
 
 
                 # Word-level network weights initialization
+
+                # value range
                 val_rng = numpy.float32(2.5 / numpy.sqrt(n_label_type + n_ner_embedding + 1))
+
+                # random initialization of word embeddings
                 self.ner_embedding = tf.Variable( tf.random_uniform( 
                                         [n_label_type + 1 ,n_ner_embedding], minval = -val_rng, maxval = val_rng ) )
                 
@@ -425,6 +457,7 @@ class fofe_mention_net( object ):
                 self.bigram_embedding = tf.Variable( tf.random_uniform( 
                                         [96 * 96, n_char_embedding], minval = -val_rng, maxval = val_rng ) )
                 
+
                 self.kernels = [ tf.Variable( tf.random_uniform( 
                                     [h, n_char_embedding, 1, d], 
                                     minval = -2.5 / numpy.sqrt(1 + h * n_char_embedding * d), 
@@ -580,19 +613,29 @@ class fofe_mention_net( object ):
                                                      reduction_indices = [1, 2] ) \
                             for kk,bb in zip( self.kernels, self.kernel_bias) ]
 
-
+            # case insensitive excluding fragment
             lw1 = tf.SparseTensor( self.lw1_indices, self.lw1_values, self.shape1 )
             rw1 = tf.SparseTensor( self.rw1_indices, self.rw1_values, self.shape1 )
+
+            # case insensitive including fragment
             lw2 = tf.SparseTensor( self.lw2_indices, self.lw2_values, self.shape1 )
             rw2 = tf.SparseTensor( self.rw2_indices, self.rw2_values, self.shape1 )
+
+            # case insensitive bow fragment
             bow1 = tf.SparseTensor( self.bow1_indices, self.bow1_values, self.shape1 )
 
+            # case sensitive excluding fragment
             lw3 = tf.SparseTensor( self.lw3_indices, self.lw3_values, self.shape2 )
             rw3 = tf.SparseTensor( self.rw3_indices, self.rw3_values, self.shape2 )
+
+            # case sensitive including fragment
             lw4 = tf.SparseTensor( self.lw4_indices, self.lw4_values, self.shape2 )
             rw4 = tf.SparseTensor( self.rw4_indices, self.rw4_values, self.shape2 )
+
+            # case sensitive bow fragment
             bow2 = tf.SparseTensor( self.bow2_indices, self.bow2_values, self.shape2 )
 
+            # left and right bigram context
             lbc = tf.SparseTensor( self.lbc_indices, self.lbc_values, self.shape3 )
             rbc = tf.SparseTensor( self.rbc_indices, self.rbc_values, self.shape3 )
 
