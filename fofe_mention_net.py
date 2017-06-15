@@ -434,7 +434,6 @@ class fofe_mention_net( object ):
 
             # network weights are randomly initialized based on the uniform distribution
             if initialize_method == 'uniform':
-
                 # Character-level network weights initialization
                 val_rng = numpy.float32(2.5 / numpy.sqrt(n_char + n_char_embedding))
                 self.char_embedding = tf.Variable( tf.random_uniform( 
@@ -606,12 +605,19 @@ class fofe_mention_net( object ):
             ################################################################################
 
             char_cube = tf.expand_dims( tf.gather( self.conv_embedding, self.char_idx ), 3 )
+
+            # char-level CNN
             char_conv = [ tf.reduce_max( tf.nn.tanh( tf.nn.conv2d( char_cube, 
                                                                    kk, 
                                                                    [1, 1, 1, 1], 
                                                                    'VALID' ) + bb ),
                                                      reduction_indices = [1, 2] ) \
                             for kk,bb in zip( self.kernels, self.kernel_bias) ]
+
+            ###########################
+            ### WORD-LEVEL FEATURES ###
+            ###########################
+
 
             # case insensitive excluding fragment
             lw1 = tf.SparseTensor( self.lw1_indices, self.lw1_values, self.shape1 )
@@ -623,6 +629,9 @@ class fofe_mention_net( object ):
 
             # case insensitive bow fragment
             bow1 = tf.SparseTensor( self.bow1_indices, self.bow1_values, self.shape1 )
+
+            # CASE SENSITIVE
+            # --------------
 
             # case sensitive excluding fragment
             lw3 = tf.SparseTensor( self.lw3_indices, self.lw3_values, self.shape2 )
@@ -696,37 +705,50 @@ class fofe_mention_net( object ):
             # all sparse feature after projection
 
             # case-insensitive in English / word embedding in Chinese
+            # case-insensitive bfofe with candidate word(s)
             lwp1 = tf.sparse_tensor_dense_matmul( lw1, self.word_embedding_1,
                                                   name = 'emb1-left-fofe-excl-proj' )
             rwp1 = tf.sparse_tensor_dense_matmul( rw1, self.word_embedding_1,
                                                   name = 'emb1-right-fofe-excl-proj' )
+
+            # case-insensitive bfofe without candidate word(s)
             lwp2 = tf.sparse_tensor_dense_matmul( lw2, self.word_embedding_1,
                                                   name = 'emb1-left-fofe-incl-proj' )
             rwp2 = tf.sparse_tensor_dense_matmul( rw2, self.word_embedding_1,
                                                   name = 'emb1-right-fofe-incl-proj' )
+
+            # case-insensitive bag-of-words
             bowp1 = tf.sparse_tensor_dense_matmul( bow1, self.word_embedding_1 )
 
             # case-sensitive in English / character embedding in Chinese
+            # case-sensitive bfofe with candidate word(s)
             lwp3 = tf.sparse_tensor_dense_matmul( lw3, self.word_embedding_2,
                                                   name = 'emb2-left-fofe-excl-proj' )
             rwp3 = tf.sparse_tensor_dense_matmul( rw3, self.word_embedding_2,
                                                   name = 'emb2-right-fofe-excl-proj' )
+
+            # case-sensitive bfofe without candidate word(s)
             lwp4 = tf.sparse_tensor_dense_matmul( lw4, self.word_embedding_2,
                                                   name = 'emb2-left-fofe-incl-proj' )
             rwp4 = tf.sparse_tensor_dense_matmul( rw4, self.word_embedding_2,
                                                   name = 'emb2-right-fofe-incl-proj' )
+
+            # case-sensitive bag-of-words
             bowp2 = tf.sparse_tensor_dense_matmul( bow2, self.word_embedding_2 )
 
             # dense features after projection
+            # char-level bfofe of candidate word(s)
             lcp = tf.matmul( self.lc_fofe, self.char_embedding )
             rcp = tf.matmul( self.rc_fofe, self.char_embedding )
-
+            
             lip = tf.matmul( self.li_fofe, self.char_embedding )
             rip = tf.matmul( self.ri_fofe, self.char_embedding )
 
+            # bigram char-fofe
             lbcp = tf.sparse_tensor_dense_matmul( lbc, self.bigram_embedding )
             rbcp = tf.sparse_tensor_dense_matmul( rbc, self.bigram_embedding )
 
+            # gazetteer exact match
             ner_projection = tf.matmul( self.ner_cls_match, self.ner_embedding )
 
             # all possible features
@@ -952,8 +974,7 @@ class fofe_mention_net( object ):
             )
 
         return c
-
-
+        
 
     def eval( self, mini_batch ):
         """

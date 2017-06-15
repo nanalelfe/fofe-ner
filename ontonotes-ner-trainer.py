@@ -402,6 +402,8 @@ if __name__ == '__main__':
                                                              config.disjoint_rate,
                                                              config.feature_choice)):
 
+            logger.info("example : %s", example)
+
             c = mention_net.train(example)
 
             cost += c * example[-1].shape[0]
@@ -415,6 +417,7 @@ if __name__ == '__main__':
         train_cost = cost / cnt
         logger.info('training set iterated, %f' % train_cost)
 
+        # just training from 1st to 9th iterations
         if 0 < n_epoch < 10:
             continue
 
