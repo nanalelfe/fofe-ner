@@ -262,6 +262,8 @@ if __name__ == '__main__':
 
     # there are 2 sets of vocabulary, case-insensitive and case sensitive
     nt = config.n_label_type if config.is_2nd_pass else 0
+
+    # Vocabulary is an object that creates dicts of word to indices and fofe codes
     numericizer1 = vocabulary(config.word_embedding + '-case-insensitive.wordlist',
                               config.char_alpha, False,
                               n_label_type=nt)
@@ -270,6 +272,9 @@ if __name__ == '__main__':
                               n_label_type=nt)
 
     if args.feature_choice & 256 > 0:
+        # Gazetteer is a list of names grouped by the pre-defined categories an NER
+        # system is targeting at. Gazetteer is shown to be one of the most effective
+        # external knowledge sources to improve NER performance
         ontonotes_gazetteer = gazetteer(args.data_path + '/ner-lst', mode = "OntoNotes")
     else:
         ontonotes_gazetteer = [set() for _ in xrange(args.n_label_type)]
@@ -401,8 +406,6 @@ if __name__ == '__main__':
                                                              config.overlap_rate,
                                                              config.disjoint_rate,
                                                              config.feature_choice)):
-
-            logger.info("example : %s", example)
 
             c = mention_net.train(example)
 
