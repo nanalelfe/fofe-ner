@@ -322,6 +322,8 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------
     # Training set
     # ----------------------------------------------------------------------------------
+    # Batch constructor initializes sets of processed_sentence objects, sentence1
+    # (case insensitive) and sentence2 (case sensitive)
     train = batch_constructor(OntoNotes(directory, training_path),
                               numericizer1, numericizer2,
                               gazetteer=ontonotes_gazetteer,
@@ -400,6 +402,7 @@ if __name__ == '__main__':
 
         cost, cnt = 0, 0
 
+        # example is batch of fragments from a sentence
         for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
                                train.mini_batch_multi_thread(config.n_batch_size,
                                                              True,

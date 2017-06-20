@@ -150,7 +150,6 @@ class fofe_mention_net( object ):
         # else:
         #     self.config = mention_config()
 
-        # WHY
         self.config = mention_config()
         if config is not None:
             self.config.__dict__.update( config.__dict__ )
@@ -182,7 +181,6 @@ class fofe_mention_net( object ):
             # Matrix with row word vectors for sensitive case
             projection2 = load_word_embedding( self.config.word_embedding + \
                                                '-case-sensitive.word2vec' )
-
 
             # Number of words in insensitive case
             self.n_word1 = projection1.shape[0]
@@ -334,7 +332,6 @@ class fofe_mention_net( object ):
 
             # CASE SENSITIVE
             # --------------
-
             # value vectors in FOFE code
 
             # case sensitive excluding fragment
@@ -369,7 +366,6 @@ class fofe_mention_net( object ):
 
             # Shape of the index matrices
             # ===========================
-
             # case insensitive bow shape, vector of size 2
             # first value # of rows and second value # of cols
             self.shape1 = tf.placeholder( tf.int64, [2], name = 'bow-shape1' )
@@ -426,7 +422,7 @@ class fofe_mention_net( object ):
             del projection1, projection2
 
             # weights & bias of fully-connected layers
-            # Weights
+            # self.W contains weight matrices for each layer
             self.W = []
             # Bias
             self.b = []   
@@ -442,9 +438,7 @@ class fofe_mention_net( object ):
                 self.conv_embedding = tf.Variable( tf.random_uniform( 
                                         [n_char, n_char_embedding], minval = -val_rng, maxval = val_rng ) )
 
-
                 # Word-level network weights initialization
-
                 # value range
                 val_rng = numpy.float32(2.5 / numpy.sqrt(n_label_type + n_ner_embedding + 1))
 
@@ -455,7 +449,6 @@ class fofe_mention_net( object ):
                 val_rng = numpy.float32(2.5 / numpy.sqrt(96 * 96 + n_char_embedding))
                 self.bigram_embedding = tf.Variable( tf.random_uniform( 
                                         [96 * 96, n_char_embedding], minval = -val_rng, maxval = val_rng ) )
-                
 
                 self.kernels = [ tf.Variable( tf.random_uniform( 
                                     [h, n_char_embedding, 1, d], 
@@ -475,6 +468,7 @@ class fofe_mention_net( object ):
 
                 for i, o in zip( n_in, n_out ):
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
+                    # Returns a tensor of the specified shape filled with random uniform values.
                     self.W.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
                     self.b.append( tf.Variable( tf.zeros( [o] ) )  )
 
@@ -618,7 +612,6 @@ class fofe_mention_net( object ):
             ### WORD-LEVEL FEATURES ###
             ###########################
 
-
             # case insensitive excluding fragment
             lw1 = tf.SparseTensor( self.lw1_indices, self.lw1_values, self.shape1 )
             rw1 = tf.SparseTensor( self.rw1_indices, self.rw1_values, self.shape1 )
@@ -706,6 +699,8 @@ class fofe_mention_net( object ):
 
             # case-insensitive in English / word embedding in Chinese
             # case-insensitive bfofe with candidate word(s)
+
+            # 1st layer: word embedding, char embedding, ner embedding
             lwp1 = tf.sparse_tensor_dense_matmul( lw1, self.word_embedding_1,
                                                   name = 'emb1-left-fofe-excl-proj' )
             rwp1 = tf.sparse_tensor_dense_matmul( rw1, self.word_embedding_1,
@@ -756,6 +751,8 @@ class fofe_mention_net( object ):
                              [lwp3, rwp3], [lwp4, rwp4], [bowp2],
                              [lcp, rcp], [lip, rip], [ner_projection],
                              char_conv, [lbcp, rbcp] ]
+
+            # divide up the used and unused features
             used, not_used = [], [] 
 
             # decide what feature to use
@@ -764,9 +761,12 @@ class fofe_mention_net( object ):
                     used.extend( f )
                 else:
                     not_used.extend( f )
+
+            # only use the features requested for use
             feature_list = used #+ not_used
 
-            # feature = tf.concat( 1, feature_list )
+            # a tensor containing all the feature vectors
+            # 2nd layer: concatenate
             feature = tf.concat( feature_list, 1 )
 
             # if hope is used, add one linear layer
@@ -776,16 +776,24 @@ class fofe_mention_net( object ):
             else:
                 layer_output = [ tf.nn.dropout( feature, self.keep_prob ) ]
 
+            # calculate the output by multiplying the input by the weights
+            # use ReLU as an activation function
+            # 3rd layer to 11th layer: linear, relu, dropout
             for i in xrange( len(self.W) ):
+                # linear layer (also 12th layer: linear)
                 layer_output.append( tf.matmul( layer_output[-1], self.W[i] ) + self.b[i] )
                 if i < len(self.W) - 1:
+                    # ReLU layer
                     layer_output[-1] = tf.nn.relu( layer_output[-1] )
+                    # Dropout layer
                     layer_output[-1] = tf.nn.dropout( layer_output[-1], self.keep_prob )
 
+            # 13th layer: log_softmax
             self.xent = tf.reduce_mean( tf.nn.sparse_softmax_cross_entropy_with_logits( 
                                             logits = layer_output[-1], labels = self.label ) )
 
             if config.l1 > 0:
+                # self.param contains weights, bias, character conv embedding variables etc
                 for param in self.param:
                     self.xent = self.xent + config.l1 * tf.reduce_sum( tf.abs( param ) )
 
@@ -798,10 +806,14 @@ class fofe_mention_net( object ):
             self.predicted_indices = tf.reshape( top_indices, [-1] )
 
             # fully connected layers are must-trained layers
+            # Want to change the weights and bias terms only for minimization of cross entropy 
+            # cost function
             fully_connected_train_step = tf.train.MomentumOptimizer( self.lr, 
                                                                      self.config.momentum, 
                                                                      use_locking = False ) \
                                            .minimize( self.xent, var_list = self.W + self.b )
+
+            # a list of things to train
             self.train_step = [ fully_connected_train_step ]
 
             if n_pattern > 0:
@@ -833,26 +845,28 @@ class fofe_mention_net( object ):
                                     )
                 self.train_step.append( sparse_fofe_step )
 
-
+            # train the word embedding for insensitive case
             if feature_choice & 0b111 > 0:
                 insensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
                                                                             use_locking = True ) \
                                           .minimize( self.xent, var_list = [ self.word_embedding_1 ] )
                 self.train_step.append( insensitive_train_step )
 
+            # train the word embedding for sensitive case
             if feature_choice & (0b111 << 3) > 0:
                 sensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
                                                                           use_locking = True ) \
                                           .minimize( self.xent, var_list = [ self.word_embedding_2 ] )
                 self.train_step.append( sensitive_train_step )
 
-
+            # train the char embedding for insensitive case
             if feature_choice & (0b11 << 6) > 0:
                 char_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr / 2, 
                                                                                use_locking = True ) \
                                               .minimize( self.xent, var_list = [ self.char_embedding ] )
                 self.train_step.append( char_embedding_train_step )
 
+            # train the NER embedding
             if feature_choice & (1 << 8) > 0:
                 ner_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr, 
                                                                               use_locking = True ) \
@@ -878,7 +892,7 @@ class fofe_mention_net( object ):
                                                 tf.matmul( self.U, self.U, transpose_a = True ) - tf.eye(hope_out)
                                             ) 
                                         ) * __lambda
-                U_train_step_1 = tf.train.GradientDescentOptimizer( self.lr, use_locking = True ) \
+                U_train_step_1 = tf.train.GradientDescentOptimizer(self.lr, use_locking = True) \
                                          .minimize( orthogonal_penalty , var_list = [ self.U ] )
                 U_train_step_2 = tf.train.MomentumOptimizer( self.lr, momentum, use_locking = True ) \
                                          .minimize( self.xent, var_list = [ self.U ] )
@@ -893,7 +907,6 @@ class fofe_mention_net( object ):
             self.saver = tf.train.Saver()
 
 
-
     def train( self, mini_batch, profile = False ):
         """
         Parameters
@@ -903,6 +916,7 @@ class fofe_mention_net( object ):
         Returns
         -------
             c : float
+                Cost
         """ 
         l1_values, r1_values, l1_indices, r1_indices, \
         l2_values, r2_values, l2_indices, r2_indices, \
@@ -1041,7 +1055,6 @@ class fofe_mention_net( object ):
                                                         self.keep_prob: 1 } ) 
 
         return c, pi, pv
-
 
     def tofile( self, filename ):
         """
