@@ -4,6 +4,7 @@ import numpy, logging, argparse, time, copy, os, cPickle, sys
 from subprocess import Popen, PIPE, call
 from Queue import Queue
 from threading import Thread
+from random import shuffle
 
 logger = logging.getLogger(__name__)
 
@@ -283,16 +284,18 @@ if __name__ == '__main__':
     # Split the data 80:10:10: training set, validation set and test set
     # ==================================================================================
 
+    # Data splitting
+    training_rate = 0.8
+    validation_rate = 0.1
+    test_rate = 0.1
+
+
     directory = args.dir_path
     textfile = args.text_path
 
     training_path = "/local/scratch/nana/processed-data/eng_train_paths"
     valid_path = "/local/scratch/nana/processed-data/eng_valid_paths"
     test_path = "/local/scratch/nana/processed-data/eng_test_paths"
-
-    train_file = codecs.open(training_path, 'w', 'utf8')
-    valid_file = codecs.open(valid_path, 'w', 'utf8')
-    test_file = codecs.open(test_path, 'w', 'utf8')
 
     if directory[-1] != '/':
         directory = directory + '/'
@@ -302,16 +305,35 @@ if __name__ == '__main__':
     # 2910 documents for training
     # 72 documents for validation and test
 
+    links = []
     i = 0
     for filename in file:
         if ("english" in filename) and (filename[2:] is not None):
-            if i < 2910:
-                train_file.write(filename)
-            elif i < 2982:
-                valid_file.write(filename)
-            else:
-                test_file.write(filename)
-            i += 1
+            links.append(filename)
+    file.close()
+
+    shuffle(links)
+
+    total_links = len(links)
+    n_train_links = int(math.floor(total_links * training_rate))
+    n_valid_links = int(math.floor(total_links * validation_rate))
+
+    train_links = total_links[0:n_train_links]
+    valid_links = total_links[n_train_links:n_train_links + n_valid_links]
+    test_links = total_links[n_train_links + n_valid_links:]
+
+    train_file = codecs.open(training_path, 'w', 'utf8')
+    valid_file = codecs.open(valid_path, 'w', 'utf8')
+    test_file = codecs.open(test_path, 'w', 'utf8')
+
+    for filename in train_links:
+        train_file.write(filename)
+
+    for filename in valid_links:
+        valid_file.write(filename)
+
+    for filename in test_links:
+        test_file.write(filename)
 
     train_file.close()
     valid_file.close()

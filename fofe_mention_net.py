@@ -743,7 +743,6 @@ class fofe_mention_net( object ):
             lbcp = tf.sparse_tensor_dense_matmul( lbc, self.bigram_embedding )
             rbcp = tf.sparse_tensor_dense_matmul( rbc, self.bigram_embedding )
 
-            # gazetteer exact match
             ner_projection = tf.matmul( self.ner_cls_match, self.ner_embedding )
 
             # all possible features
