@@ -5,6 +5,7 @@ from subprocess import Popen, PIPE, call
 from Queue import Queue
 from threading import Thread
 from random import shuffle
+from math import floor
 
 logger = logging.getLogger(__name__)
 
@@ -315,8 +316,8 @@ if __name__ == '__main__':
     shuffle(links)
 
     total_links = len(links)
-    n_train_links = int(math.floor(total_links * training_rate))
-    n_valid_links = int(math.floor(total_links * validation_rate))
+    n_train_links = int(floor(total_links * training_rate))
+    n_valid_links = int(floor(total_links * validation_rate))
 
     train_links = total_links[0:n_train_links]
     valid_links = total_links[n_train_links:n_train_links + n_valid_links]
