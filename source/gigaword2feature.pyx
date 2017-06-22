@@ -844,7 +844,7 @@ cdef class example:
     cdef readonly numpy.ndarray gazetteer
 
     def __init__( self, sentence_id, begin_idx, end_idx, label, gazetteer = None ):
-        self.sentence_id = sentence_idf
+        self.sentence_id = sentence_id
         self.begin_idx = begin_idx
         self.end_idx = end_idx
         self.label = label
