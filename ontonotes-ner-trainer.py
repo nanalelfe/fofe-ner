@@ -402,12 +402,11 @@ if __name__ == '__main__':
     #===================
 
     # F1 scores
-    train_scores = []
     valid_scores = []
     test_scores = []
 
-    # Learning curve
-    learning_rate = []
+    # Train cost
+    training_costs = []
 
     for n_epoch in xrange(config.max_iter):
 
@@ -458,6 +457,9 @@ if __name__ == '__main__':
         pbar.close()
         train_cost = cost / cnt
 
+        # for plot
+        training_costs.append(train_cost)
+
         logger.info('training set iterated, %f' % train_cost)
 
         # just training from 1st to 9th iterations
@@ -505,7 +507,7 @@ if __name__ == '__main__':
                 testing_file = 'ontonotes-result/ontonotes-test.predicted'
             else:
                 testing_file = os.path.join(args.buffer_dir, 'ontonotes-test.predicted')
-                
+
             test_predicted = open(testing_file, 'wb')
             cost, cnt = 0, 0
             to_print = []
@@ -581,13 +583,16 @@ if __name__ == '__main__':
                                               config.n_window, n_label_type = config.n_label_type)]
             _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
             logger.info('validation:\n' + info)
+            # fb1 score for validation
+            valid_scores.append(test_fb1)
 
             if decode_test:
                 pp = [p for p in PredictionParser(OntoNotes(directory, test_path),
                                                   testing_file,
                                                   config.n_window, n_label_type = config.n_label_type)]
-                _, _, _, out = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
+                _, _, fb1, out = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
                 logger.info('evaluation:\n' + out)
+                test_scores.append(fb1)
 
         if test_fb1 > best_test_fb1:
             if decode_test:
@@ -624,6 +629,23 @@ if __name__ == '__main__':
 
         if config.drop_rate > 0:
             mention_net.config.drop_rate *= 0.5 ** (2. / config.max_iter)
+
+    plt.figure(1)
+
+    plt.subplot(211)
+    plt.plot(n_epoch, training_costs, 'r--')
+    plt.title('Cost on training data')
+
+    plt.subplot(212)
+    plt.plot(n_epoch, valid_scores, 'r--')
+    plt.title('F-score on validation data')
+
+    plt.subplot(213)
+    plt.plot(n_epoch, test_scores, 'r--')
+    plt.title('F-score on test data')
+
+    plot.show()
+
 
     logger.info('results are written in ontonotes-{valid,test}.predicted')
 
