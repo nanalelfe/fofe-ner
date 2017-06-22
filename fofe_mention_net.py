@@ -27,10 +27,7 @@ from random import choice
 
 logger = logging.getLogger( __name__ )
 
-
-
 ########################################################################
-
 
 def load_word_embedding( filename ):
     """

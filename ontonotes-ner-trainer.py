@@ -7,6 +7,8 @@ from threading import Thread
 from random import shuffle
 from math import floor
 
+import matplotlib.pyplot as plt
+
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
@@ -341,7 +343,6 @@ if __name__ == '__main__':
     test_file.close()
 
     # ==================================================================================
-
     # ----------------------------------------------------------------------------------
     # Training set
     # ----------------------------------------------------------------------------------
@@ -396,6 +397,18 @@ if __name__ == '__main__':
             config.overlap_rate, config.disjoint_rate,
             config.feature_choice, True)
 
+    #===================
+    # ==== Plot =======
+    #===================
+
+    # F1 scores
+    train_scores = []
+    valid_scores = []
+    test_scores = []
+
+    # Learning curve
+    learning_rate = []
+
     for n_epoch in xrange(config.max_iter):
 
         if not os.path.exists('ontonotes-result'):
@@ -444,6 +457,7 @@ if __name__ == '__main__':
 
         pbar.close()
         train_cost = cost / cnt
+
         logger.info('training set iterated, %f' % train_cost)
 
         # just training from 1st to 9th iterations
@@ -491,6 +505,7 @@ if __name__ == '__main__':
                 testing_file = 'ontonotes-result/ontonotes-test.predicted'
             else:
                 testing_file = os.path.join(args.buffer_dir, 'ontonotes-test.predicted')
+                
             test_predicted = open(testing_file, 'wb')
             cost, cnt = 0, 0
             to_print = []
