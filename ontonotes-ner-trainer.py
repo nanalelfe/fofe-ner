@@ -459,6 +459,7 @@ if __name__ == '__main__':
 
         # for plot
         training_costs.append(train_cost)
+        logger.info("training costs array: %s" % str(training_costs))
 
         logger.info('training set iterated, %f' % train_cost)
 
@@ -586,6 +587,8 @@ if __name__ == '__main__':
             # fb1 score for validation
             valid_scores.append(test_fb1)
 
+            logger.info("valid scores array: %s" % str(valid_scores))
+
             if decode_test:
                 pp = [p for p in PredictionParser(OntoNotes(directory, test_path),
                                                   testing_file,
@@ -593,6 +596,8 @@ if __name__ == '__main__':
                 _, _, fb1, out = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
                 logger.info('evaluation:\n' + out)
                 test_scores.append(fb1)
+
+                logger.info("test scores array: %s" % str(test_scores))
 
         if test_fb1 > best_test_fb1:
             if decode_test:
@@ -645,7 +650,6 @@ if __name__ == '__main__':
     plt.title('F-score on test data')
 
     plot.show()
-
 
     logger.info('results are written in ontonotes-{valid,test}.predicted')
 
