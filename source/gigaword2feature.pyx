@@ -189,6 +189,10 @@ def gigaword( filename ):
 
 def gazetteer( filename, mode = 'CoNLL2003' ):
     """
+    Gazetteer is a list of names grouped by the pre- defined categories an NER system is targeting
+    at. Gazetteer is shown to be one of the most effec- tive external knowledge sources to improve
+    NER performance.
+
     Parameters
     ----------
         filename : str
@@ -300,7 +304,9 @@ def OntoNotes(directory , files):
     """
     Parameters
     ----------
-        filename : str
+        directory: str
+            directory in which the OntoNotes project is located
+        files : str
             path to a file containing all of the paths to files containing NER-annotated
             data
 
@@ -441,11 +447,23 @@ class chinese_char_vocab( object ):
 
 
 cdef class vocabulary( object ):
+    
+    # [word] -> [index] dict
     cdef dict word2idx
+
+    # [word] -> [FOFE encoding] dict
     cdef dict word2fofe
+
+    # character level forgetting factor
     cdef readonly float alpha
+
+    # True/false, case sensitive or insensitive
     cdef bint case_sensitive
+
+    # number of words
     cdef int n_word
+
+    # Regexes
     cdef regex* date_pattern_1
     cdef regex* date_pattern_2
     cdef regex* number_pattern
@@ -455,6 +473,12 @@ cdef class vocabulary( object ):
 
     def __cinit__( self, filename, alpha = 0.7, case_sensitive = False,
                    n_label_type = 0 ):
+        '''
+        filename: str
+            Path to the wordlist 
+        alpha: float
+            Character level forgetting factor
+        '''
         self.word2idx = {}
         self.word2fofe = {}
         self.alpha = alpha
@@ -466,15 +490,19 @@ cdef class vocabulary( object ):
         self.time_pattern = new regex( r"^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$" )
         self.contains_digit = new regex( r"^.*[0-9].*$" )
 
+        # iterate through the wordlist (each line contains only 1 word)
         with codecs.open( filename ) as word_file:
             for line in word_file:
                 word = line.strip().split()[0]
+                # assign an index to the word, based on its position in the file list
                 idx = len(self.word2idx)
                 self.word2idx[word] = idx
 
         logger.info( '%d words' % len(self.word2idx) )
 
         # 2nd pass, make room for labels
+        # Don't count the labels and the unknown markers as words
+        # case sensitive wordlist contains two unknown markers <unk> and <UNK>
         self.n_word = len(self.word2idx) - n_label_type - (2 if self.case_sensitive else 1)
         if n_label_type > 0:
             for w in self.word2idx.keys():
@@ -488,16 +516,31 @@ cdef class vocabulary( object ):
 
 
     cdef sentence2indices( self, sentence, vector[int]& numeric ):
+        '''
+        Populates the numeric vector with indices corresponding to the 
+        types of words the sentence has. For example the string "647-384-2364" would 
+        have the numeric value [index], where index corresponds to the word index of
+        <phone-value> from the vocabulary list (self.word2idx). The words that do not
+        contain any numeric value, date, time, phone number will get the value of unk
+        or UNK (depending on whether the word is case sensitive or insensitive)
+
+        sentence: str
+            Sentence of words
+        numeric: reference to vector
+            Vector to which the numeric repr of the sentence needs to be saved
+        '''
         cdef string s
         cdef int i
         cdef int n = len( sentence )
         cdef int unk = self.word2idx['<unk>']
         cdef int UNK = self.word2idx.get( '<UNK>', unk )
+        # resize the numeric vector to n
         numeric.resize( n )
+        # index of word to word
         for i, w in enumerate(sentence):
             s = w.lower()
             if regex_match( s, self.contains_digit[0] ):
-                if regex_match( s, self.number_pattern[0] ):
+                if regex_match( s, self.number_pattern[0]):
                     numeric[i] = self.word2idx.get('<numeric-value>', unk)
                 elif regex_match( s, self.date_pattern_1[0] ) or \
                                 regex_match( w, self.date_pattern_2[0] ):
@@ -586,7 +629,6 @@ class chinese_word_vocab( vocabulary ):
                     self.word2idx.pop(w, None)
 
 
-
     def sentence2indices( self, sentence ):
         w_unk = self.word2idx[u'<unk>']
         result = [ self.word2idx.get(w, w_unk) for w in \
@@ -602,7 +644,6 @@ class chinese_word_vocab( vocabulary ):
         raise AttributeError( "'chinese_word_vocab' does not provide 'char_fofe_of_phrase'" )
 
 
-
 ################################################################################
 
 
@@ -611,10 +652,20 @@ cdef class processed_sentence:
     Any object of this class should not be instantiated outside this module.
     """
     cdef public vector[int] numeric
+
+    # vector of strings 
     cdef readonly vector[string] sentence
+
+    # left_context_idx and left_context_data form a sparse tensor 
+    # FOFE encoding indices for left context
     cdef readonly vector[vector[int]] left_context_idx
+    # FOFE encoding values for left context
     cdef readonly vector[vector[float]] left_context_data
+
+    # right_context_idx and right_context_data form a sparse tensor 
+    # FOFE encoding indices for right context
     cdef readonly vector[vector[int]] right_context_idx
+    # FOFE encoding values for right context
     cdef readonly vector[vector[float]] right_context_data
 
     def __init__( self, sentence, numericizer, 
@@ -631,22 +682,28 @@ cdef class processed_sentence:
             label1st : list
                 labels from 1st pass
         """
-
+        # current vocabulary being used
         cdef vocabulary vocab
 
         if language != 'cmn':
             for w in sentence:
+                # push_back() is equivalent of append()
+                # convert the non-ascii characters to something (hexadecimal?)
                 self.sentence.push_back( u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) )
             vocab = numericizer
+            # populate the self.numeric vector 
             vocab.sentence2indices( self.sentence, self.numeric )
         else:
             self.numeric = numericizer.sentence2indices( sentence )
 
         cdef vector[int] idx_buffer
         cdef vector[float] data_buffer
+        # FOFE code for left context
         cdef ordered_map[int,float] left_context
+        # FOFE code for right context
         cdef ordered_map[int,float] right_context
         cdef ordered_map[int,float].iterator map_itr
+        # forgetting factor
         cdef float alpha = a
         cdef int i
         cdef int idx
@@ -662,14 +719,19 @@ cdef class processed_sentence:
 
         if is2ndPass:
             # TODO, remove nested mention
+            # (ner_begin, ner_label)
             boe = dict(zip(label1st[0], label1st[2]))
+            # (ner_end, ner_label)
             eoe = dict(zip(label1st[1], label1st[2]))
 
         with nogil: 
+
+            # FOFE for left context
             for i in range( n ):
+                # if i exists in the boe
                 if boe.find(i) != boe.end():
                     left_context_2nd = left_context
-
+                # if i + 1 doesn't exist in the map
                 if eoe.find(i + 1) == eoe.end():
                     idx = self.numeric[i]
                 else:
@@ -698,6 +760,7 @@ cdef class processed_sentence:
                 self.left_context_idx.push_back( idx_buffer )
                 self.left_context_data.push_back( data_buffer )
 
+            # FOFE for right context
             for i in reversed( range( n ) ):
                 if eoe.find(i + 1) != eoe.end():
                     right_context_2nd = right_context
@@ -734,7 +797,6 @@ cdef class processed_sentence:
             reverse( self.right_context_data.begin(), self.right_context_data.end() )
 
 
-
     cdef insert_left_fofe( self, int pos, int row_id, 
                            vector[int]& indices, vector[float]& values ):
         """ help to construct mini-batch """
@@ -768,11 +830,13 @@ cdef class processed_sentence:
                 indices.push_back( self.numeric[i] )
 
 
-
 ################################################################################
 
 
 cdef class example:
+    '''
+    Contains sentence fragments pertaining to sentence_id.
+    '''
     cdef readonly int sentence_id
     cdef readonly int begin_idx
     cdef readonly int end_idx
@@ -780,13 +844,11 @@ cdef class example:
     cdef readonly numpy.ndarray gazetteer
 
     def __init__( self, sentence_id, begin_idx, end_idx, label, gazetteer = None ):
-        self.sentence_id = sentence_id
+        self.sentence_id = sentence_idf
         self.begin_idx = begin_idx
         self.end_idx = end_idx
         self.label = label
         self.gazetteer = gazetteer
-        
-        
         
 ################################################################################
 
@@ -827,7 +889,6 @@ cdef void bigram_char_fofe( string phrase,
 ################################################################################
 
 
-
 class batch_constructor:
     def __init__( self, parser, 
                   numericizer1, numericizer2,
@@ -866,18 +927,28 @@ class batch_constructor:
         self.language = language
 
         # case-insensitive sentence set if language in { 'eng', 'spa' }
-        # sequence at char level
+        # contains processed_sentence objects
+        # Sorted by sentence id
         self.sentence1 = []
 
         # case-sensitive sentence set if language in { 'eng', 'spa' }
-        # sequence at word level
+        # contains processed_sentence objects
+        # Sorted by sentence id
         self.sentence2 = []
 
+        # sentence fragments of upto n words, divided up based on whether that fragment is
+        # exact match (positive), partial overlap (overlap) or disjoint (disjoint):
+
+        # list of example objects : example(sentence_id, begin_index, end_index, label, gazetteer)
         self.example = []
+        # contains id of the sentences that are positive
         self.positive = []
+
+        # contains id of the sentences that are negative
         self.overlap = []
         self.disjoint = []
 
+        # is second pass?
         self.is2ndPass = is2ndPass
 
         # luckily that 'batch_constructor' is not strongly-typed
@@ -891,10 +962,13 @@ class batch_constructor:
         cdef int i, j, k
         cdef bint unsure
 
+        # parser is a generator such as OntoNotes()
         for sentence, ner_begin, ner_end, ner_label in parser:
+
             ner_begin = numpy.asarray(ner_begin, dtype = numpy.int32)
             ner_end = numpy.asarray(ner_end, dtype = numpy.int32)
             ner_label = numpy.asarray(ner_label, dtype = numpy.int32)
+            
             label1st_powerset = []
             # if self.is2ndPass and len(ner_label) > 0:
             #     powerItr = combinations(numpy.arange(len(ner_label)), len(ner_label) - 1)
@@ -970,9 +1044,13 @@ class batch_constructor:
                         c, w = token.split( u'|iNCML|' )
                         char_sequence.append( c )
                         word_sequence.append( w )
+
+                    # character sequence for case insensitive?
                     self.sentence1.append( processed_sentence( char_sequence, numericizer1,
                                                                alpha, language,
                                                                label1st ) )
+
+                    # word sequence for case sensitive
                     self.sentence2.append( processed_sentence( word_sequence, numericizer2,
                                                                alpha, language,
                                                                label1st ) )
@@ -1002,7 +1080,7 @@ class batch_constructor:
         The generator yields mini batches of size 'n_batch_size'. Based on 
         'feature_choice', the following features may be selected:
         1) case-insensitive left fofe including focus word(s)
-        2) case-insensitive right fofe incuding focus word(s)
+        2) case-insensitive right fofe including focus word(s)
 
         Parameters
         ----------
@@ -1034,7 +1112,7 @@ class batch_constructor:
         -------
             l1_values : 
             r1_values : 
-
+            (incomplete)
 
         """
         cdef vector[float] l1_values    # case-insensitive left context fofe with focus words(s)
@@ -1086,6 +1164,8 @@ class batch_constructor:
 
         dense_buffer = numpy.zeros( (n_batch_size, 513 + self.n_label_type), dtype = numpy.float32 )
 
+        # downsampling
+        #--------------
         if len( self.disjoint ) > 0: 
             disjoint = numpy.random.choice( self.disjoint,
                                             size = numpy.int32( len(self.disjoint) * disjoint_rate * n_copy ),
@@ -1100,6 +1180,7 @@ class batch_constructor:
         else:
             overlap = numpy.asarray([]).astype( numpy.int32 )
 
+        # entire sample (positive + overlap + disjoint) of sentence fragments
         candidate = numpy.concatenate( [ self.positive ] * n_copy + [ disjoint, overlap ] )
 
         if shuffle_needed:
@@ -1109,10 +1190,20 @@ class batch_constructor:
         n = len(candidate)
 
         for i in range( n ):
+            # self.example is an array of example objects, sorted fragment id
+            # example (sentence id, begin index, end index, label index, gazetteer)
+            # 'candidate' contains sentence indices
             next_example = self.example[ candidate[i] ]
+
+            # begin of fragment
             begin_idx = next_example.begin_idx
+
+            # end of fragment
             end_idx = next_example.end_idx
 
+            # case insensitive
+            # 'sentence' is a processed_sentence object
+            # the sentence of the fragment being evaluated
             sentence = self.sentence1[next_example.sentence_id]
 
             if self.language != 'cmn':
@@ -1139,9 +1230,7 @@ class batch_constructor:
                                       bigram_alpha, cnt )
 
             # character-level fofe of focus word(s)
-
             if feature_choice & 64 > 0:
-                
                 left_c, right_c = self.numericizer1 \
                                       .char_fofe_of_phrase( sentence.sentence[begin_idx:end_idx] )
                 
@@ -1198,7 +1287,6 @@ class batch_constructor:
                 sentence.insert_left_fofe( end_idx - 1, cnt, l3_indices, l3_values )
                 sentence.insert_right_fofe( begin_idx, cnt, r3_indices, r3_values )
 
-
             ########## case-sensitive context without focus ##########
 
             if feature_choice & 16 > 0:
@@ -1223,6 +1311,7 @@ class batch_constructor:
 
                 # print 'i am right before yield statement, cnt = %d' % cnt
 
+                # yield for every sentence segment:
                 yield   numpy.asarray( l1_values, dtype = numpy.float32 ),\
                         numpy.asarray( r1_values, dtype = numpy.float32 ),\
                         numpy.reshape( l1_indices, [-1, 2] ),\
@@ -1321,9 +1410,6 @@ class batch_constructor:
                                                             feature_choice, replace, timeout, n_copy ):
                 if next_batch[-1].shape[0] == n_batch_size:
                     yield next_batch
-
-
-
 
 
 
@@ -1803,8 +1889,6 @@ def evaluation( prediction_parser, threshold, algorithm,
         analysis.close()
 
     return precision, recall, f_beta, info
-
-
 
 ################################################################################
 

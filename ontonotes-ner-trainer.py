@@ -578,6 +578,7 @@ if __name__ == '__main__':
             (out, err) = process.communicate()
             logger.info( 'test, global threshold\n' + out )
             test_fb1 = float(out.split('\n')[1].split()[-1])
+            
         else:
             pp = [p for p in PredictionParser(OntoNotes(directory, valid_path),
                                               validation_file,
