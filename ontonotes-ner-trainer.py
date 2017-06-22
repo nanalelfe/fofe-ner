@@ -322,8 +322,8 @@ if __name__ == '__main__':
     n_valid_links = int(floor(total_links * validation_rate))
 
     train_links = links[0:n_train_links]
-    valid_links = links[n_train_links:n_train_links + n_valid_links]
-    test_links = links[n_train_links + n_valid_links:]
+    valid_links = links[n_train_links: (n_train_links + n_valid_links)]
+    test_links = links[(n_train_links + n_valid_links):]
 
     train_file = codecs.open(training_path, 'w', 'utf8')
     valid_file = codecs.open(valid_path, 'w', 'utf8')
@@ -578,7 +578,7 @@ if __name__ == '__main__':
             (out, err) = process.communicate()
             logger.info( 'test, global threshold\n' + out )
             test_fb1 = float(out.split('\n')[1].split()[-1])
-            
+
         else:
             pp = [p for p in PredictionParser(OntoNotes(directory, valid_path),
                                               validation_file,
