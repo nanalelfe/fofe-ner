@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     # - Path to directory where the OntoNotes project is located
     parser.add_argument('dir_path', type=str,
-                        help='path to the OntoNotes project directory')
+                        help='path to the preparsed OntoNotes dataset')
 
     # - Path to file containing all of the paths to the training data
     parser.add_argument('text_path', type=str,
@@ -292,7 +292,6 @@ if __name__ == '__main__':
     validation_rate = 0.1
     test_rate = 0.1
 
-
     directory = args.dir_path
     textfile = args.text_path
 
@@ -304,9 +303,6 @@ if __name__ == '__main__':
         directory = directory + '/'
 
     file = codecs.open(textfile, 'r', 'utf8')
-
-    # 2910 documents for training
-    # 72 documents for validation and test
 
     links = []
     i = 0
@@ -372,6 +368,7 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------
     # Test set
     # ----------------------------------------------------------------------------------
+
     test = batch_constructor(OntoNotes(directory, test_path),
                              numericizer1, numericizer2,
                              gazetteer=ontonotes_gazetteer,
@@ -409,7 +406,6 @@ if __name__ == '__main__':
     training_costs = []
 
     for n_epoch in xrange(config.max_iter):
-
         if not os.path.exists('ontonotes-result'):
             os.makedirs('ontonotes-result')
 
@@ -650,7 +646,7 @@ if __name__ == '__main__':
     plt.plot(n_epoch, test_scores, 'r--')
     plt.title('F-score on test data')
 
-    plot.show()
+    plt.savefig('/local/scratch/nana/fofe-ner')
 
     logger.info('results are written in ontonotes-{valid,test}.predicted')
 
