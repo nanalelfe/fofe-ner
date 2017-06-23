@@ -345,7 +345,7 @@ def OntoNotes(directory):
     sentence_end = False
     caught = [False, None]
 
-    for filename in glob.glob(os.path.join(directory, "cnn_0160.v4_gold_conll")):
+    for filename in glob.glob(os.path.join(directory, "*gold_conll")):
         with codecs.open( filename, 'rb', 'utf8' ) as textfile:
             for line in textfile:
                 tokens = line.strip().split()
