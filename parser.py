@@ -57,5 +57,5 @@ def OntoNotes(directory):
 
 
 
-if __name__ == '__name__':
+if __name__ == '__main__':
     print(OntoNotes("/eecs/research/asr/quanliu/Datasets/CoNLL2012/data/development/conll"))
