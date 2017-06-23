@@ -63,12 +63,12 @@ def OntoNotes(directory):
                         caught[0] = True
                         caught[1] = len(sentence) - 1
                         ner_begin.append(len(sentence) - 1)
-                        ner_label.append(entity2cls[ner])
+                        ner_label.append(entity2cls[ne])
                     elif (ne[0] == '(' and ne[-1] == ')'):
                         ne = ne.strip('(').strip(')')
                         ner_begin.append(len(sentence) - 1)
                         ner_end.append(len(sentence))
-                        ner_label.append(entity2cls[ner])
+                        ner_label.append(entity2cls[ne])
                     elif ne == '*)':
                         ner_end.append(len(sentence))
                         caught[0] = False
