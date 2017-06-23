@@ -53,7 +53,7 @@ def OntoNotes(directory):
         textfile = open(filename, "r")
         for line in textfile:
             tokens = line.strip().split()
-            if len(tokens) > 1:
+            if len(tokens) > 5:
                 ne = tokens[10]
                 word  = tokens[3]
                 setence.append(word)
