@@ -44,7 +44,7 @@ def OntoNotes(directory):
 
     sentence, ner_begin, ner_end, ner_label = [], [], [], []
 
-    for filename in glob.glob(os.path.join(directory, "cnn_0360.v4_auto_conll")):
+    for filename in glob.glob(os.path.join(directory)):
         textfile = open(filename, "r")
         for line in textfile:
             tokens = line.strip().split()
