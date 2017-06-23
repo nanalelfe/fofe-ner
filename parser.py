@@ -56,7 +56,7 @@ def OntoNotes(directory):
             if len(tokens) > 5:
                 ne = tokens[10]
                 word  = tokens[3]
-                setence.append(word)
+                sentence.append(word)
                 if ne != '*':
                     if ne[-1] == '*':
                         ne = ne.strip('(').strip('*')
