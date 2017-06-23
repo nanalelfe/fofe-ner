@@ -46,15 +46,40 @@ def OntoNotes(directory):
 
     sentence, ner_begin, ner_end, ner_label = [], [], [], []
 
-
+    sentence_end = False
+    caught = [False, None]
 
     for filename in glob.glob(os.path.join(directory, "cnn_0160.v4_gold_conll")):
         textfile = open(filename, "r")
         for line in textfile:
             tokens = line.strip().split()
-            print(tokens)
+            if len(tokens) > 1:
+                ne = tokens[10]
+                word  = tokens[3]
+                setence.append(word)
+                if ne != '*':
+                    if ne[-1] == '*':
+                        ne = ne.strip('(').strip('*')
+                        caught[0] = True
+                        caught[1] = len(sentence) - 1
+                        ner_begin.append(len(sentence) - 1)
+                        ner_label.append(entity2cls[ner])
+                    elif (ne[0] == '(' and ne[-1] == ')'):
+                        ne = ne.strip('(').strip(')')
+                        ner_begin.append(len(sentence) - 1)
+                        ner_end.append(len(sentence))
+                        ner_label.append(entity2cls[ner])
+                    elif ne == '*)':
+                        ner_end.append(len(sentence))
+                        caught[0] = False
+                        caught[1] = None
 
+            else:
+                yield sentence, ner_begin, ner_end, ner_label
+                sentence, ner_begin, ner_end, ner_label = [], [], [], []
 
 
 if __name__ == '__main__':
-    OntoNotes("/eecs/research/asr/quanliu/Datasets/CoNLL2012/data/development/conll")
+    generator = OntoNotes("/eecs/research/asr/quanliu/Datasets/CoNLL2012/data/development/conll")
+    for line in generator:
+        print(line)
