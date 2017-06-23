@@ -49,7 +49,7 @@ def OntoNotes(directory):
     sentence_end = False
     caught = [False, None]
 
-    for filename in glob.glob(os.path.join(directory)):
+    for filename in glob.glob(os.path.join(directory), '*'):
         textfile = open(filename, "r")
         for line in textfile:
             tokens = line.strip().split()
