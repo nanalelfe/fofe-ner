@@ -51,7 +51,7 @@ def OntoNotes(directory):
     for filename in glob.glob(os.path.join(directory, "cnn_0160.v4_gold_conll")):
         textfile = open(filename, "r")
         for line in textfile:
-            tokens = line.strip().split
+            tokens = line.strip().split()
             print(tokens)
 
 
