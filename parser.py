@@ -1,3 +1,5 @@
+import glob, os
+
 def OntoNotes(directory):
     """
     Parameters
