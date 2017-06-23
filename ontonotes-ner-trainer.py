@@ -294,7 +294,7 @@ if __name__ == '__main__':
     training_path = directory + "train/conll"
     valid_path = directory + "development/conll"
     test_path = directory + "test/conll"
-    
+
 
 
     # textfile = args.text_path
@@ -539,7 +539,7 @@ if __name__ == '__main__':
 
         if decode_test:
 
-            pp = [p for p in PredictionParser(OntoNotes(directory, valid_path),
+            pp = [p for p in PredictionParser(OntoNotes(valid_path),
                                               validation_file,
                                               config.n_window, n_label_type = config.n_label_type)]
 
@@ -577,7 +577,7 @@ if __name__ == '__main__':
             test_fb1 = float(out.split('\n')[1].split()[-1])
 
         else:
-            pp = [p for p in PredictionParser(OntoNotes(directory, valid_path),
+            pp = [p for p in PredictionParser(OntoNotes(valid_path),
                                               validation_file,
                                               config.n_window, n_label_type = config.n_label_type)]
             _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
@@ -588,7 +588,7 @@ if __name__ == '__main__':
             logger.info("valid scores array: %s" % str(valid_scores))
 
             if decode_test:
-                pp = [p for p in PredictionParser(OntoNotes(directory, test_path),
+                pp = [p for p in PredictionParser(OntoNotes(test_path),
                                                   testing_file,
                                                   config.n_window, n_label_type = config.n_label_type)]
                 _, _, fb1, out = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)

@@ -28,7 +28,7 @@ from Queue import Queue
 from threading import Thread
 from itertools import izip, islice, imap, combinations, chain
 from hanziconv import HanziConv
-import numpy, re, random, logging, codecs, copy
+import numpy, re, random, logging, codecs, copy, glob, os
 from lxml import etree
 
 logger = logging.getLogger()
@@ -299,8 +299,7 @@ def CoNLL2003( filename ):
 
 ################################################################################
 
-
-def OntoNotes(directory , files):
+def OntoNotes(directory):
     """
     Parameters
     ----------
@@ -344,55 +343,39 @@ def OntoNotes(directory , files):
         'NORP': 17
     }
 
-    file = open(files, 'r')
-    for filename in file: 
-        # only english
-        textfile = open(directory + filename[2:].strip(), "r")
+    sentence, ner_begin, ner_end, ner_label = [], [], [], []
+
+    sentence_end = False
+    caught = [False, None]
+
+    for filename in glob.glob(os.path.join(directory, "cnn_0160.v4_gold_conll")):
+        textfile = open(filename, "r")
         for line in textfile:
-            sentence, ner_begin, ner_end, ner_label = [], [], [], []
+            tokens = line.strip().split()
+            if len(tokens) > 5:
+                ne = tokens[10]
+                word  = tokens[3]
+                sentence.append(word)
+                if ne != '*':
+                    if ne[-1] == '*':
+                        ne = ne.strip('(').strip('*')
+                        caught[0] = True
+                        caught[1] = len(sentence) - 1
+                        ner_begin.append(len(sentence) - 1)
+                        ner_label.append(entity2cls[ne])
+                    elif (ne[0] == '(' and ne[-1] == ')'):
+                        ne = ne.strip('(').strip(')')
+                        ner_begin.append(len(sentence) - 1)
+                        ner_end.append(len(sentence))
+                        ner_label.append(entity2cls[ne])
+                    elif ne == '*)':
+                        ner_end.append(len(sentence))
+                        caught[0] = False
+                        caught[1] = None
 
-            try:
-                tree = etree.fromstring("<text>" + line + "</text>")
-            except Exception:
-                continue
-
-            text = etree.tostring(tree, encoding='utf8', method='text').decode("utf-8")
-
-            text_arr = text.split()
-            sentence = text_arr
-
-            for child in tree:
-                if (child.tag != "ENAMEX") or (child.text is None):
-                    continue
-                mention = child.text.strip()
-                label = child.attrib.get("TYPE")
-                mention_arr = mention.split()
-                found = False
-                if len(mention_arr) > 1:
-                    while not found:
-                        i = text_arr.index(mention_arr[0]) + 1
-                        j = 1
-                        broke = False
-                        while j < len(mention_arr):
-                            if mention_arr[j] != text_arr[i]:
-                                found = False
-                                broke = True
-                                break
-                            i += 1
-                            j += 1
-                        if not broke:
-                            found = True
-                        else:
-                            text_arr[text_arr.index(mention_arr[0])] = ""
-
-                beg = text_arr.index(mention_arr[0])
-                end = beg + len(mention_arr)
-                ner_begin.append(beg)
-                ner_end.append(end)
-                ner_label.append(entity2cls.get(label))
-
-            yield sentence, ner_begin, ner_end, ner_label
-
+            elif len(sentence) > 0:
+                yield sentence, ner_begin, ner_end, ner_label
+                sentence, ner_begin, ner_end, ner_label = [], [], [], []
 
 ################################################################################
 
@@ -844,7 +827,7 @@ cdef class example:
     cdef readonly numpy.ndarray gazetteer
 
     def __init__( self, sentence_id, begin_idx, end_idx, label, gazetteer = None ):
-        self.sentence_id = sentence_id
+        self.sentence_id = sentence_idf
         self.begin_idx = begin_idx
         self.end_idx = end_idx
         self.label = label
