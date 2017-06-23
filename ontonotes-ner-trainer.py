@@ -295,50 +295,6 @@ if __name__ == '__main__':
     valid_path = directory + "development/conll"
     test_path = directory + "test/conll"
 
-
-
-    # textfile = args.text_path
-
-    # training_path = "/local/scratch/nana/processed-data/eng_train_paths"
-    # valid_path = "/local/scratch/nana/processed-data/eng_valid_paths"
-    # test_path = "/local/scratch/nana/processed-data/eng_test_paths"
-
-    # file = codecs.open(textfile, 'r', 'utf8')
-
-    # links = []
-    # i = 0
-    # for filename in file:
-    #     if ("english" in filename) and (filename[2:] is not None):
-    #         links.append(filename)
-    # file.close()
-
-    # shuffle(links)
-
-    # total_links = len(links)
-    # n_train_links = int(floor(total_links * training_rate))
-    # n_valid_links = int(floor(total_links * validation_rate))
-
-    # train_links = links[0:n_train_links]
-    # valid_links = links[n_train_links: (n_train_links + n_valid_links)]
-    # test_links = links[(n_train_links + n_valid_links):]
-
-    # train_file = codecs.open(training_path, 'w', 'utf8')
-    # valid_file = codecs.open(valid_path, 'w', 'utf8')
-    # test_file = codecs.open(test_path, 'w', 'utf8')
-
-    # for filename in train_links:
-    #     train_file.write(filename)
-
-    # for filename in valid_links:
-    #     valid_file.write(filename)
-
-    # for filename in test_links:
-    #     test_file.write(filename)
-
-    # train_file.close()
-    # valid_file.close()
-    # test_file.close()
-
     # ==================================================================================
     # ----------------------------------------------------------------------------------
     # Training set

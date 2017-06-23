@@ -159,8 +159,9 @@ class fofe_mention_net( object ):
 
         if gpu_option is not None:
             gpu_option = tf.GPUOptions( per_process_gpu_memory_fraction = gpu_option )
-            self.session = tf.Session( config = tf.ConfigProto( 
-                                                gpu_options = gpu_option ),
+            configg = tf.ConfigProto(gpu_options = gpu_option )
+            configg.gpu_options.allow_growth = True
+            self.session = tf.Session( config = configg,
                                                 # log_device_placement = True ),
                                        graph = self.graph )
 
