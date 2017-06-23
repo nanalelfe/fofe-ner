@@ -46,16 +46,15 @@ def OntoNotes(directory):
 
     sentence, ner_begin, ner_end, ner_label = [], [], [], []
 
-    ret = []
+
 
     for filename in glob.glob(os.path.join(directory, "cnn_0160.v4_gold_conll")):
         textfile = open(filename, "r")
         for line in textfile:
             tokens = line.strip().split
-            ret.append(token)
-    return ret
+            print(tokens)
 
 
 
 if __name__ == '__main__':
-    print(OntoNotes("/eecs/research/asr/quanliu/Datasets/CoNLL2012/data/development/conll"))
+    OntoNotes("/eecs/research/asr/quanliu/Datasets/CoNLL2012/data/development/conll")
