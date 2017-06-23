@@ -63,11 +63,6 @@ if __name__ == '__main__':
     parser.add_argument('dir_path', type=str,
                         help='path to the preparsed OntoNotes dataset')
 
-    # - Path to file containing all of the paths to the training data
-    parser.add_argument('text_path', type=str,
-                        help='path to a file containing all of the paths to textfile' +
-                             'containing NER-annotated data')
-
     # - Character embedding dimension
     parser.add_argument('--n_char_embedding', type=int, default=32,
                         help='char embedding dimension')
@@ -284,7 +279,7 @@ if __name__ == '__main__':
         ontonotes_gazetteer = [set() for _ in xrange(args.n_label_type)]
 
     # ==================================================================================
-    # Split the data 80:10:10: training set, validation set and test set
+    # Official OntoNotes split
     # ==================================================================================
 
     # Data splitting
@@ -293,50 +288,56 @@ if __name__ == '__main__':
     test_rate = 0.1
 
     directory = args.dir_path
-    textfile = args.text_path
-
-    training_path = "/local/scratch/nana/processed-data/eng_train_paths"
-    valid_path = "/local/scratch/nana/processed-data/eng_valid_paths"
-    test_path = "/local/scratch/nana/processed-data/eng_test_paths"
-
     if directory[-1] != '/':
         directory = directory + '/'
 
-    file = codecs.open(textfile, 'r', 'utf8')
+    training_path = directory + "train/conll"
+    valid_path = directory + "development/conll"
+    test_path = directory + "test/conll"
+    
 
-    links = []
-    i = 0
-    for filename in file:
-        if ("english" in filename) and (filename[2:] is not None):
-            links.append(filename)
-    file.close()
 
-    shuffle(links)
+    # textfile = args.text_path
 
-    total_links = len(links)
-    n_train_links = int(floor(total_links * training_rate))
-    n_valid_links = int(floor(total_links * validation_rate))
+    # training_path = "/local/scratch/nana/processed-data/eng_train_paths"
+    # valid_path = "/local/scratch/nana/processed-data/eng_valid_paths"
+    # test_path = "/local/scratch/nana/processed-data/eng_test_paths"
 
-    train_links = links[0:n_train_links]
-    valid_links = links[n_train_links: (n_train_links + n_valid_links)]
-    test_links = links[(n_train_links + n_valid_links):]
+    # file = codecs.open(textfile, 'r', 'utf8')
 
-    train_file = codecs.open(training_path, 'w', 'utf8')
-    valid_file = codecs.open(valid_path, 'w', 'utf8')
-    test_file = codecs.open(test_path, 'w', 'utf8')
+    # links = []
+    # i = 0
+    # for filename in file:
+    #     if ("english" in filename) and (filename[2:] is not None):
+    #         links.append(filename)
+    # file.close()
 
-    for filename in train_links:
-        train_file.write(filename)
+    # shuffle(links)
 
-    for filename in valid_links:
-        valid_file.write(filename)
+    # total_links = len(links)
+    # n_train_links = int(floor(total_links * training_rate))
+    # n_valid_links = int(floor(total_links * validation_rate))
 
-    for filename in test_links:
-        test_file.write(filename)
+    # train_links = links[0:n_train_links]
+    # valid_links = links[n_train_links: (n_train_links + n_valid_links)]
+    # test_links = links[(n_train_links + n_valid_links):]
 
-    train_file.close()
-    valid_file.close()
-    test_file.close()
+    # train_file = codecs.open(training_path, 'w', 'utf8')
+    # valid_file = codecs.open(valid_path, 'w', 'utf8')
+    # test_file = codecs.open(test_path, 'w', 'utf8')
+
+    # for filename in train_links:
+    #     train_file.write(filename)
+
+    # for filename in valid_links:
+    #     valid_file.write(filename)
+
+    # for filename in test_links:
+    #     test_file.write(filename)
+
+    # train_file.close()
+    # valid_file.close()
+    # test_file.close()
 
     # ==================================================================================
     # ----------------------------------------------------------------------------------
@@ -344,7 +345,7 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------
     # Batch constructor initializes sets of processed_sentence objects, sentence1
     # (case insensitive) and sentence2 (case sensitive)
-    train = batch_constructor(OntoNotes(directory, training_path),
+    train = batch_constructor(OntoNotes(training_path),
                               numericizer1, numericizer2,
                               gazetteer=ontonotes_gazetteer,
                               alpha=config.word_alpha,
@@ -356,7 +357,7 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------
     # Validation set
     # ----------------------------------------------------------------------------------
-    valid = batch_constructor(OntoNotes(directory, valid_path),
+    valid = batch_constructor(OntoNotes(valid_path),
                               numericizer1, numericizer2,
                               gazetteer=ontonotes_gazetteer,
                               alpha=config.word_alpha,
@@ -369,7 +370,7 @@ if __name__ == '__main__':
     # Test set
     # ----------------------------------------------------------------------------------
 
-    test = batch_constructor(OntoNotes(directory, test_path),
+    test = batch_constructor(OntoNotes(test_path),
                              numericizer1, numericizer2,
                              gazetteer=ontonotes_gazetteer,
                              alpha=config.word_alpha,
