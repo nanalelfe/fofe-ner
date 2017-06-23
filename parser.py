@@ -74,7 +74,7 @@ def OntoNotes(directory):
                         caught[0] = False
                         caught[1] = None
 
-            else:
+            elif len(sentence) > 0:
                 yield sentence, ner_begin, ner_end, ner_label
                 sentence, ner_begin, ner_end, ner_label = [], [], [], []
 
