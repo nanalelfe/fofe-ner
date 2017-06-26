@@ -151,7 +151,6 @@ class fofe_mention_net( object ):
         if config is not None:
             self.config.__dict__.update( config.__dict__ )
 
-
         self.graph = tf.Graph()
         # TODO: create a graph instead of using default graph
         #       otherwise, we cannot instantiate multiple fofe_mention_nets
