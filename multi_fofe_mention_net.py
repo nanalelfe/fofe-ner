@@ -822,6 +822,7 @@ class multi_fofe_mention_net( object ):
                 if i < len(ontonotes_layer_weights) - 1:
                     # ReLU layer
                     ontonotes_layer_output[-1] = tf.nn.relu(ontonotes_layer_output[-1] )
+                if i < len(ontonotes_layer_weights) - 2:
                     # Dropout layer
                     ontonotes_layer_output[-1] = tf.nn.dropout(ontonotes_layer_output[-1], self.keep_prob )
 
@@ -834,6 +835,7 @@ class multi_fofe_mention_net( object ):
                 if i < len(conll_layer_weights) - 1:
                     # ReLU layer
                     conll_layer_output[-1] = tf.nn.relu(conll_layer_output[-1] )
+                if i < len(conll_layer_weights) - 2:
                     # Dropout layer
                     conll_layer_output[-1] = tf.nn.dropout(conll_layer_output[-1], self.keep_prob )
 
