@@ -1,17 +1,5 @@
 #!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 
-"""
-Author      : Mingbin Xu (mingbin.xu@gmail.com)
-Filename    : fofe_mention_net.py
-Last Update : Jul 17, 2016
-Description : N/A
-Website     : https://wiki.eecs.yorku.ca/lab/MLL/
-
-Copyright (c) 2016 iNCML (author: Mingbin Xu)
-License: MIT License (see ../LICENSE)
-"""
-
-
 import numpy, logging, time, copy, os, cPickle
 
 import tensorflow as tf
@@ -108,8 +96,9 @@ class mention_config( object ):
 
 ########################################################################
 
-class fofe_mention_net( object ):
-    
+
+class multi_fofe_mention_net( object ):
+
     def __init__( self, config = None, gpu_option = 0.96 ):
         """
         Parameters
@@ -152,6 +141,7 @@ class fofe_mention_net( object ):
             self.config.__dict__.update( config.__dict__ )
 
         self.graph = tf.Graph()
+
         # TODO: create a graph instead of using default graph
         #       otherwise, we cannot instantiate multiple fofe_mention_nets
         # tf.reset_default_graph()
@@ -185,7 +175,9 @@ class fofe_mention_net( object ):
             # Number of words in sensitive case
             self.n_word2 = projection2.shape[0]
 
+            # Number of words in insensitive case
             n_word1 = projection1.shape[0]
+            # Number of words in sensitive case
             n_word2 = projection2.shape[0]
 
             # Length of the word embedding for insensitive case
@@ -392,16 +384,17 @@ class fofe_mention_net( object ):
             # A constant value
             self.lr = tf.placeholder( tf.float32, [], 'learning-rate' )
 
+            # 1 - dropout rate
             self.keep_prob = tf.placeholder( tf.float32, [], 'keep-prob' )
             
             self.char_idx = tf.placeholder( tf.int32, [None, None], name = 'char-idx' )
 
             # Bigrams
-            # left context 
+            # left context character level
             self.lbc_values = tf.placeholder( tf.float32, [None], name = 'bigram-values' )
             self.lbc_indices = tf.placeholder( tf.int64, [None, 2], name = 'bigram-indices' )
 
-            # right context
+            # right context character level
             self.rbc_values = tf.placeholder( tf.float32, [None], name = 'bigram-values' )
             self.rbc_indices = tf.placeholder( tf.int64, [None, 2], name = 'bigram-indices' )
 
@@ -420,9 +413,14 @@ class fofe_mention_net( object ):
 
             # weights & bias of fully-connected layers
             # self.W contains weight matrices for each layer
-            self.W = []
+            self.shared_layer_weights = []
+            self.ontonotes_layer_weights = []
+            self.conll_layer_weights = []
+
             # Bias
-            self.b = []   
+            self.shared_layer_b = []   
+            self.ontonotes_layer_b = []
+            self.conll_layer_b = []
             self.param = []
 
             # network weights are randomly initialized based on the uniform distribution
@@ -463,11 +461,19 @@ class fofe_mention_net( object ):
                     self.U = tf.Variable( u_matrix )
                     del u_matrix
 
+                # Initialize the weights of each module using uniform
                 for i, o in zip( n_in, n_out ):
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
-                    # Returns a tensor of the specified shape filled with random uniform values.
-                    self.W.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
-                    self.b.append( tf.Variable( tf.zeros( [o] ) )  )
+                    # random_uniform : Returns a tensor of the specified shape filled with random uniform values.
+                    self.shared_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
+                    self.shared_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
+
+                    self.ontonotes_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
+                    self.ontonotes_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
+
+                    self.conll_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
+                    self.conll_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
+
 
                 if n_pattern > 0:
                     # case-insensitive patterns
@@ -535,8 +541,14 @@ class fofe_mention_net( object ):
                                                           stddev = numpy.sqrt(2./(hope_in * hope_out)) ) )
 
                 for i, o in zip( n_in, n_out ):
-                    self.W.append( tf.Variable( tf.truncated_normal( [i, o], stddev = numpy.sqrt(2./(i * o)) ) ) )
-                    self.b.append( tf.Variable( tf.zeros( [o] ) ) )
+                    self.shared_layer_weights.append( tf.Variable( tf.truncated_normal( [i, o], stddev = numpy.sqrt(2./(i * o)) ) ) )
+                    self.shared_layer_b.append( tf.Variable( tf.zeros( [o] ) ) )
+
+                    self.ontonotes_layer_weights.append( tf.Variable( tf.truncated_normal( [i, o], stddev = numpy.sqrt(2./(i * o)) ) ) )
+                    self.ontonotes_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
+
+                    self.conll_layer_weights.append( tf.Variable( tf.truncated_normal( [i, o], stddev = numpy.sqrt(2./(i * o)) ) ) )
+                    self.conll_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
                 if n_pattern > 0:
                     # case-insensitive patterns
@@ -575,6 +587,7 @@ class fofe_mention_net( object ):
 
                     del stddev
 
+            # parameters that need calculation for the cost function
             if hope_out > 0:
                 self.param.append( self.U )
             self.param.append( self.char_embedding )
@@ -583,13 +596,24 @@ class fofe_mention_net( object ):
             self.param.append( self.bigram_embedding )
             self.param.extend( self.kernels )
             self.param.extend( self.kernel_bias )
-            self.param.extend( self.W )
-            self.param.extend( self.b )
+            self.param.extend( self.shared_layer_weights )
+            self.param.extend( self.shared_layer_b )
+
+            self.ontonotes_param = self.param 
+            self.conll_param = self.param
             if n_pattern > 0:
                 self.param.extend( self.pattern1 )
                 self.param.extend( self.pattern2 )
                 self.param.extend( self.pattern1_bias )
                 self.param.extend( self.pattern2_bias )
+
+
+            self.conll_param.extend(self.conll_layer_weights)
+            self.conll_param.extend(self.conll_layer_b)
+
+            self.ontonotes_param.extend(self.ontonotes_layer_weights)
+            self.ontonotes_param.extend(self.ontonotes_layer_b)
+            # add KBP later
 
             logger.info( 'variable defined' )
 
@@ -622,7 +646,6 @@ class fofe_mention_net( object ):
 
             # CASE SENSITIVE
             # --------------
-
             # case sensitive excluding fragment
             lw3 = tf.SparseTensor( self.lw3_indices, self.lw3_values, self.shape2 )
             rw3 = tf.SparseTensor( self.rw3_indices, self.rw3_values, self.shape2 )
@@ -765,52 +788,109 @@ class fofe_mention_net( object ):
             # 2nd layer: concatenate
             feature = tf.concat( feature_list, 1 )
 
-            # if hope is used, add one linear layer
             if hope_out > 0:
                 hope = tf.matmul( feature, self.U )
-                layer_output = [ hope ] 
+                shared_layer_output = [ hope ]
             else:
-                layer_output = [ tf.nn.dropout( feature, self.keep_prob ) ]
+                # layer 1 and 2
+                shared_layer_output = [ tf.nn.dropout( feature, self.keep_prob ) ]
+
+            #=======================
+            #==== Shared layers ====
+            #=======================
 
             # calculate the output by multiplying the input by the weights
             # use ReLU as an activation function
             # 3rd layer to 11th layer: linear, relu, dropout
-            for i in xrange( len(self.W) ):
+            for i in xrange( len(self.shared_layer_weights) ):
                 # linear layer (also 12th layer: linear)
-                layer_output.append( tf.matmul( layer_output[-1], self.W[i] ) + self.b[i] )
-                if i < len(self.W) - 1:
+                shared_layer_output.append( tf.matmul( shared_layer_output[-1], self.shared_layer_weights[i] ) + self.shared_layer_b[i] )
+                # ReLU layer
+                shared_layer_output[-1] = tf.nn.relu(shared_layer_output[-1] )
+                # Dropout layer
+                shared_layer_output[-1] = tf.nn.dropout(shared_layer_output[-1], self.keep_prob )
+
+            conll_layer_output = [ shared_layer_output ]
+            ontonotes_layer_output = [ shared_layer_output ]
+
+            #============================
+            #==== OntoNotes layers ======
+            #============================
+
+            for i in xrange(len(self.ontonotes_layer_weights)):
+                ontonotes_layer_output.append( tf.matmul( ontonotes_layer_output[-1], ontonotes_layer_weights[i] ) + ontonotes_layer_b[i] )
+                if i < len(ontonotes_layer_weights) - 1:
                     # ReLU layer
-                    layer_output[-1] = tf.nn.relu( layer_output[-1] )
+                    ontonotes_layer_output[-1] = tf.nn.relu(ontonotes_layer_output[-1] )
                     # Dropout layer
-                    layer_output[-1] = tf.nn.dropout( layer_output[-1], self.keep_prob )
+                    ontonotes_layer_output[-1] = tf.nn.dropout(ontonotes_layer_output[-1], self.keep_prob )
+
+            #=============================
+            #==== CoNLL 2003 layers ======
+            #=============================
+
+            for i in xrange(len(conll_layer_weights)):
+                conll_layer_output.append( tf.matmul(conll_layer_output[-1], conll_layer_weights[i] ) + conll_layer_b[i] )
+                if i < len(conll_layer_weights) - 1:
+                    # ReLU layer
+                    conll_layer_output[-1] = tf.nn.relu(conll_layer_output[-1] )
+                    # Dropout layer
+                    conll_layer_output[-1] = tf.nn.dropout(conll_layer_output[-1], self.keep_prob )
+
+            #=============================
 
             # 13th layer: log_softmax
-            self.xent = tf.reduce_mean( tf.nn.sparse_softmax_cross_entropy_with_logits( 
-                                            logits = layer_output[-1], labels = self.label ) )
+            self.ontonotes_xent = tf.reduce_mean( tf.nn.sparse_softmax_cross_entropy_with_logits( 
+                                            logits = ontonotes_layer_output[-1], labels = self.label ) )
+
+            self.conll_xent = tf.reduce_mean( tf.nn.sparse_softmax_cross_entropy_with_logits( 
+                                            logits = conll_layer_output[-1], labels = self.label ) )
 
             if config.l1 > 0:
                 # self.param contains weights, bias, character conv embedding variables etc
-                for param in self.param:
-                    self.xent = self.xent + config.l1 * tf.reduce_sum( tf.abs( param ) )
+                for param in self.ontonotes_param:
+                    self.ontonotes_xent = self.ontonotes_xent + config.l1 * tf.reduce_sum( tf.abs( param ) )
+
+                for param in self.conll_param:
+                    self.conll_xent = self.conll_xent + config.l1 * tf.reduce_sum( tf.abs( param ) )
+
 
             if config.l2 > 0:
-                for param in  self.param:
-                    self.xent = self.xent + config.l2 * tf.nn.l2_loss( param )
+                for param in self.ontonotes_param:
+                    self.ontonotes_xent = self.ontonotes_xent + config.l2 * tf.nn.l2_loss( param )
 
-            self.predicted_values = tf.nn.softmax( layer_output[-1] )
-            _, top_indices = tf.nn.top_k( self.predicted_values )
-            self.predicted_indices = tf.reshape( top_indices, [-1] )
+                for param in self.conll_param:
+                    self.conll_xent = self.conll_xent + config.l2 * tf.nn.l2_loss( param )
+
+            self.ontonotes_predicted_values = tf.nn.softmax( ontonotes_layer_output[-1] )
+            _, top_ontonotes_indices = tf.nn.top_k( self.ontonotes_predicted_values )
+            self.ontonotes_predicted_indices = tf.reshape( top_ontonotes_indices, [-1] )
+
+            self.conll_predicted_values = tf.nn.softmax( conll_layer_output[-1] )
+            _, top_conll_indices = tf.nn.top_k( self.conll_predicted_values )
+            self.conll_predicted_indices = tf.reshape( top_conll_indices, [-1] )
+
+            varlist = self.shared_layer_weights + self.shared_layer_b
+            # add KBP later
 
             # fully connected layers are must-trained layers
             # Want to change the weights and bias terms only for minimization of cross entropy 
             # cost function
-            fully_connected_train_step = tf.train.MomentumOptimizer( self.lr, 
+            ontonotes_varlist = varlist + self.ontonotes_layer_weghts + self.ontonotes_layer_b
+            ontonotes_fully_connected_train_step = tf.train.MomentumOptimizer( self.lr, 
                                                                      self.config.momentum, 
                                                                      use_locking = False ) \
-                                           .minimize( self.xent, var_list = self.W + self.b )
+                                           .minimize(self.ontonotes_xent, var_list = ontonotes_varlist)
+
+            conll_varlist = varlist + self.conll_layer_weights + self.conll_layer_b
+            conll_fully_connected_train_step = tf.train.MomentumOptimizer(self.lr,
+                                                                self.config.momentum,
+                                                                use_locking = False) \
+                                        .minimize(self.conll_xent, var_list = conll_varlist)
 
             # a list of things to train
-            self.train_step = [ fully_connected_train_step ]
+            self.conll_train_step = [ conll_fully_connected_train_step ]
+            self.ontonotes_train_step = [ ontonotes_fully_connected_train_step ]
 
             if n_pattern > 0:
                 __lambda = 0.001
@@ -843,43 +923,50 @@ class fofe_mention_net( object ):
 
             # train the word embedding for insensitive case
             if feature_choice & 0b111 > 0:
+                # returns an Operation that updates the variables in var_list.
                 insensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
                                                                             use_locking = True ) \
                                           .minimize( self.xent, var_list = [ self.word_embedding_1 ] )
-                self.train_step.append( insensitive_train_step )
+                self.conll_train_step.append( insensitive_train_step )
+                self.ontonotes_train_step.append( insensitive_train_step )
 
             # train the word embedding for sensitive case
             if feature_choice & (0b111 << 3) > 0:
                 sensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
                                                                           use_locking = True ) \
                                           .minimize( self.xent, var_list = [ self.word_embedding_2 ] )
-                self.train_step.append( sensitive_train_step )
+                self.conll_train_step.append( sensitive_train_step )
+                self.ontonotes_train_step.append( sensitive_train_step )
 
             # train the char embedding for insensitive case
             if feature_choice & (0b11 << 6) > 0:
                 char_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr / 2, 
                                                                                use_locking = True ) \
                                               .minimize( self.xent, var_list = [ self.char_embedding ] )
-                self.train_step.append( char_embedding_train_step )
+                self.conll_train_step.append( char_embedding_train_step )
+                self.ontonotes_train_step.append( char_embedding_train_step )
 
             # train the NER embedding
             if feature_choice & (1 << 8) > 0:
                 ner_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr, 
                                                                               use_locking = True ) \
                                           .minimize( self.xent, var_list = [ self.ner_embedding ] )
-                self.train_step.append( ner_embedding_train_step )
+                self.conll_train_step.append( ner_embedding_train_step )
+                self.ontonotes_train_step.append( ner_embedding_train_step )
 
             if feature_choice & (1 << 9) > 0:
                 char_conv_train_step = tf.train.MomentumOptimizer( self.lr, momentum )\
                                              .minimize( self.xent, 
                                                 var_list = [ self.conv_embedding ] + \
                                                              self.kernels + self.kernel_bias )
-                self.train_step.append( char_conv_train_step )
+                self.conll_train_step.append( char_conv_train_step )
+                self.ontonotes_train_step.append( char_conv_train_step )
 
             if feature_choice & (1 << 10) > 0:
                 bigram_train_step = tf.train.GradientDescentOptimizer( self.lr / 2, use_locking = True )\
                                             .minimize( self.xent, var_list = [ self.bigram_embedding ] )
-                self.train_step.append( bigram_train_step )
+                self.conll_train_step.append( bigram_train_step )
+                self.ontonotes_train_step.append( bigram_train_step )
 
             if hope_out > 0:
                 __lambda = 0.001
@@ -903,16 +990,18 @@ class fofe_mention_net( object ):
             self.saver = tf.train.Saver()
 
 
-    def train( self, mini_batch, profile = False ):
+    def train( self, mini_batch, dataset, profile = False ):
         """
         Parameters
         ----------
             mini_batch : tuple
+            dataset:    0 - CoNLL2003 
+                        1 - OntoNotes 
+                        2 - KBP
 
         Returns
         -------
             c : float
-                Cost
         """ 
         l1_values, r1_values, l1_indices, r1_indices, \
         l2_values, r2_values, l2_indices, r2_indices, \
@@ -934,8 +1023,13 @@ class fofe_mention_net( object ):
         else:
             options, run_metadata = None, None
 
+        if dataset == 0:
+            train = self.conll_train_step + [self.conll_xent]
+        else:
+            train = self.ontonotes_train_step + [self.ontonotes_xent]
+
         c = self.session.run(  
-            self.train_step + [ self.xent ],
+            train,
             feed_dict = {   self.lw1_values: l1_values,
                             self.lw1_indices: l1_indices,
                             self.rw1_values: r1_values,
@@ -986,7 +1080,7 @@ class fofe_mention_net( object ):
         return c
         
 
-    def eval( self, mini_batch ):
+    def eval( self, mini_batch, dataset ):
         """
         Parameters
         ----------
@@ -1011,9 +1105,13 @@ class fofe_mention_net( object ):
         if not self.config.strictly_one_hot:
             dense_feature[:,-1] = 0
 
-        c, pi, pv = self.session.run( [ self.xent, 
-                                        self.predicted_indices, 
-                                        self.predicted_values ], 
+        if dataset == 0:
+            train = [self.conll_xent, self.conll_predicted_indices, self.conll_predicted_values]
+        else:
+            train = [self.ontonotes_xent, self.ontonotes_predicted_indices, self.ontonotes_predicted_values]
+
+
+        c, pi, pv = self.session.run( train, 
                                         feed_dict = {   self.lw1_values: l1_values,
                                                         self.lw1_indices: l1_indices,
                                                         self.rw1_values: r1_values,
