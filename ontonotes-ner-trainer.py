@@ -589,21 +589,29 @@ if __name__ == '__main__':
         if config.drop_rate > 0:
             mention_net.config.drop_rate *= 0.5 ** (2. / config.max_iter)
 
+
+    #===================
+    #===== Plot ========
+    #===================
+
+    epochs = list(range(1, n_epoch + 1))
+
     plt.figure(1)
 
-    plt.subplot(211)
-    plt.plot(n_epoch, training_costs, 'r--')
+    plt.subplot(311)
+    plt.plot(epochs, training_costs, 'r--')
     plt.title('Cost on training data')
 
-    plt.subplot(212)
-    plt.plot(n_epoch, valid_scores, 'r--')
+    plt.subplot(312)
+    plt.plot(epochs, valid_scores, 'r--')
     plt.title('F-score on validation data')
 
-    plt.subplot(213)
-    plt.plot(n_epoch, test_scores, 'r--')
+    plt.subplot(313)
+    plt.plot(epochs, test_scores, 'r--')
     plt.title('F-score on test data')
 
     plt.savefig('/local/scratch/nana/fofe-ner/plots.png')
+    #===================
 
     logger.info('results are written in ontonotes-{valid,test}.predicted')
 
