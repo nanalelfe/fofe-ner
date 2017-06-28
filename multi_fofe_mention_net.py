@@ -448,11 +448,15 @@ class multi_fofe_mention_net( object ):
 
                 # Word-level network weights initialization
                 # value range
-                val_rng = numpy.float32(2.5 / numpy.sqrt(n_label_type + n_ner_embedding + 1))
+                val_rng_conll = numpy.float32(2.5 / numpy.sqrt(CONLL_N_LABELS + n_ner_embedding + 1))
+                val_rng_ontonotes = numpy.float32(2.5 / numpy.sqrt(ONTONOTES_N_LABELS + n_ner_embedding + 1))
 
                 # random initialization of word embeddings
-                self.ner_embedding = tf.Variable( tf.random_uniform( 
-                                        [n_label_type + 1 ,n_ner_embedding], minval = -val_rng, maxval = val_rng ) )
+                self.ner_embedding_conll = tf.Variable( tf.random_uniform( 
+                                        [CONLL_N_LABELS + 1 ,n_ner_embedding], minval = -val_rng_conll, maxval = val_rng_conll ) )
+
+                self.ner_embedding_ontonotes = tf.Variable( tf.random_uniform( 
+                                        [ONTONOTES_N_LABELS + 1 ,n_ner_embedding], minval = -val_rng_ontonotes, maxval = val_rng_ontonotes ) )
                 
                 val_rng = numpy.float32(2.5 / numpy.sqrt(96 * 96 + n_char_embedding))
                 self.bigram_embedding = tf.Variable( tf.random_uniform( 
@@ -613,7 +617,6 @@ class multi_fofe_mention_net( object ):
                 self.param.append( self.U )
             self.param.append( self.char_embedding )
             self.param.append( self.conv_embedding )
-            self.param.append( self.ner_embedding )
             self.param.append( self.bigram_embedding )
             self.param.extend( self.kernels )
             self.param.extend( self.kernel_bias )
@@ -629,11 +632,14 @@ class multi_fofe_mention_net( object ):
                 self.param.extend( self.pattern2_bias )
 
 
+            self.conll_param.append( self.ner_embedding_conll )
             self.conll_param.extend(self.conll_layer_weights)
             self.conll_param.extend(self.conll_layer_b)
 
+            self.ontonotes_param.append( self.ner_embedding_ontonotes )
             self.ontonotes_param.extend(self.ontonotes_layer_weights)
             self.ontonotes_param.extend(self.ontonotes_layer_b)
+            
             # add KBP later
 
             logger.info( 'variable defined' )
@@ -784,8 +790,8 @@ class multi_fofe_mention_net( object ):
             lbcp = tf.sparse_tensor_dense_matmul( lbc, self.bigram_embedding )
             rbcp = tf.sparse_tensor_dense_matmul( rbc, self.bigram_embedding )
 
-            ner_projection_conll = tf.matmul( self.ner_cls_match_conll, self.ner_embedding )
-            ner_projection_ontonotes = tf.matmul( self.ner_cls_match_ontonotes, self.ner_embedding )
+            ner_projection_conll = tf.matmul( self.ner_cls_match_conll, self.ner_embedding_conll )
+            ner_projection_ontonotes = tf.matmul( self.ner_cls_match_ontonotes, self.ner_embedding_ontonotes )
 
             # all possible features
             feature_list = [ [lwp1, rwp1], [lwp2, rwp2], [bowp1],
@@ -983,10 +989,10 @@ class multi_fofe_mention_net( object ):
             if feature_choice & (1 << 8) > 0:
                 conll_ner_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr, 
                                                                               use_locking = True ) \
-                                          .minimize( self.conll_xent, var_list = [ self.ner_embedding ] )
+                                          .minimize( self.conll_xent, var_list = [ self.ner_embedding_conll ] )
                 ontonotes_ner_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr, 
                                                                               use_locking = True ) \
-                                          .minimize( self.ontonotes_xent, var_list = [ self.ner_embedding ] )
+                                          .minimize( self.ontonotes_xent, var_list = [ self.ner_embedding_ontonotes ] )
                 self.conll_train_step.append( conll_ner_embedding_train_step )
                 self.ontonotes_train_step.append( ontonotes_ner_embedding_train_step )
 
