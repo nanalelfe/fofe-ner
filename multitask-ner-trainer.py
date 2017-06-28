@@ -283,8 +283,8 @@ if __name__ == '__main__':
         # Gazetteer is a list of names grouped by the pre-defined categories an NER
         # system is targeting at. Gazetteer is shown to be one of the most effective
         # external knowledge sources to improve NER performance
-        #conll2003_gazetteer = gazetteer( args.conll_datapath + '/ner-lst' )
-        #ontonotes_gazetteer = gazetteer(args.data_path + '/ner-lst', mode = "OntoNotes")
+        conll2003_gazetteer = gazetteer( args.conll_datapath + '/ner-lst' )
+        ontonotes_gazetteer = gazetteer(args.data_path + '/ner-lst', mode = "OntoNotes")
     else:
         conll2003_gazetteer = [set() for _ in xrange( CONLL_N_LABELS )]
         ontonotes_gazetteer = [set() for _ in xrange( ONTONOTES_N_LABELS )]
