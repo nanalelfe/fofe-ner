@@ -838,6 +838,8 @@ class multi_fofe_mention_net( object ):
             #============================
 
             for i in xrange(len(self.ontonotes_layer_weights)):
+                test = tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] ) + self.conll_layer_b[i]
+                logger.info("test ontonotes: " + str(test.get_shape()))
                 ontonotes_layer_output.append( tf.matmul( ontonotes_layer_output[-1], self.ontonotes_layer_weights[i] ) + self.ontonotes_layer_b[i] )
                 if i < len(self.ontonotes_layer_weights) - 1:
                     # ReLU layer
