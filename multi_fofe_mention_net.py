@@ -840,8 +840,8 @@ class multi_fofe_mention_net( object ):
                 # Dropout layer
                 shared_layer_output[-1] = tf.nn.dropout(shared_layer_output[-1], self.keep_prob )
 
-            conll_layer_output = shared_layer_output
-            ontonotes_layer_output = shared_layer_output
+            conll_layer_output = shared_layer_output[:]
+            ontonotes_layer_output = shared_layer_output[:]
 
             #============================
             #==== OntoNotes layers ======
