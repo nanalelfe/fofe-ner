@@ -475,18 +475,21 @@ class multi_fofe_mention_net( object ):
 
                 # Initialize the weights of each module using uniform
                 for i, o in zip( n_in_shared, n_out_shared ):
+                    logger.log("shared shape: " + str(i) + ' ' + str(o) + '\n')
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
                     # random_uniform : Returns a tensor of the specified shape filled with random uniform values.
                     self.shared_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
                     self.shared_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
                 for i, o in zip( n_in_ontonotes, n_out_ontonotes ):
+                    logger.log("ontonotes shape: " + str(i) + ' ' + str(o) + '\n')
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
 
                     self.ontonotes_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
                     self.ontonotes_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
                 for i, o in zip( n_in_conll, n_out_conll ):
+                    logger.log("conll shape: " + str(i) + ' ' + str(o) + '\n')
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
 
                     self.conll_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
