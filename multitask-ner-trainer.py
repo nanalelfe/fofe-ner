@@ -468,9 +468,9 @@ if __name__ == '__main__':
                 is2ndPass=args.is_2nd_pass)
             logger.info('train: ' + str(train))
 
-        pbar = tqdm(total=len(train.positive) +
-                          int(len(train.overlap) * config.overlap_rate) +
-                          int(len(train.disjoint) * config.disjoint_rate))
+        pbar = tqdm(total=len(train_batch.positive) +
+                          int(len(train_batch.overlap) * config.overlap_rate) +
+                          int(len(train_batch.disjoint) * config.disjoint_rate))
 
         cost, cnt = 0, 0
 
