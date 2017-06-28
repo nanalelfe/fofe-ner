@@ -818,11 +818,11 @@ class multi_fofe_mention_net( object ):
             #============================
 
             for i in xrange(len(self.ontonotes_layer_weights)):
-                ontonotes_layer_output.append( tf.matmul( ontonotes_layer_output[-1], ontonotes_layer_weights[i] ) + ontonotes_layer_b[i] )
-                if i < len(ontonotes_layer_weights) - 1:
+                ontonotes_layer_output.append( tf.matmul( ontonotes_layer_output[-1], self.ontonotes_layer_weights[i] ) + self.ontonotes_layer_b[i] )
+                if i < len(self.ontonotes_layer_weights) - 1:
                     # ReLU layer
                     ontonotes_layer_output[-1] = tf.nn.relu(ontonotes_layer_output[-1] )
-                if i < len(ontonotes_layer_weights) - 2:
+                if i < len(self.ontonotes_layer_weights) - 2:
                     # Dropout layer
                     ontonotes_layer_output[-1] = tf.nn.dropout(ontonotes_layer_output[-1], self.keep_prob )
 
@@ -830,12 +830,12 @@ class multi_fofe_mention_net( object ):
             #==== CoNLL 2003 layers ======
             #=============================
 
-            for i in xrange(len(conll_layer_weights)):
-                conll_layer_output.append( tf.matmul(conll_layer_output[-1], conll_layer_weights[i] ) + conll_layer_b[i] )
-                if i < len(conll_layer_weights) - 1:
+            for i in xrange(len(self.conll_layer_weights)):
+                conll_layer_output.append( tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] ) + self.conll_layer_b[i] )
+                if i < len(self.conll_layer_weights) - 1:
                     # ReLU layer
                     conll_layer_output[-1] = tf.nn.relu(conll_layer_output[-1] )
-                if i < len(conll_layer_weights) - 2:
+                if i < len(self.conll_layer_weights) - 2:
                     # Dropout layer
                     conll_layer_output[-1] = tf.nn.dropout(conll_layer_output[-1], self.keep_prob )
 
