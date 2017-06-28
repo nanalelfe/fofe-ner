@@ -780,6 +780,10 @@ class fofe_mention_net( object ):
             # 3rd layer to 11th layer: linear, relu, dropout
             for i in xrange( len(self.W) ):
                 # linear layer (also 12th layer: linear)
+                logger.info("test shared_layer_weights[i]: " + str(self.W[i].get_shape()))
+                logger.info("test shared layer output[-1]: " + str(layer_output[-1].get_shape()))
+                test = tf.matmul( layer_output[-1], self.W[i] ) + self.b[i]
+                logger.info("test shared1: " + str(test.get_shape()))
                 layer_output.append( tf.matmul( layer_output[-1], self.W[i] ) + self.b[i] )
                 if i < len(self.W) - 1:
                     # ReLU layer
