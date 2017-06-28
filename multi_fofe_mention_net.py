@@ -1077,7 +1077,7 @@ class multi_fofe_mention_net( object ):
             ner_cls_match_ontonotes = numpy.zeros((512, 19))
         else:
             train = self.ontonotes_train_step + [self.ontonotes_xent]
-            ner_cls_match_conll = numpy.zeros((512, 5)
+            ner_cls_match_conll = numpy.zeros((512, 5))
             ner_cls_match_ontonotes = dense_feature[:,512:]
 
         c = self.session.run(  
@@ -1161,7 +1161,7 @@ class multi_fofe_mention_net( object ):
         if dataset == 0:
             train = [self.conll_xent, self.conll_predicted_indices, self.conll_predicted_values]
             ner_cls_match_conll = dense_feature[:,512:]
-            ner_cls_match_ontonotes = numpy.zeros([(512, 19))
+            ner_cls_match_ontonotes = numpy.zeros((512, 19))
         else:
             train = [self.ontonotes_xent, self.ontonotes_predicted_indices, self.ontonotes_predicted_values]
             ner_cls_match_conll = numpy.zeros((512, 5))
