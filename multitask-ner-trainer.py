@@ -441,6 +441,7 @@ if __name__ == '__main__':
             train_batch = train_mini_batch_conll
             valid_batch = valid_mini_batch_conll
             test_batch = test_mini_batch_conll
+            train = train_conll
             batch_num = 0
 
         else:
@@ -448,6 +449,7 @@ if __name__ == '__main__':
             train_batch = train_mini_batch_ontonotes
             valid_batch = valid_mini_batch_ontonotes
             test_batch = test_mini_batch_ontonotes
+            train = train_ontonotes
             batch_num = 1
 
         #############################################
@@ -468,9 +470,9 @@ if __name__ == '__main__':
                 is2ndPass=args.is_2nd_pass)
             logger.info('train: ' + str(train))
 
-        pbar = tqdm(total=len(train_batch.positive) +
-                          int(len(train_batch.overlap) * config.overlap_rate) +
-                          int(len(train_batch.disjoint) * config.disjoint_rate))
+        pbar = tqdm(total=len(train.positive) +
+                          int(len(train.overlap) * config.overlap_rate) +
+                          int(len(train.disjoint) * config.disjoint_rate))
 
         cost, cnt = 0, 0
 
