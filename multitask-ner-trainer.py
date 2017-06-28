@@ -6,8 +6,9 @@ import numpy, logging, argparse, time, copy, os, cPickle, sys
 from subprocess import Popen, PIPE, call
 from Queue import Queue
 from threading import Thread
-from random import shuffle, random
 from math import floor
+from random import shuffle, random
+
 
 logger = logging.getLogger(__name__)
 
@@ -435,7 +436,7 @@ if __name__ == '__main__':
                         False, 1, 1, config.feature_choice)
 
         # Will have to change the range when introducing KBP
-        if random() < 0.5:
+        if random.random() < 0.5:
             # CoNLL 2003
             train_batch = train_mini_batch_conll
             valid_batch = valid_mini_batch_conll
