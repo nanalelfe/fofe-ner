@@ -829,7 +829,7 @@ class multi_fofe_mention_net( object ):
             # 3rd layer to 11th layer: linear, relu, dropout
             for i in xrange( len(self.shared_layer_weights) ):
                 logger.info("test shared_layer_weights[i]: " + str(self.shared_layer_weights[i].get_shape()))
-                logger.info("test shared layer output[-1]: " + str(shared_layer_output[-1]))
+                logger.info("test shared layer output[-1]: " + str(shared_layer_output[-1].get_shape()))
                 test = tf.matmul( shared_layer_output[-1], self.shared_layer_weights[i] )
                 logger.info("test shared1: " + str(test.get_shape()))
                 # linear layer (also 12th layer: linear)
