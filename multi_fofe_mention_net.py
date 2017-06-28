@@ -271,14 +271,26 @@ class multi_fofe_mention_net( object ):
                 elif ith == 10:
                     hope_in += n_char_embedding * 2
 
+        CONLL_N_LABELS = 4
+        ONTONOTES_N_LABELS = 18
+
         # add a U matrix between projected feature and fully-connected layers
-        n_in = [ hope_out if hope_out > 0 else hope_in ] + [ int(s) for s in layer_size.split(',') ]
 
-        # output size of fully-connected layers
-        n_out = n_in[1:] + [ n_label_type + 1 ]
+        n_in_shared = [ hope_out if hope_out > 0 else hope_in ] + [ int(s) for s in layer_size.split(',') ]
+        n_out_shared = n_in_shared[1:] + n_in_shared[-1]
 
-        logger.info( 'n_in: ' + str(n_in) )
-        logger.info( 'n_out: ' + str(n_out) )
+        n_in_conll = n_out_shared
+        n_out_conll = n_in_conll[1:] + [ CONLL_N_LABELS + 1 ]
+
+        n_in_ontonotes = n_out_shared
+        n_out_ontonotes = n_in_ontonotes[1:] + [ ONTONOTES_N_LABELS + 1 ]
+
+        logger.info( 'n_in_shared: ' + str(n_in_shared) )
+        logger.info( 'n_out_shared: ' + str(n_out_shared) )
+        logger.info( 'n_in_ontonotes: ' + str(n_in_ontonotes) )
+        logger.info( 'n_out_ontonotes: ' + str(n_out_ontonotes) )
+        logger.info( 'n_in_conll: ' + str(n_in_conll) )
+        logger.info( 'n_out_conll: ' + str(n_out_conll) )
 
         with self.graph.as_default():
 
@@ -462,14 +474,20 @@ class multi_fofe_mention_net( object ):
                     del u_matrix
 
                 # Initialize the weights of each module using uniform
-                for i, o in zip( n_in, n_out ):
+                for i, o in zip( n_in_shared, n_out_shared ):
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
                     # random_uniform : Returns a tensor of the specified shape filled with random uniform values.
                     self.shared_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
                     self.shared_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
+                for i, o in zip( n_in_ontonotes, n_out_ontonotes ):
+                    val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
+
                     self.ontonotes_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
                     self.ontonotes_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
+
+                for i, o in zip( n_in_conll, n_out_conll ):
+                    val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
 
                     self.conll_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
                     self.conll_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
@@ -540,12 +558,15 @@ class multi_fofe_mention_net( object ):
                     self.U = tf.Variable( tf.truncated_normal( [hope_in, hope_out],
                                                           stddev = numpy.sqrt(2./(hope_in * hope_out)) ) )
 
-                for i, o in zip( n_in, n_out ):
+                for i, o in zip( n_in_shared, n_out_shared ):
                     self.shared_layer_weights.append( tf.Variable( tf.truncated_normal( [i, o], stddev = numpy.sqrt(2./(i * o)) ) ) )
-                    self.shared_layer_b.append( tf.Variable( tf.zeros( [o] ) ) )
+                    self.shared_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
+                for i, o in zip( n_in_ontonotes, n_out_ontonotes ):
                     self.ontonotes_layer_weights.append( tf.Variable( tf.truncated_normal( [i, o], stddev = numpy.sqrt(2./(i * o)) ) ) )
                     self.ontonotes_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
+
+                for i, o in zip( n_in_conll, n_out_conll ):
 
                     self.conll_layer_weights.append( tf.Variable( tf.truncated_normal( [i, o], stddev = numpy.sqrt(2./(i * o)) ) ) )
                     self.conll_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
@@ -831,7 +852,7 @@ class multi_fofe_mention_net( object ):
             #=============================
 
             for i in xrange(len(self.conll_layer_weights)):
-                conll_layer_output.append( tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] ) + self.conll_layer_b[i] )
+                conll_layer_output.append( tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] ) + selfconll_layer_b[i] )
                 if i < len(self.conll_layer_weights) - 1:
                     # ReLU layer
                     conll_layer_output[-1] = tf.nn.relu(conll_layer_output[-1] )
