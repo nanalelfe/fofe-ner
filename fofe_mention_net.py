@@ -773,6 +773,7 @@ class fofe_mention_net( object ):
                 layer_output = [ hope ] 
             else:
                 layer_output = [ tf.nn.dropout( feature, self.keep_prob ) ]
+                logger.info("layer output: " + str(layer_output[-1].get_shape()))
 
             # calculate the output by multiplying the input by the weights
             # use ReLU as an activation function
