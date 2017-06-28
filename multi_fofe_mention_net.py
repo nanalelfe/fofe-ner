@@ -852,7 +852,7 @@ class multi_fofe_mention_net( object ):
             #=============================
 
             for i in xrange(len(self.conll_layer_weights)):
-                conll_layer_output.append( tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] ) + selfconll_layer_b[i] )
+                conll_layer_output.append( tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] ) + self.conll_layer_b[i] )
                 if i < len(self.conll_layer_weights) - 1:
                     # ReLU layer
                     conll_layer_output[-1] = tf.nn.relu(conll_layer_output[-1] )
