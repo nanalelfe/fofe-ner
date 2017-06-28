@@ -475,23 +475,18 @@ class multi_fofe_mention_net( object ):
 
                 # Initialize the weights of each module using uniform
                 for i, o in zip( n_in_shared, n_out_shared ):
-                    logger.info("shared shape: " + str(i) + ' ' + str(o) + '\n')
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
                     # random_uniform : Returns a tensor of the specified shape filled with random uniform values.
-                    test = tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng )
-                    logger.info("shared shape 2 : " + str(test.get_shape()))
                     self.shared_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
                     self.shared_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
                 for i, o in zip( n_in_ontonotes, n_out_ontonotes ):
-                    logger.info("ontonotes shape: " + str(i) + ' ' + str(o) + '\n')
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
 
                     self.ontonotes_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
                     self.ontonotes_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
                 for i, o in zip( n_in_conll, n_out_conll ):
-                    logger.info("conll shape: " + str(i) + ' ' + str(o) + '\n')
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
 
                     self.conll_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
@@ -819,7 +814,6 @@ class multi_fofe_mention_net( object ):
             else:
                 # layer 1 and 2
                 shared_layer_output = [ tf.nn.dropout( feature, self.keep_prob ) ]
-                logger.info("shared layer output: " + str(shared_layer_output[-1].get_shape()))
 
             #=======================
             #==== Shared layers ====
@@ -829,10 +823,6 @@ class multi_fofe_mention_net( object ):
             # use ReLU as an activation function
             # 3rd layer to 11th layer: linear, relu, dropout
             for i in xrange( len(self.shared_layer_weights) ):
-                logger.info("test shared_layer_weights[i]: " + str(self.shared_layer_weights[i].get_shape()))
-                logger.info("test shared layer output[-1]: " + str(shared_layer_output[-1].get_shape()))
-                test = tf.matmul( shared_layer_output[-1], self.shared_layer_weights[i] )
-                logger.info("test shared1: " + str(test.get_shape()))
                 # linear layer (also 12th layer: linear)
                 shared_layer_output.append( tf.matmul( shared_layer_output[-1], self.shared_layer_weights[i] ) + self.shared_layer_b[i] )
                 # ReLU layer
@@ -848,8 +838,6 @@ class multi_fofe_mention_net( object ):
             #============================
 
             for i in xrange(len(self.ontonotes_layer_weights)):
-                test = tf.matmul( ontonotes_layer_output[-1], self.ontonotes_layer_weights[i] )
-                logger.info("test ontonotes: " + str(test.get_shape()))
                 ontonotes_layer_output.append( tf.matmul( ontonotes_layer_output[-1], self.ontonotes_layer_weights[i] ) + self.ontonotes_layer_b[i] )
                 if i < len(self.ontonotes_layer_weights) - 1:
                     # ReLU layer
@@ -858,16 +846,11 @@ class multi_fofe_mention_net( object ):
                     # Dropout layer
                     ontonotes_layer_output[-1] = tf.nn.dropout(ontonotes_layer_output[-1], self.keep_prob )
 
-
-            logger.info("Something fishy, shared layer output: " + str(shared_layer_output[-1].get_shape()))
-
             #=============================
             #==== CoNLL 2003 layers ======
             #=============================
 
             for i in xrange(len(self.conll_layer_weights)):
-                test = tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] )
-                logger.info("test conll: " + str(test.get_shape()))
                 conll_layer_output.append( tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] ) + self.conll_layer_b[i] )
                 if i < len(self.conll_layer_weights) - 1:
                     # ReLU layer
@@ -963,49 +946,67 @@ class multi_fofe_mention_net( object ):
             # train the word embedding for insensitive case
             if feature_choice & 0b111 > 0:
                 # returns an Operation that updates the variables in var_list.
-                insensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
+                conll_insensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
                                                                             use_locking = True ) \
-                                          .minimize( self.xent, var_list = [ self.word_embedding_1 ] )
-                self.conll_train_step.append( insensitive_train_step )
-                self.ontonotes_train_step.append( insensitive_train_step )
+                                          .minimize( self.conll_xent, var_list = [ self.word_embedding_1 ] )
+                ontonotes_insensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
+                                                                            use_locking = True ) \
+                                          .minimize( self.ontonotes_xent, var_list = [ self.word_embedding_1 ] )
+                self.conll_train_step.append( conll_insensitive_train_step )
+                self.ontonotes_train_step.append( ontonotes_insensitive_train_step )
 
             # train the word embedding for sensitive case
             if feature_choice & (0b111 << 3) > 0:
-                sensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
+                conll_sensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
                                                                           use_locking = True ) \
-                                          .minimize( self.xent, var_list = [ self.word_embedding_2 ] )
-                self.conll_train_step.append( sensitive_train_step )
-                self.ontonotes_train_step.append( sensitive_train_step )
+                                          .minimize( self.conll_xent, var_list = [ self.word_embedding_2 ] )
+                ontonotes_sensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
+                                                                          use_locking = True ) \
+                                          .minimize( self.ontonotes_xent, var_list = [ self.word_embedding_2 ] )
+                self.conll_train_step.append( conll_sensitive_train_step )
+                self.ontonotes_train_step.append( ontonotes_sensitive_train_step )
 
             # train the char embedding for insensitive case
             if feature_choice & (0b11 << 6) > 0:
-                char_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr / 2, 
+                conll_char_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr / 2, 
                                                                                use_locking = True ) \
-                                              .minimize( self.xent, var_list = [ self.char_embedding ] )
-                self.conll_train_step.append( char_embedding_train_step )
-                self.ontonotes_train_step.append( char_embedding_train_step )
+                                              .minimize( self.conll_xent, var_list = [ self.char_embedding ] )
+                ontonotes_char_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr / 2, 
+                                                                               use_locking = True ) \
+                                              .minimize( self.ontonotes_xent, var_list = [ self.char_embedding ] )
+                self.conll_train_step.append( conll_char_embedding_train_step )
+                self.ontonotes_train_step.append( ontonotes_char_embedding_train_step )
 
             # train the NER embedding
             if feature_choice & (1 << 8) > 0:
-                ner_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr, 
+                conll_ner_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr, 
                                                                               use_locking = True ) \
-                                          .minimize( self.xent, var_list = [ self.ner_embedding ] )
-                self.conll_train_step.append( ner_embedding_train_step )
-                self.ontonotes_train_step.append( ner_embedding_train_step )
+                                          .minimize( self.conll_xent, var_list = [ self.ner_embedding ] )
+                ontonotes_ner_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr, 
+                                                                              use_locking = True ) \
+                                          .minimize( self.ontonotes_xent, var_list = [ self.ner_embedding ] )
+                self.conll_train_step.append( conll_ner_embedding_train_step )
+                self.ontonotes_train_step.append( ontonotes_ner_embedding_train_step )
 
             if feature_choice & (1 << 9) > 0:
-                char_conv_train_step = tf.train.MomentumOptimizer( self.lr, momentum )\
-                                             .minimize( self.xent, 
+                conll_char_conv_train_step = tf.train.MomentumOptimizer( self.lr, momentum )\
+                                             .minimize( self.conll_xent, 
                                                 var_list = [ self.conv_embedding ] + \
                                                              self.kernels + self.kernel_bias )
-                self.conll_train_step.append( char_conv_train_step )
-                self.ontonotes_train_step.append( char_conv_train_step )
+                ontonotes_char_conv_train_step = tf.train.MomentumOptimizer( self.lr, momentum )\
+                                             .minimize( self.ontonotes_xent, 
+                                                var_list = [ self.conv_embedding ] + \
+                                                             self.kernels + self.kernel_bias )
+                self.conll_train_step.append( conll_char_conv_train_step )
+                self.ontonotes_train_step.append( ontonotes_char_conv_train_step )
 
             if feature_choice & (1 << 10) > 0:
-                bigram_train_step = tf.train.GradientDescentOptimizer( self.lr / 2, use_locking = True )\
-                                            .minimize( self.xent, var_list = [ self.bigram_embedding ] )
-                self.conll_train_step.append( bigram_train_step )
-                self.ontonotes_train_step.append( bigram_train_step )
+                conll_bigram_train_step = tf.train.GradientDescentOptimizer( self.lr / 2, use_locking = True )\
+                                            .minimize( self.conll_xent, var_list = [ self.bigram_embedding ] )
+                ontonotes_bigram_train_step = tf.train.GradientDescentOptimizer( self.lr / 2, use_locking = True )\
+                                            .minimize( self.ontonotes_xent, var_list = [ self.bigram_embedding ] )
+                self.conll_train_step.append( conll_bigram_train_step )
+                self.ontonotes_train_step.append( ontonotes_bigram_train_step )
 
             if hope_out > 0:
                 __lambda = 0.001

@@ -464,8 +464,6 @@ class fofe_mention_net( object ):
                     del u_matrix
 
                 for i, o in zip( n_in, n_out ):
-                    test = tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng )
-                    logger.info("test shared: " + str(test.get_shape()))
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
                     # Returns a tensor of the specified shape filled with random uniform values.
                     self.W.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
@@ -773,17 +771,12 @@ class fofe_mention_net( object ):
                 layer_output = [ hope ] 
             else:
                 layer_output = [ tf.nn.dropout( feature, self.keep_prob ) ]
-                logger.info("layer output: " + str(layer_output[-1].get_shape()))
 
             # calculate the output by multiplying the input by the weights
             # use ReLU as an activation function
             # 3rd layer to 11th layer: linear, relu, dropout
             for i in xrange( len(self.W) ):
                 # linear layer (also 12th layer: linear)
-                logger.info("test shared_layer_weights[i]: " + str(self.W[i].get_shape()))
-                logger.info("test shared layer output[-1]: " + str(layer_output[-1].get_shape()))
-                test = tf.matmul( layer_output[-1], self.W[i] ) + self.b[i]
-                logger.info("test shared1: " + str(test.get_shape()))
                 layer_output.append( tf.matmul( layer_output[-1], self.W[i] ) + self.b[i] )
                 if i < len(self.W) - 1:
                     # ReLU layer
