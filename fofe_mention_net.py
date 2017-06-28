@@ -464,6 +464,8 @@ class fofe_mention_net( object ):
                     del u_matrix
 
                 for i, o in zip( n_in, n_out ):
+                    test = tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng )
+                    logger.info("test shared: " + str(test.get_shape()))
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
                     # Returns a tensor of the specified shape filled with random uniform values.
                     self.W.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
