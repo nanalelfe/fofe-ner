@@ -915,7 +915,7 @@ class multi_fofe_mention_net( object ):
             # fully connected layers are must-trained layers
             # Want to change the weights and bias terms only for minimization of cross entropy 
             # cost function
-            ontonotes_varlist = varlist + self.ontonotes_layer_weghts + self.ontonotes_layer_b
+            ontonotes_varlist = varlist + self.ontonotes_layer_weights + self.ontonotes_layer_b
             ontonotes_fully_connected_train_step = tf.train.MomentumOptimizer( self.lr, 
                                                                      self.config.momentum, 
                                                                      use_locking = False ) \
