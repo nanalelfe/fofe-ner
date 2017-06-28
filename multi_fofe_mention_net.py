@@ -819,6 +819,7 @@ class multi_fofe_mention_net( object ):
             else:
                 # layer 1 and 2
                 shared_layer_output = [ tf.nn.dropout( feature, self.keep_prob ) ]
+                logger.info("shared layer output: " + str(shared_layer_output.get_shape()))
 
             #=======================
             #==== Shared layers ====
