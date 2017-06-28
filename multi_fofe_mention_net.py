@@ -567,7 +567,6 @@ class multi_fofe_mention_net( object ):
                     self.ontonotes_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
                 for i, o in zip( n_in_conll, n_out_conll ):
-
                     self.conll_layer_weights.append( tf.Variable( tf.truncated_normal( [i, o], stddev = numpy.sqrt(2./(i * o)) ) ) )
                     self.conll_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
@@ -852,6 +851,8 @@ class multi_fofe_mention_net( object ):
             #=============================
 
             for i in xrange(len(self.conll_layer_weights)):
+                test = tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] ) + self.conll_layer_b[i]
+                logger.info("test conll: " + str(test.get_shape()))
                 conll_layer_output.append( tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] ) + self.conll_layer_b[i] )
                 if i < len(self.conll_layer_weights) - 1:
                     # ReLU layer
