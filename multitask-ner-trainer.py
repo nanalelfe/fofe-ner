@@ -1,13 +1,13 @@
 #!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
-
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy, logging, argparse, time, copy, os, cPickle, sys
 from subprocess import Popen, PIPE, call
 from Queue import Queue
 from threading import Thread
 from random import shuffle, random
 from math import floor
-
-import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +157,7 @@ if __name__ == '__main__':
                         help='dimension of z in the HOPE paper; 0 means not used')
 
     # - Number of label types
-    parser.add_argument('--n_label_type', type=int, default=18,
+    parser.add_argument('--n_label_type', type=int, default=4,
                         help='By default, PER, LOC, ORG and MISC are assumed')
 
     # - Kernel height
@@ -261,6 +261,9 @@ if __name__ == '__main__':
 
     ################################################################################
 
+    CONLL_N_LABELS = 4
+    ONTONOTES_N_LABELS = 18
+
     # there are 2 sets of vocabulary, case-insensitive and case sensitive
     nt = config.n_label_type if config.is_2nd_pass else 0
 
@@ -283,8 +286,8 @@ if __name__ == '__main__':
         #conll2003_gazetteer = gazetteer( args.conll_datapath + '/ner-lst' )
         #ontonotes_gazetteer = gazetteer(args.data_path + '/ner-lst', mode = "OntoNotes")
     else:
-        conll2003_gazetteer = [set() for _ in xrange( args.n_label_type )]
-        ontonotes_gazetteer = [set() for _ in xrange(args.n_label_type)]
+        conll2003_gazetteer = [set() for _ in xrange( CONLL_N_LABELS )]
+        ontonotes_gazetteer = [set() for _ in xrange( ONTONOTES_N_LABELS )]
 
     # ==================================================================================
     # Official OntoNotes split
@@ -310,6 +313,7 @@ if __name__ == '__main__':
                                gazetteer = conll2003_gazetteer, 
                                alpha = config.word_alpha, 
                                window = config.n_window,
+                               n_label_type = CONLL_N_LABELS,
                                is2ndPass = args.is_2nd_pass )
 
     train_ontonotes = batch_constructor(OntoNotes(ontonotes_training_path),
@@ -317,7 +321,7 @@ if __name__ == '__main__':
                               gazetteer=ontonotes_gazetteer,
                               alpha=config.word_alpha,
                               window=config.n_window,
-                              n_label_type = config.n_label_type,
+                              n_label_type = ONTONOTES_N_LABELS,
                               is2ndPass=args.is_2nd_pass)
 
     logger.info('train conll: ' + str(train_conll))
@@ -332,6 +336,7 @@ if __name__ == '__main__':
                                gazetteer = conll2003_gazetteer, 
                                alpha = config.word_alpha, 
                                window = config.n_window,
+                               n_label_type = CONLL_N_LABELS,
                                is2ndPass = args.is_2nd_pass)
 
     valid_ontonotes = batch_constructor(OntoNotes(ontonotes_valid_path),
@@ -339,7 +344,7 @@ if __name__ == '__main__':
                               gazetteer=ontonotes_gazetteer,
                               alpha=config.word_alpha,
                               window=config.n_window,
-                              n_label_type = config.n_label_type,
+                              n_label_type = ONTONOTES_N_LABELS,
                               is2ndPass=args.is_2nd_pass)
 
     logger.info('valid conll: ' + str(valid_conll))
@@ -354,6 +359,7 @@ if __name__ == '__main__':
                                gazetteer = conll2003_gazetteer, 
                                alpha = config.word_alpha, 
                                window = config.n_window,
+                               n_label_type = CONLL_N_LABELS,
                                is2ndPass = args.is_2nd_pass)
 
     test_ontonotes = batch_constructor(OntoNotes(ontonotes_test_path),
@@ -361,7 +367,7 @@ if __name__ == '__main__':
                              gazetteer=ontonotes_gazetteer,
                              alpha=config.word_alpha,
                              window=config.n_window,
-                             n_label_type = config.n_label_type,
+                             n_label_type = ONTONOTES_N_LABELS,
                              is2ndPass=args.is_2nd_pass)
 
     logger.info('test conll: ' + str(test_conll))
@@ -390,43 +396,58 @@ if __name__ == '__main__':
     # Train cost
     training_costs = []
 
-    # Train batch for CoNLL2003
-    train_mini_batch_conll = train_conll.mini_batch_multi_thread(config.n_batch_size,
-                                                    True,
-                                                    config.overlap_rate,
-                                                    config.disjoint_rate,
-                                                    config.feature_choice)
-
-    # Train batch for OntoNotes
-    train_mini_batch_ontonotes = train_ontonotes.mini_batch_multi_thread(config.n_batch_size,
-                                                    True,
-                                                    config.overlap_rate,
-                                                    config.disjoint_rate,
-                                                    config.feature_choice)
-
-    # Valid batch for CoNLL2003
-    valid_mini_batch_conll = valid_conll.mini_batch_multi_thread(
-                512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                False, 1, 1, config.feature_choice)
-
-    # Valid batch for OntoNotes
-    valid_mini_batch_ontonotes = valid_ontonotes.mini_batch_multi_thread(
-                512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                False, 1, 1, config.feature_choice)
-
-    # Test batch for CoNLL2003
-    test_mini_batch_conll = test_conll.mini_batch_multi_thread(
-                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                    False, 1, 1, config.feature_choice)
-
-    # Test batch for OntoNotes
-    test_mini_batch_ontonotes = test_ontonotes.mini_batch_multi_thread(
-                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                    False, 1, 1, config.feature_choice)
-
     for n_epoch in xrange(config.max_iter):
         if not os.path.exists('multitask-result'):
             os.makedirs('multitask-result')
+
+        # Train batch for CoNLL2003
+        train_mini_batch_conll = train_conll.mini_batch_multi_thread(config.n_batch_size,
+                                                        True,
+                                                        config.overlap_rate,
+                                                        config.disjoint_rate,
+                                                        config.feature_choice)
+
+        # Train batch for OntoNotes
+        train_mini_batch_ontonotes = train_ontonotes.mini_batch_multi_thread(config.n_batch_size,
+                                                        True,
+                                                        config.overlap_rate,
+                                                        config.disjoint_rate,
+                                                        config.feature_choice)
+
+        # Valid batch for CoNLL2003
+        valid_mini_batch_conll = valid_conll.mini_batch_multi_thread(
+                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
+                    False, 1, 1, config.feature_choice)
+
+        # Valid batch for OntoNotes
+        valid_mini_batch_ontonotes = valid_ontonotes.mini_batch_multi_thread(
+                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
+                    False, 1, 1, config.feature_choice)
+
+        # Test batch for CoNLL2003
+        test_mini_batch_conll = test_conll.mini_batch_multi_thread(
+                        512 if config.feature_choice & (1 << 9) > 0 else 1024,
+                        False, 1, 1, config.feature_choice)
+
+        # Test batch for OntoNotes
+        test_mini_batch_ontonotes = test_ontonotes.mini_batch_multi_thread(
+                        512 if config.feature_choice & (1 << 9) > 0 else 1024,
+                        False, 1, 1, config.feature_choice)
+
+        # Will have to change the range when introducing KBP
+        if random() < 0.5:
+            # CoNLL 2003
+            train_batch = train_mini_batch_conll
+            valid_batch = valid_mini_batch_conll
+            test_batch = test_mini_batch_conll
+            batch_num = 0
+
+        else:
+            # OntoNotes
+            train_batch = train_mini_batch_ontonotes
+            valid_batch = valid_mini_batch_ontonotes
+            test_batch = test_mini_batch_ontonotes
+            batch_num = 1
 
         #############################################
         ########## go through training set ##########
@@ -451,22 +472,6 @@ if __name__ == '__main__':
                           int(len(train.disjoint) * config.disjoint_rate))
 
         cost, cnt = 0, 0
-
-        # Will have to change the range when introducing KBP
-        if random() < 0.5:
-            # CoNLL 2003
-            train_batch = train_mini_batch_conll
-            valid_batch = valid_mini_batch_conll
-            test_batch = test_mini_batch_conll
-            batch_num = 0
-
-        else:
-            # OntoNotes
-            train_batch = train_mini_batch_ontonotes
-            valid_batch = valid_mini_batch_ontonotes
-            test_batch = test_mini_batch_ontonotes
-            batch_num = 1
-
 
         # example is batch of fragments from a sentence
         for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
@@ -567,19 +572,21 @@ if __name__ == '__main__':
         if decode_test:
 
             if batch_num == 0:
+                curr_label = CONLL_N_LABELS
                 pp = [ p for p in PredictionParser(CoNLL2003( args.conll_datapath + '/eng.testa' ), 
                                                     validation_file, 
                                                     config.n_window ) ]
 
             #elif batch_num == 1:
             else:
+                curr_label = ONTONOTES_N_LABELS
                 pp = [p for p in PredictionParser(OntoNotes(ontonotes_valid_path),
                                                   validation_file,
-                                                  config.n_window, n_label_type = config.n_label_type)]
+                                                  config.n_window, n_label_type = ONTONOTES_N_LABELS)]
 
             for algorithm, name in zip([1, 2, 3], algo_list):
                 for threshold in numpy.arange(0.3, 1, 0.1).tolist():
-                    precision, recall, f1, _ = evaluation(pp, threshold, algorithm, True, n_label_type = config.n_label_type)
+                    precision, recall, f1, _ = evaluation(pp, threshold, algorithm, True, n_label_type = curr_label)
                     logger.debug(('cut-off: %f, algorithm: %-20s' %
                                   (threshold, name)) +
                                  (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)))
@@ -621,7 +628,7 @@ if __name__ == '__main__':
             else:
                 pp = [p for p in PredictionParser(OntoNotes(ontonotes_valid_path),
                                                   validation_file,
-                                                  config.n_window, n_label_type = config.n_label_type)]
+                                                  config.n_window, n_label_type = ONTONOTES_N_LABELS)]
 
             _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
             logger.info('validation:\n' + info)
@@ -640,7 +647,7 @@ if __name__ == '__main__':
                 else:
                     pp = [p for p in PredictionParser(OntoNotes(ontonotes_test_path),
                                                       testing_file,
-                                                      config.n_window, n_label_type = config.n_label_type)]
+                                                      config.n_window, n_label_type = ONTONOTES_N_LABELS)]
 
                 _, _, fb1, out = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
                 logger.info('evaluation:\n' + out)
@@ -691,20 +698,23 @@ if __name__ == '__main__':
     epochs = list(range(1, n_epoch + 1))
 
     plt.figure(1)
-
-    plt.subplot(311)
     plt.plot(epochs, training_costs, 'r--')
     plt.title('Cost on training data')
 
-    plt.subplot(312)
+    plt.savefig('/local/scratch/nana/fofe-ner/training_costs.png')
+
+    plt.figure(2)
     plt.plot(epochs, valid_scores, 'r--')
     plt.title('F-score on validation data')
 
-    plt.subplot(313)
+    plt.savefig('/local/scratch/nana/fofe-ner/validation_score.png')
+
+    plt.figure(3)
     plt.plot(epochs, test_scores, 'r--')
     plt.title('F-score on test data')
 
-    plt.savefig('/local/scratch/nana/fofe-ner/plots.png')
+    plt.savefig('/local/scratch/nana/fofe-ner/test_score.png')
+
     #===================
 
     logger.info('results are written in multitask-{valid,test}.predicted')
