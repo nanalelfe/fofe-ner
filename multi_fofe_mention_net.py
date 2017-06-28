@@ -478,6 +478,8 @@ class multi_fofe_mention_net( object ):
                     logger.info("shared shape: " + str(i) + ' ' + str(o) + '\n')
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
                     # random_uniform : Returns a tensor of the specified shape filled with random uniform values.
+                    test = tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng )
+                    logger.info("shared shape 2 : " + test.get_shape())
                     self.shared_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
                     self.shared_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
