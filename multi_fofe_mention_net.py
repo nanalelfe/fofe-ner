@@ -388,7 +388,8 @@ class multi_fofe_mention_net( object ):
             # A grid like matrix where each row represents a token, and a 0/1 in a particular
             # column means that the token is a mention with entity type corresponding to 
             # column number:
-            self.ner_cls_match = tf.placeholder( tf.float32, [None, n_label_type + 1], name = 'gazetteer' )
+            self.ner_cls_match_conll = tf.placeholder( tf.float32, [None, CONLL_N_LABELS + 1], name = 'gazetteer_conll' )
+            self.ner_cls_match_ontonotes = tf.placeholder( tf.float32, [None, ONTONOTES_N_LABELS + 1], name = 'gazetteer_ontonotes' )
 
             # Each entity type is associated with a label
             self.label = tf.placeholder( tf.int64, [None], 'label' )
@@ -783,12 +784,13 @@ class multi_fofe_mention_net( object ):
             lbcp = tf.sparse_tensor_dense_matmul( lbc, self.bigram_embedding )
             rbcp = tf.sparse_tensor_dense_matmul( rbc, self.bigram_embedding )
 
-            ner_projection = tf.matmul( self.ner_cls_match, self.ner_embedding )
+            ner_projection_conll = tf.matmul( self.ner_cls_match_conll, self.ner_embedding )
+            ner_projection_ontonotes = tf.matmul( self.ner_cls_match_ontonotes, self.ner_embedding )
 
             # all possible features
             feature_list = [ [lwp1, rwp1], [lwp2, rwp2], [bowp1],
                              [lwp3, rwp3], [lwp4, rwp4], [bowp2],
-                             [lcp, rcp], [lip, rip], [ner_projection],
+                             [lcp, rcp], [lip, rip], [ner_projection_conll, ner_projection_ontonotes],
                              char_conv, [lbcp, rbcp] ]
 
             # divide up the used and unused features
@@ -1065,8 +1067,12 @@ class multi_fofe_mention_net( object ):
 
         if dataset == 0:
             train = self.conll_train_step + [self.conll_xent]
+            ner_cls_match_conll = dense_feature[:,512:]
+            ner_cls_match_ontonotes = tf.zeros([512, 19])
         else:
             train = self.ontonotes_train_step + [self.ontonotes_xent]
+            ner_cls_match_conll = tf.zeros([512, 5])
+            ner_cls_match_ontonotes = dense_feature[:,512:]
 
         c = self.session.run(  
             train,
@@ -1096,7 +1102,8 @@ class multi_fofe_mention_net( object ):
                             self.rc_fofe: dense_feature[:,128:256],
                             self.li_fofe: dense_feature[:,256:384],
                             self.ri_fofe: dense_feature[:,384:512],
-                            self.ner_cls_match: dense_feature[:,512:],
+                            self.ner_cls_match_conll: ner_cls_match_conll,
+                            self.ner_cls_match_ontonotes: ner_cls_match_ontonotes,
                             self.char_idx: conv_idx,
                             self.lbc_values : l5_values,
                             self.lbc_indices : l5_indices,
@@ -1147,8 +1154,12 @@ class multi_fofe_mention_net( object ):
 
         if dataset == 0:
             train = [self.conll_xent, self.conll_predicted_indices, self.conll_predicted_values]
+            ner_cls_match_conll = dense_feature[:,512:]
+            ner_cls_match_ontonotes = tf.zeros([512, 19])
         else:
             train = [self.ontonotes_xent, self.ontonotes_predicted_indices, self.ontonotes_predicted_values]
+            ner_cls_match_conll = tf.zeros([512, 5])
+            ner_cls_match_ontonotes = dense_feature[:,512:]
 
 
         c, pi, pv = self.session.run( train, 
@@ -1178,7 +1189,8 @@ class multi_fofe_mention_net( object ):
                                                         self.rc_fofe: dense_feature[:,128:256],
                                                         self.li_fofe: dense_feature[:,256:384],
                                                         self.ri_fofe: dense_feature[:,384:512],
-                                                        self.ner_cls_match: dense_feature[:,512:],
+                                                        self.ner_cls_match_conll: ner_cls_match_conll,
+                                                        self.ner_cls_match_ontonotes: ner_cls_match_ontonotes,
                                                         self.char_idx: conv_idx,
                                                         self.lbc_values : l5_values,
                                                         self.lbc_indices : l5_indices,
