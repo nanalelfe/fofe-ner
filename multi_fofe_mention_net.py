@@ -828,7 +828,7 @@ class multi_fofe_mention_net( object ):
             # use ReLU as an activation function
             # 3rd layer to 11th layer: linear, relu, dropout
             for i in xrange( len(self.shared_layer_weights) ):
-                test = tf.matmul( shared_layer_output[-1], self.shared_layer_weights[i] ) + self.shared_layer_b[i]
+                test = tf.matmul( shared_layer_output[-1], self.shared_layer_weights[i] )
                 logger.info("test shared: " + str(test.get_shape()))
                 # linear layer (also 12th layer: linear)
                 shared_layer_output.append( tf.matmul( shared_layer_output[-1], self.shared_layer_weights[i] ) + self.shared_layer_b[i] )
@@ -845,7 +845,7 @@ class multi_fofe_mention_net( object ):
             #============================
 
             for i in xrange(len(self.ontonotes_layer_weights)):
-                test = tf.matmul( ontonotes_layer_output[-1], self.ontonotes_layer_weights[i] ) + self.ontonotes_layer_b[i]
+                test = tf.matmul( ontonotes_layer_output[-1], self.ontonotes_layer_weights[i] )
                 logger.info("test ontonotes: " + str(test.get_shape()))
                 ontonotes_layer_output.append( tf.matmul( ontonotes_layer_output[-1], self.ontonotes_layer_weights[i] ) + self.ontonotes_layer_b[i] )
                 if i < len(self.ontonotes_layer_weights) - 1:
@@ -860,7 +860,7 @@ class multi_fofe_mention_net( object ):
             #=============================
 
             for i in xrange(len(self.conll_layer_weights)):
-                test = tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] ) + self.conll_layer_b[i]
+                test = tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] )
                 logger.info("test conll: " + str(test.get_shape()))
                 conll_layer_output.append( tf.matmul(conll_layer_output[-1], self.conll_layer_weights[i] ) + self.conll_layer_b[i] )
                 if i < len(self.conll_layer_weights) - 1:
