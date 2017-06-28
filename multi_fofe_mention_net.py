@@ -826,6 +826,7 @@ class multi_fofe_mention_net( object ):
             # use ReLU as an activation function
             # 3rd layer to 11th layer: linear, relu, dropout
             for i in xrange( len(self.shared_layer_weights) ):
+                test = tf.matmul( shared_layer_output[-1], self.shared_layer_weights[i] ) + self.shared_layer_b[i]
                 logger.info("test shared: " + str(test.get_shape()))
                 # linear layer (also 12th layer: linear)
                 shared_layer_output.append( tf.matmul( shared_layer_output[-1], self.shared_layer_weights[i] ) + self.shared_layer_b[i] )
