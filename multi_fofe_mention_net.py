@@ -859,7 +859,7 @@ class multi_fofe_mention_net( object ):
                     ontonotes_layer_output[-1] = tf.nn.dropout(ontonotes_layer_output[-1], self.keep_prob )
 
 
-            logger.info("Something fishy, shared layer output: " + str(shared_layer_output[-1]))
+            logger.info("Something fishy, shared layer output: " + str(shared_layer_output[-1].get_shape()))
 
             #=============================
             #==== CoNLL 2003 layers ======
