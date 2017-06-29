@@ -371,7 +371,6 @@ def OntoNotes(directory):
                             caught[1] = None
 
                 elif len(sentence) > 0:
-                    logger.info("sentence: " + str(sentence) + str(ner_begin) + str(ner_end) + str(ner_label))
                     yield sentence, ner_begin, ner_end, ner_label
                     sentence, ner_begin, ner_end, ner_label = [], [], [], []
 
