@@ -345,14 +345,7 @@ def OntoNotes(directory):
     sentence_end = False
     caught = [False, None]
 
-    files = []
-
     for filename in glob.glob(os.path.join(directory, "*gold*")):
-        files.append(filename)
-
-    random.shuffle(files)
-
-    for filename in files:
         with codecs.open( filename, 'rb', 'utf8' ) as textfile:
             for line in textfile:
                 tokens = line.strip().split()
@@ -378,11 +371,11 @@ def OntoNotes(directory):
                             caught[1] = None
 
                 elif len(sentence) > 0:
+                    logger.info("sentence: " + str(sentence) + str(ner_begin) + str(ner_end) + str(ner_label))
                     yield sentence, ner_begin, ner_end, ner_label
                     sentence, ner_begin, ner_end, ner_label = [], [], [], []
 
 ################################################################################
-
 
 def prepare_mini_batch( batch_generator, batch_buffer, timeout ):
     """
