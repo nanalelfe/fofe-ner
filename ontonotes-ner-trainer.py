@@ -158,7 +158,7 @@ if __name__ == '__main__':
 
     # - Number of label types
     parser.add_argument('--n_label_type', type=int, default=18,
-                        help='By default, PER, LOC, ORG and MISC are assumed')
+                        help='By default, OntoNotes')
 
     # - Kernel height
     parser.add_argument('--kernel_height', type=str, default='2,3,4,5,6,7,8,9')
@@ -221,13 +221,6 @@ if __name__ == '__main__':
 
     ################################################################################
 
-    if args.is_2nd_pass:
-        logger.info('user-input feature-choice was %d' % args.feature_choice)
-        args.feature_choice &= 2038
-        logger.info('feature-choice now is %d' % args.feature_choice)
-
-    ################################################################################
-
     from fofe_mention_net import *
     config = mention_config(args)
     from pprint import pprint
@@ -272,13 +265,7 @@ if __name__ == '__main__':
                               config.char_alpha, True,
                               n_label_type=nt)
 
-    if args.feature_choice & 256 > 0:
-        # Gazetteer is a list of names grouped by the pre-defined categories an NER
-        # system is targeting at. Gazetteer is shown to be one of the most effective
-        # external knowledge sources to improve NER performance
-        ontonotes_gazetteer = gazetteer(args.data_path + '/ner-lst', mode = "OntoNotes")
-    else:
-        ontonotes_gazetteer = [set() for _ in xrange(args.n_label_type)]
+    ontonotes_gazetteer = [set() for _ in xrange(args.n_label_type)]
 
     # ==================================================================================
     # Official OntoNotes split
@@ -377,14 +364,15 @@ if __name__ == '__main__':
                     (n_epoch + 1, mention_net.config.learning_rate))
 
         if config.enable_distant_supervision:
-            train = batch_constructor(  # gigaword( 'gigaword/' + filelist[n_epoch] ),
-                CoNLL2003(os.path.join(folder, filelist[n_epoch])),
-                numericizer1, numericizer2,
-                gazetteer=conll2003_gazetteer,
-                alpha=config.word_alpha,
-                window=config.n_window,
-                is2ndPass=args.is_2nd_pass)
-            logger.info('train: ' + str(train))
+            logger.info("Distant supervision enabled")
+            # train = batch_constructor(  # gigaword( 'gigaword/' + filelist[n_epoch] ),
+            #     CoNLL2003(os.path.join(folder, filelist[n_epoch])),
+            #     numericizer1, numericizer2,
+            #     gazetteer=conll2003_gazetteer,
+            #     alpha=config.word_alpha,
+            #     window=config.n_window,
+            #     is2ndPass=args.is_2nd_pass)
+            # logger.info('train: ' + str(train))
 
         pbar = tqdm(total=len(train.positive) +
                           int(len(train.overlap) * config.overlap_rate) +
@@ -517,22 +505,23 @@ if __name__ == '__main__':
         ###############################################
 
         if args.offical_eval:
-            cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d --config=%s ' \
-                            % ( best_threshold, best_algorithm, config.n_window,
-                                'conll2003-model/%s.config' % args.model ) ) + \
-                  ('%s/eng.testa %s | conlleval' % (config.data_path, validation_file) )
-            process = Popen( cmd, shell = True, stdout = PIPE, stderr = PIPE)
-            (out, err) = process.communicate()
-            exit_code = process.wait()
-            logger.info( 'validation\n' + out )
+            logger.info("Inside the official eval if-statement")
+            # cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d --config=%s ' \
+            #                 % ( best_threshold, best_algorithm, config.n_window,
+            #                     'conll2003-model/%s.config' % args.model ) ) + \
+            #       ('%s/eng.testa %s | conlleval' % (config.data_path, validation_file) )
+            # process = Popen( cmd, shell = True, stdout = PIPE, stderr = PIPE)
+            # (out, err) = process.communicate()
+            # exit_code = process.wait()
+            # logger.info( 'validation\n' + out )
 
-            cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d ' \
-                            % ( best_threshold, best_algorithm, config.n_window ) ) + \
-                  ('%s/eng.testb %s | conlleval' % (config.data_path, testing_file) )
-            process = Popen( cmd, shell = True, stdout = PIPE, stderr = PIPE)
-            (out, err) = process.communicate()
-            logger.info( 'test, global threshold\n' + out )
-            test_fb1 = float(out.split('\n')[1].split()[-1])
+            # cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d ' \
+            #                 % ( best_threshold, best_algorithm, config.n_window ) ) + \
+            #       ('%s/eng.testb %s | conlleval' % (config.data_path, testing_file) )
+            # process = Popen( cmd, shell = True, stdout = PIPE, stderr = PIPE)
+            # (out, err) = process.communicate()
+            # logger.info( 'test, global threshold\n' + out )
+            # test_fb1 = float(out.split('\n')[1].split()[-1])
 
         else:
             pp = [p for p in PredictionParser(OntoNotes(valid_path),

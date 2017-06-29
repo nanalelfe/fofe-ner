@@ -71,7 +71,7 @@ class mention_config( object ):
         self.n_window = 7
         self.strictly_one_hot = True
         self.hope_out = 0
-        self.n_label_type = 7
+        self.n_label_type = 18
         self.kernel_height = range(2, 10)
         self.kernel_depth = [16] * 8
         self.enable_distant_supervision = False

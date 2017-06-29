@@ -345,7 +345,14 @@ def OntoNotes(directory):
     sentence_end = False
     caught = [False, None]
 
+    files = []
+
     for filename in glob.glob(os.path.join(directory, "*gold*")):
+        files.append(filename)
+
+    random.shuffle(files)
+
+    for filename in files:
         with codecs.open( filename, 'rb', 'utf8' ) as textfile:
             for line in textfile:
                 tokens = line.strip().split()
@@ -424,7 +431,6 @@ class chinese_char_vocab( object ):
 
 
 ################################################################################
-
 
 cdef class vocabulary( object ):
     
@@ -1534,8 +1540,6 @@ def PredictionParser( sample_generator, result, ner_max_length,
 
     if isinstance(result, str):
         fp.close()
-
-
 
 def SentenceIterator( filename ):
     with open( filename, 'rb' ) as corpus:
