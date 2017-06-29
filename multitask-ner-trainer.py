@@ -206,7 +206,7 @@ if __name__ == '__main__':
     # set a logging file at DEBUG level, TODO: windows doesn't allow ":" appear in a file name
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                         level=logging.DEBUG,
-                        filename=('log/ontonotes ' + time.ctime() + '.log').replace(' ', '-'),
+                        filename=('log/multitask ' + time.ctime() + '.log').replace(' ', '-'),
                         filemode='w')
 
     # direct the INFO-level logging to the screen

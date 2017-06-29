@@ -1,13 +1,15 @@
 #!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 import numpy, logging, argparse, time, copy, os, cPickle, sys
 from subprocess import Popen, PIPE, call
 from Queue import Queue
 from threading import Thread
 from random import shuffle
 from math import floor
-
-import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
 
@@ -597,20 +599,22 @@ if __name__ == '__main__':
     epochs = list(range(1, n_epoch + 1))
 
     plt.figure(1)
-
-    plt.subplot(311)
     plt.plot(epochs, training_costs, 'r--')
     plt.title('Cost on training data')
 
-    plt.subplot(312)
+    plt.savefig('/local/scratch/nana/fofe-ner/training_costs.png')
+
+    plt.figure(2)
     plt.plot(epochs, valid_scores, 'r--')
     plt.title('F-score on validation data')
 
-    plt.subplot(313)
+    plt.savefig('/local/scratch/nana/fofe-ner/validation_score.png')
+
+    plt.figure(3)
     plt.plot(epochs, test_scores, 'r--')
     plt.title('F-score on test data')
 
-    plt.savefig('/local/scratch/nana/fofe-ner/plots.png')
+    plt.savefig('/local/scratch/nana/fofe-ner/test_score.png')
     #===================
 
     logger.info('results are written in ontonotes-{valid,test}.predicted')
