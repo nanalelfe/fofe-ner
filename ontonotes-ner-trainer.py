@@ -345,6 +345,7 @@ if __name__ == '__main__':
     #===================
 
     # F1 scores
+    train_scores = []
     valid_scores = []
     test_scores = []
 
@@ -378,7 +379,11 @@ if __name__ == '__main__':
                           int(len(train.overlap) * config.overlap_rate) +
                           int(len(train.disjoint) * config.disjoint_rate))
 
+
+        training_file = 'ontonotes-result/ontonotes-train.predicted'
+        train_predicted = open(training_file, 'wb')
         cost, cnt = 0, 0
+        to_print = []
 
         # example is batch of fragments from a sentence
         for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
@@ -390,14 +395,23 @@ if __name__ == '__main__':
 
             c = mention_net.train(example)
 
+            c_, pi, pv = mention_net.eval(example)
+
             cost += c * example[-1].shape[0]
             cnt += example[-1].shape[0]
             pbar.update(example[-1].shape[0])
+
+            for exp, est, prob in zip(example[-1], pi, pv):
+                to_print.append('%d  %d  %s' % \
+                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
 
             if config.enable_distant_supervision:
                 mention_net.train(infinite.next())
 
         pbar.close()
+
+        print >> train_predicted, '\n'.join(to_print)
+        train_predicted.close()
         train_cost = cost / cnt
 
         # for plot
@@ -524,6 +538,18 @@ if __name__ == '__main__':
             # test_fb1 = float(out.split('\n')[1].split()[-1])
 
         else:
+            # training
+            pp = [p for p in PredictionParser(OntoNotes(training_path),
+                                              training_file,
+                                              config.n_window, n_label_type = config.n_label_type)]
+            _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
+            logger.info('training:\n' + info)
+            # fb1 score for validation
+            train_scores.append(test_fb1)
+
+            logger.info("train scores array: %s" % str(train_scores))
+
+            # validation
             pp = [p for p in PredictionParser(OntoNotes(valid_path),
                                               validation_file,
                                               config.n_window, n_label_type = config.n_label_type)]
@@ -594,12 +620,18 @@ if __name__ == '__main__':
     plt.savefig('/local/scratch/nana/fofe-ner/training_costs.png')
 
     plt.figure(2)
+    plt.plot(epochs, train_scores, 'r--')
+    plt.title('F-score on training data')
+
+    plt.savefig('/local/scratch/nana/fofe-ner/train_score.png')
+
+    plt.figure(3)
     plt.plot(epochs, valid_scores, 'r--')
     plt.title('F-score on validation data')
 
     plt.savefig('/local/scratch/nana/fofe-ner/validation_score.png')
 
-    plt.figure(3)
+    plt.figure(4)
     plt.plot(epochs, test_scores, 'r--')
     plt.title('F-score on test data')
 
