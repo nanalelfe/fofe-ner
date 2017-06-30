@@ -421,8 +421,8 @@ if __name__ == '__main__':
         logger.info('training set iterated, %f' % train_cost)
 
         # just training from 1st to 9th iterations
-        if 0 < n_epoch < 10:
-            continue
+        # if 0 < n_epoch < 10:
+        #     continue
 
         ###############################################
         ########## go through validation set ##########
@@ -458,7 +458,7 @@ if __name__ == '__main__':
         ########## go through test set ##########
         #########################################
 
-        decode_test = (n_epoch >= config.max_iter / 2 or n_epoch == 0)
+        decode_test = True#(n_epoch >= config.max_iter / 2 or n_epoch == 0)
 
         if args.offical_eval or decode_test:
             if args.buffer_dir is None:
@@ -598,6 +598,8 @@ if __name__ == '__main__':
         ##########################################
 
         if valid_cost > prev_cost or decay_started:
+            # Try the new scheduler for the learning rate instead of decreasing by a constant rate 
+            # each time
             mention_net.config.learning_rate *= \
                 0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
         else:
