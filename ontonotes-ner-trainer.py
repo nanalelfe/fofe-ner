@@ -659,7 +659,6 @@ if __name__ == '__main__':
     # plt.figure(2)
     # plt.plot(epochs, train_scores, 'r--')
     # plt.title('F-score on training data')
-
     # plt.savefig('/local/scratch/nana/fofe-ner/train_score.png')
 
     plt.figure(2)
@@ -676,4 +675,6 @@ if __name__ == '__main__':
     #===================
 
     logger.info('results are written in ontonotes-{valid,test}.predicted')
+
+    #===================
 
