@@ -23,7 +23,6 @@ class ReduceLROnPlateau:
         self.min_lrs = min_lrs
         self.lr = init_lr
         self.patience = patience
-        self.threshold = threshold
         self.highest = 0
         self.num_bad_epochs = 0
         self.last_epoch = -1
