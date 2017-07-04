@@ -13,6 +13,37 @@ from math import floor
 
 logger = logging.getLogger(__name__)
 
+
+# use AdamOptimizer for optimizer
+class ReduceLROnPlateau:
+    def __init__(self, init_lr, factor=0.1, patience=10, min_lrs=0):
+        if factor >= 1.0:
+            raise ValueError('Factor should be < 1.0.')
+        self.factor = factor
+        self.min_lrs = min_lrs
+        self.lr = init_lr
+        self.patience = patience
+        self.threshold = threshold
+        self.highest = 0
+        self.num_bad_epochs = 0
+        self.last_epoch = -1
+
+    def step(self, metrics, epoch=None):
+        current = metrics
+        if epoch is None:
+            epoch = self.last_epoch = self.last_epoch + 1
+        self.last_epoch = epoch
+
+        if current > self.highest:
+            self.highest = current
+            self.num_bad_epochs = 0
+        else:
+            self.num_bad_epochs += 1
+
+        if self.num_bad_epochs > self.patience:
+            self.lr = max(self.lr * self.factor, self.min_lrs)
+            self.num_bad_epochs = 0
+
 if __name__ == '__main__':
 
     #################
@@ -352,6 +383,8 @@ if __name__ == '__main__':
     # Train cost
     training_costs = []
 
+    scheduler = ReduceLROnPlateau(init_lr=mention_net.config.learning_rate, min_lrs=0.0008)
+
     for n_epoch in xrange(config.max_iter):
         if not os.path.exists('ontonotes-result'):
             os.makedirs('ontonotes-result')
@@ -597,6 +630,9 @@ if __name__ == '__main__':
         ########## adjust learning rate ##########
         ##########################################
 
+        # scheduler.step(valid_cost)
+        # mention_net.config.learning_rate = scheduler.lr
+
         if valid_cost > prev_cost or decay_started:
             # Try the new scheduler for the learning rate instead of decreasing by a constant rate 
             # each time
@@ -607,7 +643,6 @@ if __name__ == '__main__':
 
         if config.drop_rate > 0:
             mention_net.config.drop_rate *= 0.5 ** (2. / config.max_iter)
-
 
     #===================
     #===== Plot ========
