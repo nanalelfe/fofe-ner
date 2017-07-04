@@ -531,7 +531,6 @@ if __name__ == '__main__':
         best_dev_fb1, best_threshold, best_algorithm = 0, 0.5, 1
 
         if decode_test:
-
             pp = [p for p in PredictionParser(OntoNotes(valid_path),
                                               validation_file,
                                               config.n_window, n_label_type = config.n_label_type)]
