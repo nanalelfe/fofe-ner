@@ -304,7 +304,7 @@ def OntoNotes(directory):
     Parameters
     ----------
         directory: str
-            directory in which the parsed data is located
+            directory in which the parsed data (CoNLL2002) is located
 
     Yields
     ------
@@ -345,7 +345,10 @@ def OntoNotes(directory):
     sentence_end = False
     caught = [False, None]
 
-    for filename in glob.glob(os.path.join(directory, "*gold*")):
+    files = glob.glob(os.path.join(directory, "*gold*"))
+    random.shuffle(files)
+
+    for filename in files:
         with codecs.open( filename, 'rb', 'utf8' ) as textfile:
             for line in textfile:
                 tokens = line.strip().split()
