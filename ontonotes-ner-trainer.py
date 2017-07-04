@@ -333,7 +333,8 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------
     # Validation set
     # ----------------------------------------------------------------------------------
-    valid = batch_constructor(OntoNotes(valid_path),
+
+    valid = batch_constructor(OntoNotes(test_path),
                               numericizer1, numericizer2,
                               gazetteer=ontonotes_gazetteer,
                               alpha=config.word_alpha,
@@ -346,7 +347,7 @@ if __name__ == '__main__':
     # Test set
     # ----------------------------------------------------------------------------------
 
-    test = batch_constructor(OntoNotes(test_path),
+    test = batch_constructor(OntoNotes(valid_path),
                              numericizer1, numericizer2,
                              gazetteer=ontonotes_gazetteer,
                              alpha=config.word_alpha,
@@ -583,7 +584,7 @@ if __name__ == '__main__':
             # logger.info("train scores array: %s" % str(train_scores))
 
             # validation
-            pp = [p for p in PredictionParser(OntoNotes(valid_path),
+            pp = [p for p in PredictionParser(OntoNotes(test_path),
                                               validation_file,
                                               config.n_window, n_label_type = config.n_label_type)]
             _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
@@ -594,7 +595,7 @@ if __name__ == '__main__':
             logger.info("valid scores array: %s" % str(valid_scores))
 
             if decode_test:
-                pp = [p for p in PredictionParser(OntoNotes(test_path),
+                pp = [p for p in PredictionParser(OntoNotes(valid_path),
                                                   testing_file,
                                                   config.n_window, n_label_type = config.n_label_type)]
                 _, _, fb1, out = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
