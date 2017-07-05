@@ -329,12 +329,6 @@ if __name__ == '__main__':
                               is2ndPass=args.is_2nd_pass)
     logger.info('train: ' + str(train))
 
-
-    t = OntoNotes(training_path)
-    logger.info("TRAINING")
-    for el in t:
-        logger.info(el)
-
     # ----------------------------------------------------------------------------------
     # Validation set
     # ----------------------------------------------------------------------------------
