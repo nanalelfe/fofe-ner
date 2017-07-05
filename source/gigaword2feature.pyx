@@ -1537,6 +1537,109 @@ def PredictionParser( sample_generator, result, ner_max_length,
     if isinstance(result, str):
         fp.close()
 
+def TrainingPredictionParser( sample_generator, result, ner_max_length, 
+                      reinterpret_threshold = 0, n_label_type = 4 ):
+    """
+    This function is modified from some legancy code. 'table' was designed for 
+    visualization. 
+
+    Parameters
+    ----------
+        sample_generator : iterable
+            Likes of CoNLL2003 and KBP2015
+
+        result : str
+            path to a filename where each line is predicted class (in integer) 
+            followed by the probabilities of each class
+
+        ner_max_length: int
+            maximum length of mention
+
+        reinterpret_threshold: float
+            NOT USED ANYMORE
+
+        n_label_type : int
+            numer of memtion types
+
+    Yields
+    ------
+        s : list of str
+            words in a sentence
+
+        table : numpy.ndarray
+            table[i][j - 1] is a pair of string represnetation of predicted class
+            and the corresponding probability of s[i][j]
+
+        estimate : tuple
+            (begin,end,class) triples
+
+        actual : tuple
+            (begin,end,class) triples
+    """
+    if n_label_type == 4:
+        idx2ner = [ 'PER', 'LOC', 'ORG', 'MISC', 'O' ]
+
+    elif n_label_type == 18:
+        idx2ner = ['PERSON', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'DATE', 'TIME', 'PERCENT',
+                    'MONEY', 'QUANTITY', 'ORDINAL', 'CARDINAL', 'EVENT', 'WORK_OF_ART', 'LAW',
+                    'LANGUAGE', 'NORP', 'O']
+
+    else:
+        # idx2ner = [ 'PER_NAM', 'PER_NOM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'TTL_NAM', 'O'  ]
+        idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
+                    'PER_NOM', 'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM',
+                    'O' ]  
+
+    logger.info("PREDICTION: " + str(idx2ner))
+
+    # sg = SampleGenerator( dataset )
+    if isinstance(result, str):
+        fp = open( result, 'rb' )
+    else:
+        fp = result
+    sg = sample_generator
+
+    # @xmb 20160717
+    lines, cnt = fp.readlines(), 0
+
+    for s, boe, eoe, cls in sg:
+        actual = set( zip(boe, eoe, cls) )
+
+        table = numpy.empty((len(s), len(s)), dtype = object)
+        table[:,:] = None #''
+        estimate = set()
+        actual = set( zip(boe, eoe, cls) )
+
+        for i in xrange(len(s)):
+            for j in xrange(i + 1, len(s) + 1):
+                if j - i <= ner_max_length:
+                    # @xmb 20160717
+                    # line = fp.readline()
+                    line = lines[cnt]
+                    cnt += 1
+
+                    tokens = line.strip().split()
+                    predicted_label = int(tokens[1])
+                    all_prob = numpy.asarray([ numpy.float32(x) for x in tokens[2:] ])
+
+                    if predicted_label == n_label_type:
+                        if all_prob[n_label_type] < reinterpret_threshold:
+                            all_prob[n_label_type] = 0
+                            all_prob /= all_prob.sum()
+                            predicted_label = all_prob.argmax()
+
+                    if predicted_label != n_label_type:
+                        predicted, probability = idx2ner[predicted_label], all_prob[predicted_label]
+                        table[i][j - 1] = (predicted, probability)
+                        estimate.add( (i, j, predicted_label ) )
+
+        yield s, table, estimate, actual
+
+    if isinstance(result, str):
+        fp.close()
+
+
+
 def SentenceIterator( filename ):
     with open( filename, 'rb' ) as corpus:
         sentence = []
