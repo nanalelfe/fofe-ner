@@ -348,13 +348,6 @@ if __name__ == '__main__':
                               is2ndPass=args.is_2nd_pass)
     logger.info('valid: ' + str(valid))
 
-
-    v = OntoNotes(test_path)
-    logger.info("VALIDATION")
-
-    for el in v:
-        logger.info(el)
-
     # ----------------------------------------------------------------------------------
     # Test set
     # ----------------------------------------------------------------------------------
@@ -369,12 +362,6 @@ if __name__ == '__main__':
     logger.info('test: ' + str(test))
 
     logger.info('data set loaded')
-
-
-    te = OntoNotes(valid_path)
-    logger.info("TESTING")
-    for el in te:
-        logger.info(el)
 
     # ==================================================================================
 

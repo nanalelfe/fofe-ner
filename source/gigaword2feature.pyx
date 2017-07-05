@@ -304,7 +304,7 @@ def OntoNotes(directory):
     Parameters
     ----------
         directory: str
-            directory in which the parsed data (CoNLL2002) is located
+            directory in which the parsed data is located
 
     Yields
     ------
@@ -346,7 +346,6 @@ def OntoNotes(directory):
     caught = [False, None]
 
     files = glob.glob(os.path.join(directory, "*gold*"))
-    random.shuffle(files)
 
     for filename in files:
         with codecs.open( filename, 'rb', 'utf8' ) as textfile:
@@ -1941,4 +1940,3 @@ def distant_supervision_parser( sentence_file, tag_file,
 
 
 ################################################################################
-
