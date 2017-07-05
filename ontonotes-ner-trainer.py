@@ -531,8 +531,8 @@ if __name__ == '__main__':
         best_dev_fb1, best_threshold, best_algorithm = 0, 0.5, 1
 
         if decode_test:
-            pp = [p for p in PredictionParser(OntoNotes(valid_path),
-                                              validation_file,
+            pp = [p for p in PredictionParser(OntoNotes(test_path),
+                                              testing_file,
                                               config.n_window, n_label_type = config.n_label_type)]
 
             for algorithm, name in zip([1, 2, 3], algo_list):
@@ -552,7 +552,7 @@ if __name__ == '__main__':
 
         if args.offical_eval:
             logger.info("Inside the official eval if-statement")
-            
+
             # cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d --config=%s ' \
             #                 % ( best_threshold, best_algorithm, config.n_window,
             #                     'conll2003-model/%s.config' % args.model ) ) + \
@@ -584,7 +584,7 @@ if __name__ == '__main__':
 
             # validation
             pp = [p for p in PredictionParser(OntoNotes(test_path),
-                                              validation_file,
+                                              testing_file,
                                               config.n_window, n_label_type = config.n_label_type)]
             _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, False, n_label_type = config.n_label_type)
             logger.info('validation:\n' + info)
@@ -597,9 +597,9 @@ if __name__ == '__main__':
                 pp = [p for p in PredictionParser(OntoNotes(valid_path),
                                                   testing_file,
                                                   config.n_window, n_label_type = config.n_label_type)]
-                _, _, fb1, out = evaluation(pp, best_threshold, best_algorithm, False, n_label_type = config.n_label_type)
+                _, _, test_fb1, out = evaluation(pp, best_threshold, best_algorithm, False, n_label_type = config.n_label_type)
                 logger.info('evaluation:\n' + out)
-                test_scores.append(fb1)
+                test_scores.append(test_fb1)
 
                 logger.info("test scores array: %s" % str(test_scores))
 
