@@ -329,6 +329,12 @@ if __name__ == '__main__':
                               is2ndPass=args.is_2nd_pass)
     logger.info('train: ' + str(train))
 
+
+    t = OntoNotes(training_path)
+
+    for el in t:
+        logger.info(el)
+
     # ----------------------------------------------------------------------------------
     # Validation set
     # ----------------------------------------------------------------------------------
@@ -341,6 +347,12 @@ if __name__ == '__main__':
                               n_label_type = config.n_label_type,
                               is2ndPass=args.is_2nd_pass)
     logger.info('valid: ' + str(valid))
+
+
+    v = OntoNotes(test_path)
+
+    for el in v:
+        logger.info(el)
 
     # ----------------------------------------------------------------------------------
     # Test set
@@ -356,6 +368,12 @@ if __name__ == '__main__':
     logger.info('test: ' + str(test))
 
     logger.info('data set loaded')
+
+
+    te = OntoNotes(valid_path)
+
+    for el in te:
+        logger.info(el)
 
     # ==================================================================================
 
