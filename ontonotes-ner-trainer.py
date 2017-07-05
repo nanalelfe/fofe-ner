@@ -13,36 +13,6 @@ from math import floor
 
 logger = logging.getLogger(__name__)
 
-
-# use AdamOptimizer for optimizer
-# class ReduceLROnPlateau:
-#     def __init__(self, init_lr, factor=0.1, patience=10, min_lrs=0):
-#         if factor >= 1.0:
-#             raise ValueError('Factor should be < 1.0.')
-#         self.factor = factor
-#         self.min_lrs = min_lrs
-#         self.lr = init_lr
-#         self.patience = patience
-#         self.highest = 0
-#         self.num_bad_epochs = 0
-#         self.last_epoch = -1
-
-#     def step(self, metrics, epoch=None):
-#         current = metrics
-#         if epoch is None:
-#             epoch = self.last_epoch = self.last_epoch + 1
-#         self.last_epoch = epoch
-
-#         if current > self.highest:
-#             self.highest = current
-#             self.num_bad_epochs = 0
-#         else:
-#             self.num_bad_epochs += 1
-
-#         if self.num_bad_epochs > self.patience:
-#             self.lr = max(self.lr * self.factor, self.min_lrs)
-#             self.num_bad_epochs = 0
-
 if __name__ == '__main__':
 
     #################
@@ -332,8 +302,7 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------
     # Validation set
     # ----------------------------------------------------------------------------------
-
-    valid = batch_constructor(OntoNotes(test_path),
+    valid = batch_constructor(OntoNotes(valid_path),
                               numericizer1, numericizer2,
                               gazetteer=ontonotes_gazetteer,
                               alpha=config.word_alpha,
@@ -346,7 +315,7 @@ if __name__ == '__main__':
     # Test set
     # ----------------------------------------------------------------------------------
 
-    test = batch_constructor(OntoNotes(valid_path),
+    test = batch_constructor(OntoNotes(test_path),
                              numericizer1, numericizer2,
                              gazetteer=ontonotes_gazetteer,
                              alpha=config.word_alpha,
@@ -376,14 +345,11 @@ if __name__ == '__main__':
     #===================
 
     # F1 scores
-    train_scores = []
     valid_scores = []
     test_scores = []
 
     # Train cost
     training_costs = []
-
-    # scheduler = ReduceLROnPlateau(init_lr=mention_net.config.learning_rate, min_lrs=0.0008)
 
     for n_epoch in xrange(config.max_iter):
         if not os.path.exists('ontonotes-result'):
@@ -412,11 +378,7 @@ if __name__ == '__main__':
                           int(len(train.overlap) * config.overlap_rate) +
                           int(len(train.disjoint) * config.disjoint_rate))
 
-
-        training_file = 'ontonotes-result/ontonotes-train.predicted'
-        train_predicted = open(training_file, 'wb')
         cost, cnt = 0, 0
-        to_print = []
 
         # example is batch of fragments from a sentence
         for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
@@ -428,23 +390,14 @@ if __name__ == '__main__':
 
             c = mention_net.train(example)
 
-            c_, pi, pv = mention_net.eval(example)
-
             cost += c * example[-1].shape[0]
             cnt += example[-1].shape[0]
             pbar.update(example[-1].shape[0])
-
-            for exp, est, prob in zip(example[-1], pi, pv):
-                to_print.append('%d  %d  %s' % \
-                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
 
             if config.enable_distant_supervision:
                 mention_net.train(infinite.next())
 
         pbar.close()
-
-        print >> train_predicted, '\n'.join(to_print)
-        train_predicted.close()
         train_cost = cost / cnt
 
         # for plot
@@ -454,8 +407,8 @@ if __name__ == '__main__':
         logger.info('training set iterated, %f' % train_cost)
 
         # just training from 1st to 9th iterations
-        # if 0 < n_epoch < 10:
-        #     continue
+        if 0 < n_epoch < 10:
+            continue
 
         ###############################################
         ########## go through validation set ##########
@@ -491,7 +444,7 @@ if __name__ == '__main__':
         ########## go through test set ##########
         #########################################
 
-        decode_test = True #(n_epoch >= config.max_iter / 2 or n_epoch == 0)
+        decode_test = (n_epoch >= config.max_iter / 2 or n_epoch == 0)
 
         if args.offical_eval or decode_test:
             if args.buffer_dir is None:
@@ -531,8 +484,9 @@ if __name__ == '__main__':
         best_dev_fb1, best_threshold, best_algorithm = 0, 0.5, 1
 
         if decode_test:
-            pp = [p for p in PredictionParser(OntoNotes(test_path),
-                                              testing_file,
+
+            pp = [p for p in PredictionParser(OntoNotes(valid_path),
+                                              validation_file,
                                               config.n_window, n_label_type = config.n_label_type)]
 
             for algorithm, name in zip([1, 2, 3], algo_list):
@@ -552,7 +506,6 @@ if __name__ == '__main__':
 
         if args.offical_eval:
             logger.info("Inside the official eval if-statement")
-
             # cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d --config=%s ' \
             #                 % ( best_threshold, best_algorithm, config.n_window,
             #                     'conll2003-model/%s.config' % args.model ) ) + \
@@ -571,22 +524,10 @@ if __name__ == '__main__':
             # test_fb1 = float(out.split('\n')[1].split()[-1])
 
         else:
-            # # training
-            # pp = [p for p in TrainingPredictionParser(OntoNotes(training_path),
-            #                                   training_file,
-            #                                   config.n_window, n_label_type = config.n_label_type)]
-            # _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, False, n_label_type = config.n_label_type)
-            # logger.info('training:\n' + info)
-            # # fb1 score for validation
-            # train_scores.append(test_fb1)
-
-            # logger.info("train scores array: %s" % str(train_scores))
-
-            # validation
-            pp = [p for p in PredictionParser(OntoNotes(test_path),
-                                              testing_file,
+            pp = [p for p in PredictionParser(OntoNotes(valid_path),
+                                              validation_file,
                                               config.n_window, n_label_type = config.n_label_type)]
-            _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, False, n_label_type = config.n_label_type)
+            _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
             logger.info('validation:\n' + info)
             # fb1 score for validation
             valid_scores.append(test_fb1)
@@ -594,12 +535,12 @@ if __name__ == '__main__':
             logger.info("valid scores array: %s" % str(valid_scores))
 
             if decode_test:
-                pp = [p for p in PredictionParser(OntoNotes(valid_path),
+                pp = [p for p in PredictionParser(OntoNotes(test_path),
                                                   testing_file,
                                                   config.n_window, n_label_type = config.n_label_type)]
-                _, _, test_fb1, out = evaluation(pp, best_threshold, best_algorithm, False, n_label_type = config.n_label_type)
+                _, _, fb1, out = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
                 logger.info('evaluation:\n' + out)
-                test_scores.append(test_fb1)
+                test_scores.append(fb1)
 
                 logger.info("test scores array: %s" % str(test_scores))
 
@@ -630,12 +571,7 @@ if __name__ == '__main__':
         ########## adjust learning rate ##########
         ##########################################
 
-        # scheduler.step(valid_cost)
-        # mention_net.config.learning_rate = scheduler.lr
-
         if valid_cost > prev_cost or decay_started:
-            # Try the new scheduler for the learning rate instead of decreasing by a constant rate 
-            # each time
             mention_net.config.learning_rate *= \
                 0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
         else:
@@ -643,6 +579,7 @@ if __name__ == '__main__':
 
         if config.drop_rate > 0:
             mention_net.config.drop_rate *= 0.5 ** (2. / config.max_iter)
+
 
     #===================
     #===== Plot ========
@@ -655,11 +592,6 @@ if __name__ == '__main__':
     plt.title('Cost on training data')
 
     plt.savefig('/local/scratch/nana/fofe-ner/training_costs.png')
-
-    # plt.figure(2)
-    # plt.plot(epochs, train_scores, 'r--')
-    # plt.title('F-score on training data')
-    # plt.savefig('/local/scratch/nana/fofe-ner/train_score.png')
 
     plt.figure(2)
     plt.plot(epochs, valid_scores, 'r--')
@@ -675,6 +607,3 @@ if __name__ == '__main__':
     #===================
 
     logger.info('results are written in ontonotes-{valid,test}.predicted')
-
-    #===================
-

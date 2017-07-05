@@ -345,9 +345,7 @@ def OntoNotes(directory):
     sentence_end = False
     caught = [False, None]
 
-    files = glob.glob(os.path.join(directory, "*gold*"))
-
-    for filename in files:
+    for filename in glob.glob(os.path.join(directory, "*gold*")):
         with codecs.open( filename, 'rb', 'utf8' ) as textfile:
             for line in textfile:
                 tokens = line.strip().split()
@@ -1487,8 +1485,6 @@ def PredictionParser( sample_generator, result, ner_max_length,
         idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
                     'PER_NOM', 'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM',
                     'O' ]  
-
-    logger.info("PREDICTION: " + str(idx2ner))
 
     # sg = SampleGenerator( dataset )
     if isinstance(result, str):
