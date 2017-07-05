@@ -552,6 +552,7 @@ if __name__ == '__main__':
 
         if args.offical_eval:
             logger.info("Inside the official eval if-statement")
+            
             # cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d --config=%s ' \
             #                 % ( best_threshold, best_algorithm, config.n_window,
             #                     'conll2003-model/%s.config' % args.model ) ) + \
