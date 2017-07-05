@@ -331,7 +331,7 @@ if __name__ == '__main__':
 
 
     t = OntoNotes(training_path)
-
+    logger.info("TRAINING")
     for el in t:
         logger.info(el)
 
@@ -350,6 +350,7 @@ if __name__ == '__main__':
 
 
     v = OntoNotes(test_path)
+    logger.info("VALIDATION")
 
     for el in v:
         logger.info(el)
@@ -371,7 +372,7 @@ if __name__ == '__main__':
 
 
     te = OntoNotes(valid_path)
-
+    logger.info("TESTING")
     for el in te:
         logger.info(el)
 
