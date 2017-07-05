@@ -1478,7 +1478,6 @@ def PredictionParser( sample_generator, result, ner_max_length,
         idx2ner = [ 'PER', 'LOC', 'ORG', 'MISC', 'O' ]
 
     elif n_label_type == 18:
-
         idx2ner = ['PERSON', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'DATE', 'TIME', 'PERCENT',
                     'MONEY', 'QUANTITY', 'ORDINAL', 'CARDINAL', 'EVENT', 'WORK_OF_ART', 'LAW',
                     'LANGUAGE', 'NORP', 'O']
@@ -1515,7 +1514,6 @@ def PredictionParser( sample_generator, result, ner_max_length,
                 if j - i <= ner_max_length:
                     # @xmb 20160717
                     # line = fp.readline()
-                    logger.info("LINE: " + str(lines))
                     line = lines[cnt]
                     cnt += 1
 
