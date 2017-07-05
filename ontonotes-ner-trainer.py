@@ -376,7 +376,7 @@ if __name__ == '__main__':
     #===================
 
     # F1 scores
-    # train_scores = []
+    train_scores = []
     valid_scores = []
     test_scores = []
 
@@ -491,7 +491,7 @@ if __name__ == '__main__':
         ########## go through test set ##########
         #########################################
 
-        decode_test = True#(n_epoch >= config.max_iter / 2 or n_epoch == 0)
+        decode_test = True #(n_epoch >= config.max_iter / 2 or n_epoch == 0)
 
         if args.offical_eval or decode_test:
             if args.buffer_dir is None:
@@ -570,16 +570,16 @@ if __name__ == '__main__':
             # test_fb1 = float(out.split('\n')[1].split()[-1])
 
         else:
-            # # training
-            # pp = [p for p in PredictionParser(OntoNotes(training_path),
-            #                                   training_file,
-            #                                   config.n_window, n_label_type = config.n_label_type)]
-            # _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
-            # logger.info('training:\n' + info)
-            # # fb1 score for validation
-            # train_scores.append(test_fb1)
+            # training
+            pp = [p for p in PredictionParser(OntoNotes(training_path),
+                                              training_file,
+                                              config.n_window, n_label_type = config.n_label_type)]
+            _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
+            logger.info('training:\n' + info)
+            # fb1 score for validation
+            train_scores.append(test_fb1)
 
-            # logger.info("train scores array: %s" % str(train_scores))
+            logger.info("train scores array: %s" % str(train_scores))
 
             # validation
             pp = [p for p in PredictionParser(OntoNotes(test_path),
@@ -655,18 +655,18 @@ if __name__ == '__main__':
 
     plt.savefig('/local/scratch/nana/fofe-ner/training_costs.png')
 
-    # plt.figure(2)
-    # plt.plot(epochs, train_scores, 'r--')
-    # plt.title('F-score on training data')
-    # plt.savefig('/local/scratch/nana/fofe-ner/train_score.png')
-
     plt.figure(2)
+    plt.plot(epochs, train_scores, 'r--')
+    plt.title('F-score on training data')
+    plt.savefig('/local/scratch/nana/fofe-ner/train_score.png')
+
+    plt.figure(3)
     plt.plot(epochs, valid_scores, 'r--')
     plt.title('F-score on validation data')
 
     plt.savefig('/local/scratch/nana/fofe-ner/validation_score.png')
 
-    plt.figure(3)
+    plt.figure(4)
     plt.plot(epochs, test_scores, 'r--')
     plt.title('F-score on test data')
 

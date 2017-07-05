@@ -1488,6 +1488,8 @@ def PredictionParser( sample_generator, result, ner_max_length,
                     'PER_NOM', 'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM',
                     'O' ]  
 
+    logger.info("PREDICTION: " + str(idx2ner))
+
     # sg = SampleGenerator( dataset )
     if isinstance(result, str):
         fp = open( result, 'rb' )
