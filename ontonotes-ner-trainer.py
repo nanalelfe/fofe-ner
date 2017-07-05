@@ -574,7 +574,7 @@ if __name__ == '__main__':
             pp = [p for p in PredictionParser(OntoNotes(training_path),
                                               training_file,
                                               config.n_window, n_label_type = config.n_label_type)]
-            _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
+            _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, False, n_label_type = config.n_label_type)
             logger.info('training:\n' + info)
             # fb1 score for validation
             train_scores.append(test_fb1)
@@ -585,7 +585,7 @@ if __name__ == '__main__':
             pp = [p for p in PredictionParser(OntoNotes(test_path),
                                               validation_file,
                                               config.n_window, n_label_type = config.n_label_type)]
-            _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
+            _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, False, n_label_type = config.n_label_type)
             logger.info('validation:\n' + info)
             # fb1 score for validation
             valid_scores.append(test_fb1)
@@ -596,7 +596,7 @@ if __name__ == '__main__':
                 pp = [p for p in PredictionParser(OntoNotes(valid_path),
                                                   testing_file,
                                                   config.n_window, n_label_type = config.n_label_type)]
-                _, _, fb1, out = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
+                _, _, fb1, out = evaluation(pp, best_threshold, best_algorithm, False, n_label_type = config.n_label_type)
                 logger.info('evaluation:\n' + out)
                 test_scores.append(fb1)
 

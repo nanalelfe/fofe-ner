@@ -1515,7 +1515,7 @@ def PredictionParser( sample_generator, result, ner_max_length,
                 if j - i <= ner_max_length:
                     # @xmb 20160717
                     # line = fp.readline()
-                    logger.info("LINE: " + str(line))
+                    logger.info("LINE: " + str(lines))
                     line = lines[cnt]
                     cnt += 1
 
