@@ -141,7 +141,7 @@ def PredictionParser( sample_generator, result, ner_max_length, n_label_type = 4
     if isinstance(result, str):
         fp = open( result, 'rb' )
     else:
-        fp = result
+        fp = resultf
     sg = sample_generator
 
     # @xmb 20160717
@@ -187,10 +187,10 @@ def PrettyPrint( sample_generator, result, ner_max_length, n_label_type):
     for sentence, subwords in parser:
         print("==================================================================================")
         text = '\n' + ' '.join(sentence) + '\n'
-        print(text)
+        print(str(text))
         print("MENTION\tACTUAL LABEL\tPREDICTED LABEL\n")
         for subword, actual_label, predicted_label in subwords:
-            print(' '.join(subword) + '\t' + actual_label + '\t' + predicted_label + '\n')
+            print(str(' '.join(subword)) + '\t' + actual_label + '\t' + predicted_label + '\n')
 
 
 if __name__ == "__main__":
