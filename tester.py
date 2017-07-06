@@ -85,8 +85,7 @@ def OntoNotes(directory):
                     sentence, ner_begin, ner_end, ner_label = [], [], [], []
 
 
-def PredictionParser( sample_generator, result, ner_max_length, 
-                      reinterpret_threshold = 0, n_label_type = 4 ):
+def PredictionParser( sample_generator, result, ner_max_length, n_label_type = 4 ):
     """
     This function is modified from some legancy code. 'table' was designed for 
     visualization. 
@@ -156,6 +155,7 @@ def PredictionParser( sample_generator, result, ner_max_length,
         table[:,:] = None #''
         estimate = set()
         actual = set( zip(boe, eoe, cls) )
+        subwords = []
 
         for i in xrange(len(s)):
             for j in xrange(i + 1, len(s) + 1):
@@ -170,16 +170,25 @@ def PredictionParser( sample_generator, result, ner_max_length,
                     actual_label = int(tokens[0])
                     all_prob = numpy.asarray([ numpy.float32(x) for x in tokens[2:] ])
 
-                    if predicted_label != n_label_type:
-                        predicted, probability = idx2ner[predicted_label], all_prob[predicted_label]
-                        table[i][j - 1] = (predicted, probability)
-                        estimate.add( (i, j, predicted_label ) )
+                    if predicted_label != actual_label:
+                        predicted, probability = idx2ner[predicted_label], all_prob
+                        subwords.append((s[i:j], idx2ner[actual_label], idx2ner[predicted_label]))
 
-        yield s, table, estimate, actual
+
+        yield s, subwords
 
     if isinstance(result, str):
         fp.close()
 
+
+def PrettyPrint( sample_generator, result, ner_max_length, n_label_type):
+    parser = PredictionParser(sample_generator, result, ner_max_length, n_label_type)
+
+    for sentence, subwords in parser:
+        text = '\n' + ' '.join(sentence) + '\n'
+        print(text)
+        for subword, actual_label, predicted_label in subwords:
+            print(subword + '\t' + actual_label + '\t' + predicted_label + '\n')
 
 
 if __name__ == "__main__":
@@ -187,7 +196,7 @@ if __name__ == "__main__":
 	test_path = "/eecs/research/asr/quanliu/Datasets/CoNLL2012/data/test/conll"
 	testing_file = "./ontonotes-test.predicted"
 
-	parser = PredictionParser(OntoNotes(test_path), testing_file, 7, n_label_type = 18)
+	parser = PrettyPrint(OntoNotes(test_path), testing_file, 7, n_label_type = 18)
 
 	for element in parser:
 		print(element)
