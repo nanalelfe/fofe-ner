@@ -381,10 +381,6 @@ if __name__ == '__main__':
 
         cost, cnt = 0, 0
 
-        training_file = "ontonotes-result/ontonotes-train.predicted"
-        train_predicted = open(training_file, 'wb')
-        to_print = []
-
         # example is batch of fragments from a sentence
         for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
                                train.mini_batch_multi_thread(config.n_batch_size,
@@ -394,7 +390,6 @@ if __name__ == '__main__':
                                                              config.feature_choice)):
 
             c = mention_net.train(example)
-            c_, pi, pv = mention_net.eval(example)
 
             cost += c * example[-1].shape[0]
             cnt += example[-1].shape[0]
@@ -402,14 +397,9 @@ if __name__ == '__main__':
 
             if config.enable_distant_supervision:
                 mention_net.train(infinite.next())
-            for exp, est, prob in zip(example[-1], pi, pv):
-                to_print.append('%d %d %s' % (exp, est, ' '.join([('%f' % x) for x in prob.tolist()])))
 
         pbar.close()
         train_cost = cost / cnt
-
-        print >> train_predicted, '\n'.join(to_print)
-        train_predicted.close()
 
         # for plot
         training_costs.append(train_cost)
@@ -420,6 +410,35 @@ if __name__ == '__main__':
         # just training from 1st to 9th iterations
         # if 0 < n_epoch < 10:
         #     continue
+
+        ###############################################
+        ########## go through training set ##########
+        ###############################################
+
+        training_file = "ontonotes-result/ontonotes-train.predicted"
+        train_predicted = open(training_file, 'wb')
+        to_print = []
+
+        cost, cnt = 0, 0
+        to_print = []
+
+        for example in train.mini_batch_multi_thread(
+                512 if config.feature_choice & (1 << 9) > 0 else 1024,
+                False, 1, 1, config.feature_choice):
+
+            c, pi, pv = mention_net.eval(example)
+
+            cost += c * example[-1].shape[0]
+            cnt += example[-1].shape[0]
+
+            for exp, est, prob in zip(example[-1], pi, pv):
+                to_print.append('%d  %d  %s' % \
+                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
+
+        print >> train_predicted, '\n'.join(to_print)
+        train_predicted.close()
+        valid_cost = cost / cnt
+        logger.info('training set passed')
 
         ###############################################
         ########## go through validation set ##########
