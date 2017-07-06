@@ -162,11 +162,7 @@ def PredictionParser( sample_generator, result, ner_max_length,
                 if j - i <= ner_max_length:
                     # @xmb 20160717
                     # line = fp.readline()
-                    try:
-                        line = lines[cnt]
-                        break
-                    except: 
-                        continue
+                    line = lines[cnt]
                     cnt += 1
 
                     tokens = line.strip().split()
