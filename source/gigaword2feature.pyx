@@ -1629,7 +1629,7 @@ def TrainingPredictionParser( sample_generator, result, ner_max_length,
                         cnt += 1
                         break
                     except IndexError:
-                        logger.info("len of lines" + len(lines) + " , i: " + str(i) + ", j: " + str(j))
+                        logger.info("len of lines" + str(len(lines)) + " , i: " + str(i) + ", j: " + str(j))
 
                     tokens = line.strip().split()
                     predicted_label = int(tokens[1])
