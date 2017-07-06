@@ -171,13 +171,8 @@ def PredictionParser( sample_generator, result, ner_max_length,
 
                     tokens = line.strip().split()
                     predicted_label = int(tokens[1])
+                    actual_label = int(tokens[0])
                     all_prob = numpy.asarray([ numpy.float32(x) for x in tokens[2:] ])
-
-                    if predicted_label == n_label_type:
-                        if all_prob[n_label_type] < reinterpret_threshold:
-                            all_prob[n_label_type] = 0
-                            all_prob /= all_prob.sum()
-                            predicted_label = all_prob.argmax()
 
                     if predicted_label != n_label_type:
                         predicted, probability = idx2ner[predicted_label], all_prob[predicted_label]
@@ -194,7 +189,7 @@ def PredictionParser( sample_generator, result, ner_max_length,
 if __name__ == "__main__":
 
 	test_path = "/eecs/research/asr/quanliu/Datasets/CoNLL2012/data/test/conll"
-	testing_file = "ontonotes-result/ontonotes-test.predicted"
+	testing_file = "./ontonotes-test.predicted"
 
 	parser = PredictionParser(OntoNotes(test_path), testing_file, 7, n_label_type = 18)
 
