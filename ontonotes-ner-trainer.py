@@ -345,6 +345,7 @@ if __name__ == '__main__':
     #===================
 
     # F1 scores
+    train_scores = []
     valid_scores = []
     test_scores = []
 
@@ -380,6 +381,10 @@ if __name__ == '__main__':
 
         cost, cnt = 0, 0
 
+        training_file = "ontonotes-result/ontonotes-train.predicted"
+        train_predicted = open(training_file, 'wb')
+        to_print = []
+
         # example is batch of fragments from a sentence
         for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
                                train.mini_batch_multi_thread(config.n_batch_size,
@@ -389,6 +394,7 @@ if __name__ == '__main__':
                                                              config.feature_choice)):
 
             c = mention_net.train(example)
+            c_, pi, pv = mention_net.eval(example)
 
             cost += c * example[-1].shape[0]
             cnt += example[-1].shape[0]
@@ -396,9 +402,14 @@ if __name__ == '__main__':
 
             if config.enable_distant_supervision:
                 mention_net.train(infinite.next())
+            for exp, est, prob in zip(example[-1], pi, pv):
+                to_print.append('%d %d %s' % (exp, est, ' '.join([('%f' % x) for x in prob.tolist()])))
 
         pbar.close()
         train_cost = cost / cnt
+
+        print >> train_predicted, '\n'.join(to_print)
+        train_predicted.close()
 
         # for plot
         training_costs.append(train_cost)
@@ -407,8 +418,8 @@ if __name__ == '__main__':
         logger.info('training set iterated, %f' % train_cost)
 
         # just training from 1st to 9th iterations
-        if 0 < n_epoch < 10:
-            continue
+        # if 0 < n_epoch < 10:
+        #     continue
 
         ###############################################
         ########## go through validation set ##########
@@ -444,7 +455,7 @@ if __name__ == '__main__':
         ########## go through test set ##########
         #########################################
 
-        decode_test = (n_epoch >= config.max_iter / 2 or n_epoch == 0)
+        decode_test = True#(n_epoch >= config.max_iter / 2 or n_epoch == 0)
 
         if args.offical_eval or decode_test:
             if args.buffer_dir is None:
@@ -524,6 +535,16 @@ if __name__ == '__main__':
             # test_fb1 = float(out.split('\n')[1].split()[-1])
 
         else:
+            pp = [p for p in PredictionParser(OntoNotes(training_path), training_file, config.window, n_label_type = config.n_label_type)]
+
+            _, _, train_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
+            logger.info('training:\n' + info)
+            # fb1 score for validation
+            train_scores.append(train_fb1)
+
+            logger.info("train scores array: %s" % str(train_scores))
+
+            # validation
             pp = [p for p in PredictionParser(OntoNotes(valid_path),
                                               validation_file,
                                               config.n_window, n_label_type = config.n_label_type)]
