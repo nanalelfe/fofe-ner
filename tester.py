@@ -1,17 +1,3 @@
-cimport cython, numpy
-from libcpp.string cimport string
-from libcpp.vector cimport vector
-from libcpp.map cimport map as ordered_map
-from cython.operator cimport dereference, preincrement
-
-cdef extern from "<algorithm>" namespace "std" nogil:
-    void reverse[Iter] ( Iter first, Iter last ) 
-
-cdef extern from "<regex>" namespace "std" nogil:
-    cdef cppclass regex:
-        regex( string& s ) except +
-    bint regex_match( string& s, regex& r )
-
 from scipy.sparse import csr_matrix
 from Queue import Queue
 from threading import Thread
