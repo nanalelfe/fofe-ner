@@ -555,7 +555,7 @@ if __name__ == '__main__':
 
         else:
             # training
-            pp = [p for p in TrainingPredictionParser(OntoNotes(training_path), training_file, config.n_window, n_label_type = config.n_label_type)]
+            pp = [p for p in PredictionParser(OntoNotes(training_path), training_file, config.n_window, n_label_type = config.n_label_type)]
 
             _, _, train_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
             logger.info('training:\n' + info)
