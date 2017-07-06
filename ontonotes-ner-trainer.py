@@ -282,7 +282,7 @@ if __name__ == '__main__':
 
     training_path = directory + "train/conll"
     valid_path = directory + "development/conll"
-    test_path = directory + "test/conll"
+    test_path = directory + "test-key/conll"
 
     # ==================================================================================
     # ----------------------------------------------------------------------------------
