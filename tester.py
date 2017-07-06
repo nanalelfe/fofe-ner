@@ -170,7 +170,7 @@ def PredictionParser( sample_generator, result, ner_max_length, n_label_type = 4
                     actual_label = int(tokens[0])
                     all_prob = numpy.asarray([ numpy.float32(x) for x in tokens[2:] ])
 
-                    if predicted_label != actual_label:
+                    if (predicted_label != actual_label):
                         predicted, probability = idx2ner[predicted_label], all_prob
                         subwords.append((s[i:j], idx2ner[actual_label], idx2ner[predicted_label]))
 
@@ -185,6 +185,7 @@ def PrettyPrint( sample_generator, result, ner_max_length, n_label_type):
     parser = PredictionParser(sample_generator, result, ner_max_length, n_label_type)
 
     for sentence, subwords in parser:
+        print("==================================================================================")
         text = '\n' + ' '.join(sentence) + '\n'
         print(text)
         print("MENTION\tACTUAL LABEL\tPREDICTED LABEL\n")
