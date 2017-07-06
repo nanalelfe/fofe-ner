@@ -187,6 +187,7 @@ def PrettyPrint( sample_generator, result, ner_max_length, n_label_type):
     for sentence, subwords in parser:
         text = '\n' + ' '.join(sentence) + '\n'
         print(text)
+        print("MENTION\tACTUAL LABEL\tPREDICTED LABEL\n")
         for subword, actual_label, predicted_label in subwords:
             print(' '.join(subword) + '\t' + actual_label + '\t' + predicted_label + '\n')
 
