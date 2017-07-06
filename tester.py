@@ -147,7 +147,7 @@ def PredictionParser( sample_generator, result, ner_max_length, n_label_type = 4
     # @xmb 20160717
     lines, cnt = fp.readlines(), 0
 
-    while True:
+    for i in range(1000000):
         s, boe, eoe, cls = sg.next()
         actual = set( zip(boe, eoe, cls) )
 
@@ -174,8 +174,8 @@ def PredictionParser( sample_generator, result, ner_max_length, n_label_type = 4
                         predicted, probability = idx2ner[predicted_label], all_prob
                         subwords.append((s[i:j], idx2ner[actual_label], idx2ner[predicted_label]))
 
-
-        yield s, subwords
+        if len(subwords) > 0:
+            yield s, subwords
 
     if isinstance(result, str):
         fp.close()
