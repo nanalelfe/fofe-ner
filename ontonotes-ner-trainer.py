@@ -499,6 +499,8 @@ if __name__ == '__main__':
                     to_print.append('%d  %d  %s' % \
                                     (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
 
+            logger.info("example: " + str(example))
+
             print >> test_predicted, '\n'.join(to_print)
             test_predicted.close()
             test_cost = cost / cnt
