@@ -1624,8 +1624,12 @@ def TrainingPredictionParser( sample_generator, result, ner_max_length,
                 if j - i <= ner_max_length:
                     # @xmb 20160717
                     # line = fp.readline()
-                    line = lines[cnt]
-                    cnt += 1
+                    try:
+                        line = lines[cnt]
+                        cnt += 1
+                        break
+                    except IndexError:
+                        logger.info("len of lines" + len(lines) + " , i: " + str(i) + ", j: " + str(j))
 
                     tokens = line.strip().split()
                     predicted_label = int(tokens[1])
