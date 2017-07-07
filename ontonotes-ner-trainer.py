@@ -648,15 +648,15 @@ if __name__ == '__main__':
         ########## adjust learning rate ##########
         ##########################################
 
-        # scheduler.step(valid_cost)
-        # mention_net.config.learning_rate = scheduler.lr
+        scheduler.step(valid_cost)
+        mention_net.config.learning_rate = scheduler.lr
 
 
-        if valid_cost > prev_cost or decay_started:
-            mention_net.config.learning_rate *= \
-                0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
-        else:
-            prev_cost = valid_cost
+        # if valid_cost > prev_cost or decay_started:
+        #     mention_net.config.learning_rate *= \
+        #         0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
+        # else:
+        #     prev_cost = valid_cost
 
         if config.drop_rate > 0:
             mention_net.config.drop_rate *= 0.5 ** (2. / config.max_iter)
