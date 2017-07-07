@@ -199,30 +199,12 @@ def PrettyPrint( sample_generator, result, ner_max_length, n_label_type):
 if __name__ == "__main__":
 
 	test_path = "/eecs/research/asr/quanliu/Datasets/CoNLL2012/data/test/conll"
-	testing_file = "./ontonotes-test.predicted"
+	testing_file = "./ontonotes-result/ontonotes-test.predicted"
 
 	parser = PrettyPrint(OntoNotes(test_path), testing_file, 7, n_label_type = 18)
 
 	for element in parser:
 		print(element)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
