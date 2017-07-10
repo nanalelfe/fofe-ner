@@ -28,90 +28,14 @@ from Queue import Queue
 from threading import Thread
 from itertools import izip, islice, imap, combinations, chain
 from hanziconv import HanziConv
-import numpy, re, random, logging, codecs, copy
+import numpy, re, random, logging, codecs, copy, glob, os
+from lxml import etree
 
 logger = logging.getLogger()
 
 
 ################################################################################
 
-def OntoNotes(directory):
-    """
-    Parameters
-    ----------
-        directory: str
-            directory in which the parsed data is located
-
-    Yields
-    ------
-        sentence  : list of str
-            original sentence
-        ner_begin : list of int
-            start indices of NER, inclusive
-        ner_end   : list of int
-            end indices of NER, excusive
-        ner_label : list of int
-            The entity type of sentence[ner_begin[i]:ner_end[i]] is label[i]
-    """
-
-    entity2cls = {
-        # OntoNotes labels
-        'PERSON': 0,
-        'FAC': 1,
-        'ORG': 2,
-        'GPE': 3,
-        'LOC': 4,
-        'PRODUCT': 5,
-        'DATE': 6,
-        'TIME': 7,
-        'PERCENT': 8,
-        'MONEY': 9,
-        'QUANTITY': 10,
-        'ORDINAL': 11,
-        'CARDINAL': 12,
-        'EVENT': 13,
-        'WORK_OF_ART': 14,
-        'LAW': 15,
-        'LANGUAGE': 16,
-        'NORP': 17
-    }
-
-    sentence, ner_begin, ner_end, ner_label = [], [], [], []
-
-    sentence_end = False
-    caught = [False, None]
-
-    for filename in glob.glob(os.path.join(directory, "*gold*")):
-        with codecs.open( filename, 'rb', 'utf8' ) as textfile:
-            for line in textfile:
-                tokens = line.strip().split()
-                if len(tokens) > 5:
-                    ne = tokens[10]
-                    word  = tokens[3]
-                    sentence.append(word)
-                    if ne != '*':
-                        if ne[-1] == '*':
-                            ne = ne.strip('(').strip('*')
-                            caught[0] = True
-                            caught[1] = len(sentence) - 1
-                            ner_begin.append(len(sentence) - 1)
-                            ner_label.append(entity2cls[ne])
-                        elif (ne[0] == '(' and ne[-1] == ')'):
-                            ne = ne.strip('(').strip(')')
-                            ner_begin.append(len(sentence) - 1)
-                            ner_end.append(len(sentence))
-                            ner_label.append(entity2cls[ne])
-                        elif ne == '*)':
-                            ner_end.append(len(sentence))
-                            caught[0] = False
-                            caught[1] = None
-
-                elif len(sentence) > 0:
-                    yield sentence, ner_begin, ner_end, ner_label
-                    sentence, ner_begin, ner_end, ner_label = [], [], [], []
-
-
-################################################################################
 
 def KBP2015( filename ):
     """
@@ -139,30 +63,29 @@ def KBP2015( filename ):
     buffer_stack.resize( 10 )
 
     logger.info( 'According to Liu, TTL_NAM are all labeled as PER_NOM.' )
-    entity2cls = {  
-        # KBP2015 label
-        'PER_NAM' : 0, 
-        'PER_NOM' : 5, 
-        'ORG_NAM' : 1, 
-        'GPE_NAM' : 2, 
-        'LOC_NAM' : 3, 
-        'FAC_NAM' : 4, 
-        'TTL_NAM' : 5,
+    entity2cls = {  # KBP2015 label
+                    'PER_NAM' : 0, 
+                    'PER_NOM' : 5, 
+                    'ORG_NAM' : 1, 
+                    'GPE_NAM' : 2, 
+                    'LOC_NAM' : 3, 
+                    'FAC_NAM' : 4, 
+                    'TTL_NAM' : 5,
 
-        # iflytek label
-        'PER_NAME' : 0,  
-        'ORG_NAME' : 1, 
-        'GPE_NAME' : 2, 
-        'LOC_NAME' : 3, 
-        'FAC_NAME' : 4, 
-        'PER_NOMINAL' : 5,
-        'ORG_NOMINAL' : 6,
-        'GPE_NOMINAL' : 7,
-        'LOC_NOMINAL' : 8,
-        'FAC_NOMINAL' : 9,
-        'TITLE_NAME' : 5,
-        'TITLE_NOMINAL' : 5
-    } 
+                    # iflytek label
+                    'PER_NAME' : 0,  
+                    'ORG_NAME' : 1, 
+                    'GPE_NAME' : 2, 
+                    'LOC_NAME' : 3, 
+                    'FAC_NAME' : 4, 
+                    'PER_NOMINAL' : 5,
+                    'ORG_NOMINAL' : 6,
+                    'GPE_NOMINAL' : 7,
+                    'LOC_NOMINAL' : 8,
+                    'FAC_NOMINAL' : 9,
+                    'TITLE_NAME' : 5,
+                    'TITLE_NOMINAL' : 5
+                } 
 
     with codecs.open( filename ) as text_file:
         for line in text_file:
@@ -266,6 +189,10 @@ def gigaword( filename ):
 
 def gazetteer( filename, mode = 'CoNLL2003' ):
     """
+    Gazetteer is a list of names grouped by the pre- defined categories an NER system is targeting
+    at. Gazetteer is shown to be one of the most effec- tive external knowledge sources to improve
+    NER performance.
+
     Parameters
     ----------
         filename : str
@@ -286,6 +213,23 @@ def gazetteer( filename, mode = 'CoNLL2003' ):
                 tokens = line.strip().split( None, 1 )
                 if len(tokens) == 2:
                     result[ ner2cls[tokens[0]] ].add( tokens[1] )
+
+    elif mode == "OntoNotes":
+        logger.info( 'Loading OntoNotes 18-type gazetteer' )
+        result = [ set() for _ in xrange(18) ]
+
+        ner2cls = { 'PERSON': 0, 'FAC': 1, 'ORG': 2, 'GPE': 3, 'LOC': 4, 'PRODUCT': 5,
+        'DATE': 6, 'TIME': 7, 'PERCENT': 8, 'MONEY': 9, 'QUANTITY': 10, 'ORDINAL': 11,
+        'CARDINAL': 12, 'EVENT': 13, 'WORK_OF_ART': 14, 'LAW': 15, 'LANGUAGE': 16,
+        'NORP': 17
+        }
+
+        with codecs.open(filename, 'rb', 'utf8') as text_file:
+            for line in text_file:
+                tokens = line.strip().rsplit( None, 1 )
+                if len(tokens) == 2 and tokens[1] in ner2cls:
+                    result[ ner2cls[tokens[1]] ].add( HanziConv.toSimplified(tokens[0][1:-1]) )
+    
     else:
         logger.info( 'Loading KBP 6-type gazetteer' )
         result = [ set() for _ in xrange(7) ]
@@ -355,6 +299,82 @@ def CoNLL2003( filename ):
 
 ################################################################################
 
+def OntoNotes(directory):
+    """
+    Parameters
+    ----------
+        directory: str
+            directory in which the parsed data is located
+
+    Yields
+    ------
+        sentence  : list of str
+            original sentence
+        ner_begin : list of int
+            start indices of NER, inclusive
+        ner_end   : list of int
+            end indices of NER, excusive
+        ner_label : list of int
+            The entity type of sentence[ner_begin[i]:ner_end[i]] is label[i]
+    """
+
+    entity2cls = {
+        # OntoNotes labels
+        'PERSON': 0,
+        'FAC': 1,
+        'ORG': 2,
+        'GPE': 3,
+        'LOC': 4,
+        'PRODUCT': 5,
+        'DATE': 6,
+        'TIME': 7,
+        'PERCENT': 8,
+        'MONEY': 9,
+        'QUANTITY': 10,
+        'ORDINAL': 11,
+        'CARDINAL': 12,
+        'EVENT': 13,
+        'WORK_OF_ART': 14,
+        'LAW': 15,
+        'LANGUAGE': 16,
+        'NORP': 17
+    }
+
+    sentence, ner_begin, ner_end, ner_label = [], [], [], []
+
+    sentence_end = False
+    caught = [False, None]
+
+    for filename in glob.glob(os.path.join(directory, "*gold*")):
+        with codecs.open( filename, 'rb', 'utf8' ) as textfile:
+            for line in textfile:
+                tokens = line.strip().split()
+                if len(tokens) > 5:
+                    ne = tokens[10]
+                    word  = tokens[3]
+                    sentence.append(word)
+                    if ne != '*':
+                        if ne[-1] == '*':
+                            ne = ne.strip('(').strip('*')
+                            caught[0] = True
+                            caught[1] = len(sentence) - 1
+                            ner_begin.append(len(sentence) - 1)
+                            ner_label.append(entity2cls[ne])
+                        elif (ne[0] == '(' and ne[-1] == ')'):
+                            ne = ne.strip('(').strip(')')
+                            ner_begin.append(len(sentence) - 1)
+                            ner_end.append(len(sentence))
+                            ner_label.append(entity2cls[ne])
+                        elif ne == '*)':
+                            ner_end.append(len(sentence))
+                            caught[0] = False
+                            caught[1] = None
+
+                elif len(sentence) > 0:
+                    yield sentence, ner_begin, ner_end, ner_label
+                    sentence, ner_begin, ner_end, ner_label = [], [], [], []
+
+################################################################################
 
 def prepare_mini_batch( batch_generator, batch_buffer, timeout ):
     """
@@ -384,8 +404,6 @@ class chinese_char_vocab( object ):
                 if c != '<unk>' and self.char2idx[c] >= self.n_char:
                     self.char2idx.pop( c, None )
 
-
-
     def __len__( self ):
         return self.n_char
 
@@ -406,14 +424,24 @@ class chinese_char_vocab( object ):
 
 ################################################################################
 
-
 cdef class vocabulary( object ):
+    
+    # [word] -> [index] dict
     cdef dict word2idx
+
+    # [word] -> [FOFE encoding] dict
     cdef dict word2fofe
+
+    # character level forgetting factor
     cdef readonly float alpha
+
+    # True/false, case sensitive or insensitive
     cdef bint case_sensitive
+
+    # number of words
     cdef int n_word
-    cdef int pad_idx
+
+    # Regexes
     cdef regex* date_pattern_1
     cdef regex* date_pattern_2
     cdef regex* number_pattern
@@ -423,6 +451,12 @@ cdef class vocabulary( object ):
 
     def __cinit__( self, filename, alpha = 0.7, case_sensitive = False,
                    n_label_type = 0 ):
+        '''
+        filename: str
+            Path to the wordlist 
+        alpha: float
+            Character level forgetting factor
+        '''
         self.word2idx = {}
         self.word2fofe = {}
         self.alpha = alpha
@@ -434,23 +468,25 @@ cdef class vocabulary( object ):
         self.time_pattern = new regex( r"^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$" )
         self.contains_digit = new regex( r"^.*[0-9].*$" )
 
+        # iterate through the wordlist (each line contains only 1 word)
         with codecs.open( filename ) as word_file:
             for line in word_file:
                 word = line.strip().split()[0]
+                # assign an index to the word, based on its position in the file list
                 idx = len(self.word2idx)
                 self.word2idx[word] = idx
 
         logger.info( '%d words' % len(self.word2idx) )
 
         # 2nd pass, make room for labels
-        self.n_word = len(self.word2idx) - n_label_type - (2 if self.case_sensitive else 1) - 1
+        # Don't count the labels and the unknown markers as words
+        # case sensitive wordlist contains two unknown markers <unk> and <UNK>
+        self.n_word = len(self.word2idx) - n_label_type - (2 if self.case_sensitive else 1)
         if n_label_type > 0:
             for w in self.word2idx.keys():
                 if w != '<unk>' and w != '<UNK>' \
                         and self.word2idx[w] >= self.n_word:
                     self.word2idx.pop(w, None)
-
-        self.pad_idx = self.n_word
 
 
     def __len__( self ):
@@ -458,16 +494,31 @@ cdef class vocabulary( object ):
 
 
     cdef sentence2indices( self, sentence, vector[int]& numeric ):
+        '''
+        Populates the numeric vector with indices corresponding to the 
+        types of words the sentence has. For example the string "647-384-2364" would 
+        have the numeric value [index], where index corresponds to the word index of
+        <phone-value> from the vocabulary list (self.word2idx). The words that do not
+        contain any numeric value, date, time, phone number will get the value of unk
+        or UNK (depending on whether the word is case sensitive or insensitive)
+
+        sentence: str
+            Sentence of words
+        numeric: reference to vector
+            Vector to which the numeric repr of the sentence needs to be saved
+        '''
         cdef string s
         cdef int i
         cdef int n = len( sentence )
         cdef int unk = self.word2idx['<unk>']
         cdef int UNK = self.word2idx.get( '<UNK>', unk )
+        # resize the numeric vector to n
         numeric.resize( n )
+        # index of word to word
         for i, w in enumerate(sentence):
             s = w.lower()
             if regex_match( s, self.contains_digit[0] ):
-                if regex_match( s, self.number_pattern[0] ):
+                if regex_match( s, self.number_pattern[0]):
                     numeric[i] = self.word2idx.get('<numeric-value>', unk)
                 elif regex_match( s, self.date_pattern_1[0] ) or \
                                 regex_match( w, self.date_pattern_2[0] ):
@@ -534,10 +585,6 @@ cdef class vocabulary( object ):
         return lfofe, rfofe
 
 
-    def padding_index( self ):
-        return self.pad_idx
-
-
 ################################################################################
 
 
@@ -553,24 +600,11 @@ class chinese_word_vocab( vocabulary ):
         self.word2idx = { w:i for (i,w) in enumerate( self.idx2word ) }
 
         # 2nd pass, make room for labels
-        self.n_word = len(self.word2idx) - n_label_type - 1 - 1
+        self.n_word = len(self.word2idx) - n_label_type - 1
         if n_label_type > 0:
             for w in self.word2idx.keys():
                 if w != '<unk>' and self.word2idx[w] >= self.n_word:
                     self.word2idx.pop(w, None)
-
-        self.char2stroke = {}
-        self.pad_idx = self.n_word
-
-
-    def loadWubiKeyStroke( self, wubi_keystroke ):
-        with codecs.open( wubi_keystroke, 'rb', 'utf8' ) as fp:
-            for line in fp:
-                head, tail = line.strip().split(None, 2)
-                self.char2stroke[head] = numpy.asarray(
-                    [int(n) for n in tail.split(u',')]
-                ).astype( numpy.int32 )
-        logger.info( 'wubi keystrokes loaded' )
 
 
     def sentence2indices( self, sentence ):
@@ -579,27 +613,14 @@ class chinese_word_vocab( vocabulary ):
                    imap( lambda w: u'<numeric>' if re.match(self.number, w) else w, sentence ) ]
         return result
 
-    def char2wubi( self, w ):
-        has_chinese = any( u'\u4e00' <= c <= u'\u9fff' for c in list(w) )
-        if has_chinese:
-            if w in self.char2stroke:
-                return u''.join(chr(n) for n in self.char2stroke[w])
-            else:
-                return u' '
-        else:
-            return u''.join( c if ord(c) < 128 else chr(127) for c in list(w) )
+
+    def char_fofe_of_word( self ):
+        raise AttributeError( "'chinese_word_vocab' does not provide 'char_fofe_of_word'" )
 
 
-    # def char_fofe_of_word( self, word ):
-    #     raise AttributeError( "'chinese_word_vocab' does not provide 'char_fofe_of_word'" )
+    def char_fofe_of_phrase( self ):
+        raise AttributeError( "'chinese_word_vocab' does not provide 'char_fofe_of_phrase'" )
 
-
-    # def char_fofe_of_phrase( self, phrase ):
-    #     raise AttributeError( "'chinese_word_vocab' does not provide 'char_fofe_of_phrase'" )
-
-
-    def padding_index( self ):
-        return self.pad_idx
 
 ################################################################################
 
@@ -609,10 +630,20 @@ cdef class processed_sentence:
     Any object of this class should not be instantiated outside this module.
     """
     cdef public vector[int] numeric
+
+    # vector of strings 
     cdef readonly vector[string] sentence
+
+    # left_context_idx and left_context_data form a sparse tensor 
+    # FOFE encoding indices for left context
     cdef readonly vector[vector[int]] left_context_idx
+    # FOFE encoding values for left context
     cdef readonly vector[vector[float]] left_context_data
+
+    # right_context_idx and right_context_data form a sparse tensor 
+    # FOFE encoding indices for right context
     cdef readonly vector[vector[int]] right_context_idx
+    # FOFE encoding values for right context
     cdef readonly vector[vector[float]] right_context_data
 
     def __init__( self, sentence, numericizer, 
@@ -629,28 +660,28 @@ cdef class processed_sentence:
             label1st : list
                 labels from 1st pass
         """
-
+        # current vocabulary being used
         cdef vocabulary vocab
 
         if language != 'cmn':
             for w in sentence:
-                self.sentence.push_back(  
-                    u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) 
-                )
+                # push_back() is equivalent of append()
+                # convert the non-ascii characters to something (hexadecimal?)
+                self.sentence.push_back( u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) )
             vocab = numericizer
+            # populate the self.numeric vector 
             vocab.sentence2indices( self.sentence, self.numeric )
         else:
-            for w in sentence:
-                self.sentence.push_back(
-                    numericizer.char2wubi( w )
-                )
             self.numeric = numericizer.sentence2indices( sentence )
 
         cdef vector[int] idx_buffer
         cdef vector[float] data_buffer
+        # FOFE code for left context
         cdef ordered_map[int,float] left_context
+        # FOFE code for right context
         cdef ordered_map[int,float] right_context
         cdef ordered_map[int,float].iterator map_itr
+        # forgetting factor
         cdef float alpha = a
         cdef int i
         cdef int idx
@@ -666,14 +697,19 @@ cdef class processed_sentence:
 
         if is2ndPass:
             # TODO, remove nested mention
+            # (ner_begin, ner_label)
             boe = dict(zip(label1st[0], label1st[2]))
+            # (ner_end, ner_label)
             eoe = dict(zip(label1st[1], label1st[2]))
 
         with nogil: 
+
+            # FOFE for left context
             for i in range( n ):
+                # if i exists in the boe
                 if boe.find(i) != boe.end():
                     left_context_2nd = left_context
-
+                # if i + 1 doesn't exist in the map
                 if eoe.find(i + 1) == eoe.end():
                     idx = self.numeric[i]
                 else:
@@ -702,6 +738,7 @@ cdef class processed_sentence:
                 self.left_context_idx.push_back( idx_buffer )
                 self.left_context_data.push_back( data_buffer )
 
+            # FOFE for right context
             for i in reversed( range( n ) ):
                 if eoe.find(i + 1) != eoe.end():
                     right_context_2nd = right_context
@@ -738,7 +775,6 @@ cdef class processed_sentence:
             reverse( self.right_context_data.begin(), self.right_context_data.end() )
 
 
-
     cdef insert_left_fofe( self, int pos, int row_id, 
                            vector[int]& indices, vector[float]& values ):
         """ help to construct mini-batch """
@@ -772,11 +808,13 @@ cdef class processed_sentence:
                 indices.push_back( self.numeric[i] )
 
 
-
 ################################################################################
 
 
 cdef class example:
+    '''
+    Contains sentence fragments pertaining to sentence_id.
+    '''
     cdef readonly int sentence_id
     cdef readonly int begin_idx
     cdef readonly int end_idx
@@ -789,8 +827,6 @@ cdef class example:
         self.end_idx = end_idx
         self.label = label
         self.gazetteer = gazetteer
-        
-        
         
 ################################################################################
 
@@ -831,7 +867,6 @@ cdef void bigram_char_fofe( string phrase,
 ################################################################################
 
 
-
 class batch_constructor:
     def __init__( self, parser, 
                   numericizer1, numericizer2,
@@ -870,18 +905,28 @@ class batch_constructor:
         self.language = language
 
         # case-insensitive sentence set if language in { 'eng', 'spa' }
-        # sequence at char level
+        # contains processed_sentence objects
+        # Sorted by sentence id
         self.sentence1 = []
 
         # case-sensitive sentence set if language in { 'eng', 'spa' }
-        # sequence at word level
+        # contains processed_sentence objects
+        # Sorted by sentence id
         self.sentence2 = []
 
+        # sentence fragments of upto n words, divided up based on whether that fragment is
+        # exact match (positive), partial overlap (overlap) or disjoint (disjoint):
+
+        # list of example objects : example(sentence_id, begin_index, end_index, label, gazetteer)
         self.example = []
+        # contains id of the sentences that are positive
         self.positive = []
+
+        # contains id of the sentences that are negative
         self.overlap = []
         self.disjoint = []
 
+        # is second pass?
         self.is2ndPass = is2ndPass
 
         # luckily that 'batch_constructor' is not strongly-typed
@@ -895,10 +940,13 @@ class batch_constructor:
         cdef int i, j, k
         cdef bint unsure
 
+        # parser is a generator such as OntoNotes()
         for sentence, ner_begin, ner_end, ner_label in parser:
+
             ner_begin = numpy.asarray(ner_begin, dtype = numpy.int32)
             ner_end = numpy.asarray(ner_end, dtype = numpy.int32)
             ner_label = numpy.asarray(ner_label, dtype = numpy.int32)
+            
             label1st_powerset = []
             # if self.is2ndPass and len(ner_label) > 0:
             #     powerItr = combinations(numpy.arange(len(ner_label)), len(ner_label) - 1)
@@ -962,39 +1010,28 @@ class batch_constructor:
                     label1st = None
 
                 if language != 'cmn': 
-                    self.sentence1.append( processed_sentence( 
-                        sentence, 
-                        numericizer1, 
-                        alpha, 
-                        language,
-                        label1st 
-                    ) )
-                    self.sentence2.append( processed_sentence( 
-                        sentence, numericizer2, 
-                        alpha, 
-                        language,
-                        label1st 
-                    ) )
+                    self.sentence1.append( processed_sentence( sentence, numericizer1, 
+                                                               alpha, language,
+                                                               label1st ) )
+                    self.sentence2.append( processed_sentence( sentence, numericizer2, 
+                                                               alpha, language,
+                                                               label1st ) )
                 else:
                     char_sequence, word_sequence = [], []
                     for token in sentence:
                         c, w = token.split( u'|iNCML|' )
                         char_sequence.append( c )
                         word_sequence.append( w )
-                    self.sentence1.append( processed_sentence( 
-                        char_sequence, 
-                        numericizer1,
-                        alpha, 
-                        language,
-                        label1st 
-                    ) )
-                    self.sentence2.append( processed_sentence( 
-                        word_sequence, 
-                        numericizer2,
-                        alpha, 
-                        language,
-                        label1st 
-                    ) )
+
+                    # character sequence for case insensitive?
+                    self.sentence1.append( processed_sentence( char_sequence, numericizer1,
+                                                               alpha, language,
+                                                               label1st ) )
+
+                    # word sequence for case sensitive
+                    self.sentence2.append( processed_sentence( word_sequence, numericizer2,
+                                                               alpha, language,
+                                                               label1st ) )
 
         self.positive = numpy.asarray( self.positive, dtype = numpy.int32 )
         self.overlap = numpy.asarray( self.overlap, dtype = numpy.int32 )
@@ -1021,7 +1058,7 @@ class batch_constructor:
         The generator yields mini batches of size 'n_batch_size'. Based on 
         'feature_choice', the following features may be selected:
         1) case-insensitive left fofe including focus word(s)
-        2) case-insensitive right fofe incuding focus word(s)
+        2) case-insensitive right fofe including focus word(s)
 
         Parameters
         ----------
@@ -1053,7 +1090,7 @@ class batch_constructor:
         -------
             l1_values : 
             r1_values : 
-
+            (incomplete)
 
         """
         cdef vector[float] l1_values    # case-insensitive left context fofe with focus words(s)
@@ -1095,9 +1132,9 @@ class batch_constructor:
         cdef int phrase_max_length = 10
         cdef float bigram_alpha
 
-        # has_char_feature = feature_choice & (64 | 128 | 512 | 1024)
-        # assert not has_char_feature or self.language != 'cmn', \
-        #         'Chinese is modeled at character level. '
+        has_char_feature = feature_choice & (64 | 128 | 512 | 1024)
+        assert not has_char_feature or self.language != 'cmn', \
+                'Chinese is modeled at character level. '
 
         if n_copy > 1:
             shuffle_needed = True
@@ -1105,6 +1142,8 @@ class batch_constructor:
 
         dense_buffer = numpy.zeros( (n_batch_size, 513 + self.n_label_type), dtype = numpy.float32 )
 
+        # downsampling
+        #--------------
         if len( self.disjoint ) > 0: 
             disjoint = numpy.random.choice( self.disjoint,
                                             size = numpy.int32( len(self.disjoint) * disjoint_rate * n_copy ),
@@ -1119,6 +1158,7 @@ class batch_constructor:
         else:
             overlap = numpy.asarray([]).astype( numpy.int32 )
 
+        # entire sample (positive + overlap + disjoint) of sentence fragments
         candidate = numpy.concatenate( [ self.positive ] * n_copy + [ disjoint, overlap ] )
 
         if shuffle_needed:
@@ -1128,10 +1168,20 @@ class batch_constructor:
         n = len(candidate)
 
         for i in range( n ):
+            # self.example is an array of example objects, sorted fragment id
+            # example (sentence id, begin index, end index, label index, gazetteer)
+            # 'candidate' contains sentence indices
             next_example = self.example[ candidate[i] ]
+
+            # begin of fragment
             begin_idx = next_example.begin_idx
+
+            # end of fragment
             end_idx = next_example.end_idx
 
+            # case insensitive
+            # 'sentence' is a processed_sentence object
+            # the sentence of the fragment being evaluated
             sentence = self.sentence1[next_example.sentence_id]
 
             if self.language != 'cmn':
@@ -1158,9 +1208,7 @@ class batch_constructor:
                                       bigram_alpha, cnt )
 
             # character-level fofe of focus word(s)
-
             if feature_choice & 64 > 0:
-                
                 left_c, right_c = self.numericizer1 \
                                       .char_fofe_of_phrase( sentence.sentence[begin_idx:end_idx] )
                 
@@ -1175,8 +1223,9 @@ class batch_constructor:
             # character-level fofe of initial of focus word(s)
 
             if feature_choice & 128 > 0:
+                str_list = list(filter(None, sentence.sentence[begin_idx:end_idx]))
                 left_init, right_init = self.numericizer1.char_fofe_of_word(
-                            ''.join( [ w[0] for w in sentence.sentence[begin_idx:end_idx] ] ) )
+                            ''.join( [ w[0] for w in str_list ] ) )
                 dense_buffer[cnt,256:384] = left_init
                 dense_buffer[cnt,384:512] = right_init
 
@@ -1216,7 +1265,6 @@ class batch_constructor:
                 sentence.insert_left_fofe( end_idx - 1, cnt, l3_indices, l3_values )
                 sentence.insert_right_fofe( begin_idx, cnt, r3_indices, r3_values )
 
-
             ########## case-sensitive context without focus ##########
 
             if feature_choice & 16 > 0:
@@ -1239,8 +1287,9 @@ class batch_constructor:
                             if conv_idx[k].size() > 128:
                                 conv_idx[k].resize( 128 )
 
-                # they must be either copied for wrapped by asarray
-                # because of multithreding
+                # print 'i am right before yield statement, cnt = %d' % cnt
+
+                # yield for every sentence segment:
                 yield   numpy.asarray( l1_values, dtype = numpy.float32 ),\
                         numpy.asarray( r1_values, dtype = numpy.float32 ),\
                         numpy.reshape( l1_indices, [-1, 2] ),\
@@ -1342,9 +1391,6 @@ class batch_constructor:
 
 
 
-
-
-
 ################################################################################
 
 
@@ -1382,7 +1428,6 @@ def SampleGenerator( filename ):
                 lastNer = 4
 
     corpus.close()
-
 
 
 # def PredictionParser( dataset, result, ner_max_length, 
@@ -1428,6 +1473,12 @@ def PredictionParser( sample_generator, result, ner_max_length,
     """
     if n_label_type == 4:
         idx2ner = [ 'PER', 'LOC', 'ORG', 'MISC', 'O' ]
+
+    elif n_label_type == 18:
+
+        idx2ner = ['PERSON', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'DATE', 'TIME', 'PERCENT',
+                    'MONEY', 'QUANTITY', 'ORDINAL', 'CARDINAL', 'EVENT', 'WORK_OF_ART', 'LAW',
+                    'LANGUAGE', 'NORP', 'O']
     else:
         # idx2ner = [ 'PER_NAM', 'PER_NOM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'TTL_NAM', 'O'  ]
         idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
@@ -1481,8 +1532,6 @@ def PredictionParser( sample_generator, result, ner_max_length,
     if isinstance(result, str):
         fp.close()
 
-
-
 def SentenceIterator( filename ):
     with open( filename, 'rb' ) as corpus:
         sentence = []
@@ -1512,8 +1561,6 @@ class CustomizedThreshold( object ):
         b, e, c = candidate
         return table[b][e - 1][1] >= global_threshold
 
-
-
 class ORGcoverGPE( CustomizedThreshold ):
     """
     Some ORGs are named by GPEs, e,g, University of Toronto.
@@ -1530,8 +1577,6 @@ class ORGcoverGPE( CustomizedThreshold ):
                 if bb <= b < e <= ee and cc == 1:
                     return table[b][e - 1][1] >= self.gpe_covered_by_org
         return table[b][e - 1][1] >= global_threshold
-
-
 
 class IndividualThreshold( CustomizedThreshold ):
     """
@@ -1557,7 +1602,6 @@ class IndividualThreshold( CustomizedThreshold ):
 
 ################################################################################
 
-
 def __merge_adjacient( estimate ):
     best, i = set(), 0
     while i < len(estimate):
@@ -1573,8 +1617,6 @@ def __merge_adjacient( estimate ):
         i = j
     estimate = best
     return estimate
-
-
 
 def __decode_algo_1( sentence, estimate, table, threshold, callback = None ):
     """
@@ -1597,8 +1639,6 @@ def __decode_algo_1( sentence, estimate, table, threshold, callback = None ):
     estimate.sort( key = lambda x : x[0] )
     estimate = __merge_adjacient( estimate )
     return estimate
-
-
 
 def __decode_algo_2( sentence, estimate, table, threshold, callback = None ):
     """
@@ -1713,8 +1753,6 @@ def decode( sentence, estimate, table, threshold, algorithm, callback = None ):
                     callback.restore_state()
         return result
 
-
-
 def evaluation( prediction_parser, threshold, algorithm, 
                 conll2003out = None, analysis = None, sentence_iterator = None,
                 n_label_type = 4, decoder_callback = None ):
@@ -1726,6 +1764,12 @@ def evaluation( prediction_parser, threshold, algorithm,
 
     if n_label_type == 4:
         idx2ner = [ 'PER', 'LOC', 'ORG', 'MISC', 'O' ]
+
+    elif n_label_type == 18:
+        idx2ner = ['PERSON', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'DATE', 'TIME', 'PERCENT',
+                    'MONEY', 'QUANTITY', 'ORDINAL', 'CARDINAL', 'EVENT', 'WORK_OF_ART', 'LAW',
+                    'LANGUAGE', 'NORP', 'O']
+
     else:
         # idx2ner = [ 'PER_NAM', 'PER_NOM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'TTL_NAM', 'O'  ]
         idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
@@ -1810,8 +1854,6 @@ def evaluation( prediction_parser, threshold, algorithm,
 
     return precision, recall, f_beta, info
 
-
-
 ################################################################################
 
 
@@ -1883,580 +1925,6 @@ def distant_supervision_parser( sentence_file, tag_file,
                 yield sent, boe, eoe, loe
 
 
+
+
 ################################################################################
-
-
-cdef class processed_sentence_v2:
-    cdef readonly vector[int] numeric
-    cdef readonly vector[string] sentence
-    cdef readonly vector[vector[int]] left2nd
-    cdef readonly vector[vector[int]] right2nd
-    cdef readonly bint is_2nd_pass
-
-
-    def __init__( self, sentence, numericizer, 
-                  language = 'eng', label1st = None ):
-        cdef vocabulary vocab
-        if language != 'cmn':
-            for w in sentence:
-                self.sentence.push_back(
-                    u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) )
-                )
-            vocab = numericizer
-            vocab.sentence2indices( self.sentence, self.numeric )
-        else:
-            self.numeric = numericizer.sentence2indices( sentence )
-
-        self.is_2nd_pass = (label1st is not None)
-
-        cdef ordered_map[int,int] boe
-        cdef ordered_map[int,int] eoe
-        cdef vector[int] left_context
-        cdef vector[int] right_context
-        cdef vector[int] left_buff
-        cdef vector[int] right_buff
-        cdef int i
-        cdef int idx
-        cdef int n = self.numeric.size()
-        cdef int n_word = len(numericizer)
-
-        if self.is_2nd_pass:
-            boe = dict(zip(label1st[0], label1st[2]))
-            eoe = dict(zip(label1st[1], label1st[2]))
-
-            with nogil:
-                for i in range( n ):
-                    if boe.find(i) != boe.end():
-                        left_buff = left_context
-
-                    if eoe.find(i + 1) == eoe.end():
-                        idx = self.numeric[i]
-                    else:
-                        idx = n_word + eoe[i + 1]
-                        left_context = left_buff
-
-                    left_context.push_back( idx )
-                    self.left2nd.push_back( left_context )
-
-                for i in reversed( range( n ) ):
-                    if eoe.find(i + 1) != eoe.end():
-                        right_buff = right_context
-
-                    if boe.find(i) == boe.end():
-                        idx = self.numeric[i]
-                    else:
-                        idx = n_word + boe[i]
-                        right_context = right_buff
-
-                    right_context.push_back( idx )
-                    self.right2nd.push_back( right_context ) 
-
-                reverse( self.left2nd.begin(), self.left2nd.end() )
-                reverse( self.right2nd.begin(), self.right2nd.end() )
-
-
-    @cython.boundscheck(False)
-    cdef int insert_left( self, int pos, int[:] context ) nogil:
-        cdef int i
-        cdef int length = context.shape[0]
-        if self.is_2nd_pass:
-            if self.left2nd[pos].size() < length:
-                length = self.left2nd[pos].size()
-            for i in range(length):
-                context[i] = self.left2nd[pos][i]
-        else:
-            if pos + 1 < length:
-                length = pos + 1
-            for i in range(length):
-                context[i] = self.numeric[pos - i]
-        return length
-
-        
-    @cython.boundscheck(False)
-    cdef int insert_right( self, int pos, int[:] context ) nogil:
-        cdef int i
-        cdef int length = context.shape[0]
-        if self.is_2nd_pass:
-            if self.right2nd[pos].size() < length:
-                length = self.right2nd[pos].size()
-            for i in range(length):
-                context[i] = self.right2nd[pos][i]
-        else:
-            if self.numeric.size() - pos < length:
-                length = self.numeric.size() - pos
-            for i in range(length):
-                context[i] = self.numeric[i + pos]
-        return length
-
-
-    @cython.boundscheck(False)
-    cdef int insert_bow( self, int begin_idx, int end_idx, int[:] bow ) nogil:
-        cdef int i
-        cdef int length = end_idx - begin_idx
-        if self.is_2nd_pass:
-            return 0
-        else:
-            for i in range(length):
-                bow[i] = self.numeric[i + begin_idx]
-            return length
-                            
-
-
-
-
-class batch_constructor_v2:
-    def __init__( self, parser, 
-                  numericizer1, numericizer2,
-                  gazetteer = None, window = 7, 
-                  n_label_type = 4, language = 'eng',
-                  is_2nd_pass = False ):
-        assert language in { 'eng', 'cmn', 'spa' }
-        self.language = language
-
-        self.pad1 = numericizer1.padding_index()
-        self.pad2 = numericizer2.padding_index()
-
-        # case-insensitive sentence set if language in { 'eng', 'spa' }
-        # sequence at char level
-        self.sentence1 = []
-
-        # case-sensitive sentence set if language in { 'eng', 'spa' }
-        # sequence at word level
-        self.sentence2 = []
-
-        self.example = []
-        self.positive = []
-        self.overlap = []
-        self.disjoint = []
-
-        self.is2ndPass = is_2nd_pass
-
-        # luckily that 'batch_constructor' is not strongly-typed
-        # it is OK that these two data members hold garbage value when parsing Chinese
-        self.numericizer1 = numericizer1    # case-insensitive / char-level
-        self.numericizer2 = numericizer2    # case-sensitive / word-level
-
-        self.gazetteer = gazetteer
-        self.n_label_type = n_label_type
-
-        cdef int i, j, k
-        cdef bint unsure
-
-        for sentence, ner_begin, ner_end, ner_label in parser:
-            ner_begin = numpy.asarray(ner_begin, dtype = numpy.int32)
-            ner_end = numpy.asarray(ner_end, dtype = numpy.int32)
-            ner_label = numpy.asarray(ner_label, dtype = numpy.int32)
-            label1st_powerset = []
-            
-            label1st_powerset.append( (ner_begin, ner_end, ner_label) )
-
-            for label1st in label1st_powerset:
-                for i in range( len(sentence) ):
-                    for j in range( i + 1, len(sentence) + 1 ):
-                        unsure, found = False, False
-                        if j - i > window:
-                            break
-                        label = n_label_type
-                        # look for exact match
-                        for k in range(len(ner_label)):
-                            if i == ner_begin[k] and j == ner_end[k]:
-                                label = ner_label[k]
-                                if label < n_label_type:
-                                    self.positive.append( len(self.example) )
-                                else:
-                                    unsure = True
-                                found = True
-                                break
-                        # look for overlap
-                        if not found:
-                            for k in range(len(ner_label)):
-                                if i < ner_end[k] and ner_begin[k] < j:
-                                    label = n_label_type + 1
-                                    self.overlap.append( len(self.example) )
-                                    break
-                        if unsure:
-                            continue
-                        if label == n_label_type:
-                            self.disjoint.append( len(self.example) )
-                        if label == n_label_type + 1:
-                            label = n_label_type
-
-                        gazetteer_match = []
-                        if self.gazetteer is not None:
-                            if language != 'cmn':
-                                name = u' '.join(sentence[i:j])
-                            else:
-                                name = u''.join( w[:w.find(u'|iNCML|')] for w in sentence[i:j] )
-                            for k, g in enumerate(self.gazetteer):
-                                if name in g:
-                                    gazetteer_match.append(k)
-
-                        self.example.append( 
-                            example( 
-                                len(self.sentence1), i, j, label ,
-                                numpy.asarray(
-                                    gazetteer_match,
-                                    dtype = numpy.int32
-                                )
-                            ) 
-                        )
-                
-                if not self.is2ndPass:
-                    label1st = None
-
-                if language != 'cmn': 
-                    self.sentence1.append( 
-                        processed_sentence_v2( 
-                            sentence, 
-                            numericizer1, 
-                            language = language,
-                            label1st = label1st
-                        )
-                    )
-                    self.sentence2.append( 
-                        processed_sentence_v2( 
-                            sentence, 
-                            numericizer2, 
-                            language = language,
-                            label1st = label1st
-                        ) 
-                    )
-                else:
-                    char_sequence, word_sequence = [], []
-                    for token in sentence:
-                        c, w = token.split( u'|iNCML|' )
-                        char_sequence.append( c )
-                        word_sequence.append( w )
-                    self.sentence1.append( 
-                        processed_sentence_v2( 
-                            char_sequence, 
-                            numericizer1,
-                            language = language,
-                            label1st = label1st 
-                        ) 
-                    )
-                    self.sentence2.append( 
-                        processed_sentence_v2( 
-                            word_sequence, 
-                            numericizer2,
-                            language = language,
-                            label1st = label1st
-                        ) 
-                    )
-
-        self.positive = numpy.asarray( self.positive, dtype = numpy.int32 )
-        self.overlap = numpy.asarray( self.overlap, dtype = numpy.int32 )
-        self.disjoint = numpy.asarray( self.disjoint, dtype = numpy.int32 )
-
-
-    @cython.boundscheck(False)
-    def mini_batch( self, int n_batch_size, 
-                    bint shuffle_needed = True, float overlap_rate = 0.36, 
-                    float disjoint_rate = 0.08, int feature_choice = 255, 
-                    bint replace = False, int n_copy = 1,
-                    int context_limit = 64 ):
-
-        cdef int pad1 = self.pad1
-        cdef int pad2 = self.pad2
-
-        lw1, rw1, lw2, rw2, lw3, rw3, lw4, rw4, \
-        bow1, bow2, linit, rinit = [
-            numpy.ones(
-                (n_batch_size, context_limit),
-                numpy.int32
-            ) * (-1) for _ in xrange(12)
-        ]
-        lc, rc = [
-            numpy.ones( 
-                (n_batch_size, context_limit * 2),
-                numpy.int32
-            ) * 127 for _ in xrange(2)
-        ]
-
-        label = numpy.ndarray(  
-            (n_batch_size,),
-            numpy.int32
-        )
-
-        cdef int[:,:] lw1v = lw1
-        cdef int[:,:] rw1v = rw1
-        cdef int[:,:] lw2v = lw2
-        cdef int[:,:] rw2v = rw2
-        cdef int[:,:] lw3v = lw3
-        cdef int[:,:] rw3v = rw3
-        cdef int[:,:] lw4v = lw4
-        cdef int[:,:] rw4v = rw4
-        cdef int[:,:] bow1v = bow1
-        cdef int[:,:] bow2v = bow2
-        cdef int[:,:] linitv = linit
-        cdef int[:,:] rinitv = rinit
-        cdef int[:,:] lcv = lc
-        cdef int[:,:] rcv = rc
-        cdef int[:] label_view = label
-        lcv[:,:] = 127
-        rcv[:,:] = 127
-        linitv[:,:] = 127
-        rinitv[:,:] = 127
-        lw1v[:,:] = pad1
-        rw1v[:,:] = pad1
-        lw2v[:,:] = pad1
-        rw2v[:,:] = pad1
-        bow1v[:,:] = pad1
-        lw3v[:,:] = pad2
-        rw3v[:,:] = pad2
-        lw4v[:,:] = pad1
-        rw4v[:,:] = pad2
-        bow2v[:,:] = pad2
-
-        cdef int lw1len = 1
-        cdef int rw1len = 1
-        cdef int lw2len = 1
-        cdef int rw2len = 1
-        cdef int lw3len = 1
-        cdef int rw3len = 1
-        cdef int lw4len = 1
-        cdef int rw4len = 1
-        cdef int bowlen = 1
-        cdef int clen = 10
-
-        cdef example next_example
-        cdef processed_sentence_v2 sentence
-        cdef int i, j, k, begin_idx, end_idx
-        cdef int cnt = 0
-        cdef int n
-        cdef string phrase
-        cdef int phrase_cpy_len
-        cdef int phrase_length
-        cdef int [:] phrase_view
-        cdef int [:] initial_view
-
-
-        gaz_buff = numpy.zeros(
-            (n_batch_size, 1 + self.n_label_type),
-            dtype = numpy.float32
-        )
-        cdef float[:,:] gaz_view = gaz_buff
-
-        has_char_feature = feature_choice & (64 | 128 | 512 | 1024)
-        assert not has_char_feature or self.language != 'cmn', \
-                'Chinese is modeled at character level. '
-
-        if n_copy > 1:
-            shuffle_needed = True
-            replace = True
-
-        if len( self.disjoint ) > 0: 
-            disjoint = numpy.random.choice( 
-                self.disjoint,
-                size = numpy.int32( len(self.disjoint) * disjoint_rate * n_copy ),
-                replace = replace 
-            )
-        else:
-            disjoint = numpy.asarray([]).astype( numpy.int32 )
-
-        if len( self.overlap ) > 0:
-            overlap = numpy.random.choice( 
-                self.overlap,
-                size = numpy.int32( len(self.overlap) * overlap_rate * n_copy ),
-                replace = replace 
-            )
-        else:
-            overlap = numpy.asarray([]).astype( numpy.int32 )
-
-        candidate = numpy.concatenate( [ self.positive ] * n_copy + [ disjoint, overlap ] )
-
-        if shuffle_needed:
-            numpy.random.shuffle( candidate )
-        else:
-            candidate.sort()
-        n = len(candidate)
-
-
-        for i in range( n ):
-            next_example = self.example[ candidate[i] ]
-            begin_idx = next_example.begin_idx
-            end_idx = next_example.end_idx
-
-            sentence = self.sentence1[next_example.sentence_id]
-
-            if self.language != 'cmn':
-                phrase = ' '.join( sentence.sentence[begin_idx:end_idx] )
-                phrase_array = numpy.asarray(
-                    [ ord(c) for c in list(phrase) ],
-                    dtype = numpy.int32
-                ) 
-                phrase_view = phrase_array
-
-                init_array = numpy.asarray(
-                    [ ord(c) % 128 for c in list( 
-                        ''.join( [ w[0] for w in sentence.sentence[begin_idx:end_idx] ] ) 
-                    ) ],
-                    dtype = numpy.int32
-                )
-                initial_view = init_array
-
-            if feature_choice & 256 > 0:
-                gaz_buff[cnt][next_example.gazetteer] = 1
-
-            if feature_choice & 128 > 0:
-                phrase_length = end_idx - begin_idx
-                with nogil:
-                    for j in range( phrase_length ):
-                        linitv[cnt][j] = initial_view[j]
-                        rinitv[cnt][j] = initial_view[phrase_length - j - 1]
-
-            with nogil:
-                label_view[cnt] = next_example.label
-
-                if feature_choice & (512 | 64) > 0:
-                    phrase_cpy_len = context_limit * 2 - 2
-                    if phrase_view.shape[0] < phrase_cpy_len:
-                        phrase_cpy_len = phrase_view.shape[0]
-                    lcv[cnt][1: 1 + phrase_cpy_len] = phrase_view[:phrase_cpy_len]
-                    if phrase_cpy_len + 2 > clen:
-                        clen = phrase_cpy_len + 2
-
-                if feature_choice & 64 > 0:
-                    rcv[cnt][1: 1 + phrase_cpy_len] = phrase_view[::-1][:phrase_cpy_len]
-
-            if feature_choice & 1 > 0:
-                lw1len = max( lw1len, sentence.insert_left( end_idx - 1, lw1[cnt] ) )
-                rw1len = max( rw1len, sentence.insert_right( begin_idx, rw1[cnt] ) )
-
-            if feature_choice & 2 > 0:
-                lw2len = max( lw2len, sentence.insert_left( begin_idx - 1, lw2[cnt] ) )
-                rw2len = max( rw2len, sentence.insert_right( end_idx, rw2[cnt] ) )
-
-            if feature_choice & 4 > 0:
-                bowlen = max( bowlen, sentence.insert_bow( begin_idx, end_idx, bow1[cnt] ) )
-
-            sentence = self.sentence2[next_example.sentence_id]
-
-            if feature_choice & 8 > 0:
-                lw3len = max( lw3len, sentence.insert_left( end_idx - 1, lw3[cnt] ) )
-                rw3len = max( rw3len, sentence.insert_right( begin_idx, rw3[cnt] ) )
-
-            if feature_choice & 16 > 0:
-                lw4len = max( lw4len, sentence.insert_left( begin_idx - 1, lw4[cnt] ) )
-                rw4len = max( rw4len, sentence.insert_right( end_idx, rw4[cnt] ) )
-
-            if feature_choice & 32 > 0:
-                bowlen = max( bowlen, sentence.insert_bow( begin_idx, end_idx, bow2[cnt] ) )
-
-            cnt += 1 
-            if cnt % n_batch_size == 0 or (i + 1) == len(candidate):
-                yield {
-                    'word' : {
-                        'case-insensitive' : {
-                            'left-incl' : lw1[:cnt,:lw1len].copy(),
-                            'right-incl' : rw1[:cnt,:rw1len].copy(),
-                            'left-excl' : lw2[:cnt,:lw2len].copy(),
-                            'right-excl' : rw2[:cnt,:rw2len].copy(),
-                            'bow' : bow1[:cnt,:bowlen].copy()
-                        },
-                        'case-sensitive' : {
-                            'left-incl' : lw3[:cnt,:lw3len].copy(),
-                            'right-incl' : rw3[:cnt,:rw3len].copy(),
-                            'left-excl' : lw4[:cnt,:lw4len].copy(),
-                            'right-excl' : rw4[:cnt,:rw4len].copy(),
-                            'bow' : bow2[:cnt,:bowlen].copy()
-                        }
-                    },
-                    'char' : {
-                        'left' : lc[:cnt,:clen].copy(),
-                        'right' : rc[:cnt,:clen].copy(),
-                        'left-initial' : linit[:cnt,:bowlen].copy(),
-                        'right-initial' : rinit[:cnt,:bowlen].copy()
-                    },
-                    'gaz' : gaz_buff[:cnt,:].copy(),
-                    'target' : label[:cnt].copy()
-                }
-
-                with nogil:
-                    lw1len = 1
-                    rw1len = 1
-                    lw2len = 1
-                    rw2len = 1
-                    lw3len = 1
-                    rw3len = 1
-                    lw4len = 1
-                    rw4len = 1
-                    bowlen = 1
-                    clen = 10
-                    cnt = 0
-                    lw1v[:,:] = pad1
-                    rw1v[:,:] = pad1
-                    lw2v[:,:] = pad1
-                    rw2v[:,:] = pad1
-                    bow1v[:,:] = pad1
-                    lw3v[:,:] = pad2
-                    rw3v[:,:] = pad2
-                    lw4v[:,:] = pad2
-                    rw4v[:,:] = pad2
-                    bow2v[:,:] = pad2
-                    lcv[:,:] = 127
-                    rcv[:,:] = 127
-                    linitv[:,:] = 127
-                    rinitv[:,:] = 127
-
-
-    def __str__( self ):
-        """
-        Returns
-        -------
-            Return a string description of this object.
-        """
-        return ('%d sentences, %d (positive), %d (overlap), %d (disjoint)' % 
-                (len(self.sentence1), 
-                    self.positive.shape[0], self.overlap.shape[0], self.disjoint.shape[0]) )
-
-
-    def mini_batch_multi_thread( self, int n_batch_size, 
-                                 bint shuffle_needed = True, float overlap_rate = 0.36, 
-                                 float disjoint_rate = 0.08, int feature_choice = 255, 
-                                 bint replace = False, float timeout = -1, int n_copy = 1  ):
-        """
-        Same as self.mini_batch except that data preparation is done on the background
-        """
-        batch_generator = self.mini_batch( 
-            n_batch_size, 
-            shuffle_needed, 
-            overlap_rate, 
-            disjoint_rate,
-            feature_choice, 
-            replace 
-        )
-
-        batch_buffer = Queue( maxsize = 256 )
-        t = Thread( target = prepare_mini_batch, 
-                    args = ( batch_generator, batch_buffer, timeout if timeout > 0 else None ) )
-        t.daemon = True
-        t.start()
-        while True:
-            next_batch = batch_buffer.get( True, timeout if timeout > 0 else None )
-            if next_batch is not None:
-                yield next_batch
-            else:
-                break
-
-
-    def infinite_mini_batch_multi_thread( self, int n_batch_size, 
-                                          bint shuffle_needed = True, float overlap_rate = 0.36, 
-                                          float disjoint_rate = 0.08, int feature_choice = 255, 
-                                          bint replace = True, float timeout = -1, int n_copy = 10  ):
-        """
-        Same as self.mini_batch_multi_thread except that sampling is done infinitely.
-        """
-        while True:
-            for next_batch in self.mini_batch_multi_thread( 
-                n_batch_size, shuffle_needed, 
-                overlap_rate, disjoint_rate,
-                feature_choice, 
-                replace, 
-                timeout, 
-                n_copy 
-            ):
-                if next_batch[-1].shape[0] == n_batch_size:
-                    yield next_batch
-
-
