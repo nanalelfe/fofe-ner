@@ -487,7 +487,7 @@ if __name__ == '__main__':
                 512 if config.feature_choice & (1 << 9) > 0 else 1024,
                 False, 1, 1, config.feature_choice):
 
-            c, pi, pv = mention_net.eval(example)
+            c, pi, pv = mention_net.eval(example, batch_num)
 
             cost += c * example[-1].shape[0]
             cnt += example[-1].shape[0]
