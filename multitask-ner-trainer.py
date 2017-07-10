@@ -462,7 +462,7 @@ if __name__ == '__main__':
 
         # example is batch of fragments from a sentence
         for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
-                               curr_task.generator.mini_batch_multi_thread(config.n_batch_size,
+                               curr_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
                                                              True,
                                                              config.overlap_rate,
                                                              config.disjoint_rate,
