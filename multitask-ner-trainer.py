@@ -680,7 +680,6 @@ if __name__ == '__main__':
                                                       testing_file,
                                                       config.n_window, n_label_type = ONTONOTES_N_LABELS)]
 
-                _, _, fb1, out = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
                 logger.info('evaluation:\n' + out)
                 test_scores.append(fb1)
 
