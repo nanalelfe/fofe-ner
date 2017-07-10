@@ -413,14 +413,28 @@ if __name__ == '__main__':
             train = train_conll
             valid = valid_conll
             test = test_conll
+            gen_parser = CoNLL2003
             batch_num = 0
+            training_file = "multitask-result/multitask-train-conll.predicted"
+            validation_file = 'multitask-result/multitask-valid-conll.predicted'
+            testing_file = 'multitask-result-conll/multitask-test.predicted'
+            curr_label = CONLL_N_LABELS
+            train_location = config.conll_datapath + '/eng.train'
+            valid_location = args.conll_datapath + '/eng.testa'
 
         else:
             # OntoNotes
             train = train_ontonotes
             valid = valid_ontonotes
             test = test_ontonotes
+            gen_parsor = OntoNotes
             batch_num = 1
+            training_file = "multitask-result/multitask-train-ontonotes.predicted"
+            validation_file = 'multitask-result/multitask-valid-ontonotes.predicted'
+            testing_file = 'multitask-result-conll/multitask-test-ontonotes.predicted'
+            curr_label = ONTONOTES_N_LABELS
+            train_location = ontonotes_training_path
+            valid_location = ontonotes_valid_path
 
         #############################################
         ########## go through training set ##########
@@ -468,20 +482,9 @@ if __name__ == '__main__':
         ########## go through training set ##########
         ###############################################
 
-        if batch_num == 0:
-            training_file = "multitask-result/multitask-train-conll.predicted"
-            validation_file = 'multitask-result/multitask-valid-conll.predicted'
-            testing_file = 'multitask-result-conll/multitask-test.predicted'
-        else:
-            training_file = "multitask-result/multitask-train-ontonotes.predicted"
-            validation_file = 'multitask-result/multitask-valid-ontonotes.predicted'
-            testing_file = 'multitask-result-conll/multitask-test-ontonotes.predicted'
-
         train_predicted = open(training_file, 'wb')
         to_print = []
-
         cost, cnt = 0, 0
-        to_print = []
 
         for example in train.mini_batch_multi_thread(
                 512 if config.feature_choice & (1 << 9) > 0 else 1024,
@@ -578,18 +581,9 @@ if __name__ == '__main__':
 
         if decode_test:
 
-            if batch_num == 0:
-                curr_label = CONLL_N_LABELS
-                pp = [ p for p in PredictionParser(CoNLL2003( args.conll_datapath + '/eng.testa' ), 
+            pp = [ p for p in PredictionParser(gen_parser( valid_location ), 
                                                     validation_file, 
-                                                    config.n_window, n_label_type = CONLL_N_LABELS ) ]
-
-            #elif batch_num == 1:
-            else:
-                curr_label = ONTONOTES_N_LABELS
-                pp = [p for p in PredictionParser(OntoNotes(ontonotes_valid_path),
-                                                  validation_file,
-                                                  config.n_window, n_label_type = ONTONOTES_N_LABELS)]
+                                                    config.n_window, n_label_type = curr_label ) ]
 
             for algorithm, name in zip([1, 2, 3], algo_list):
                 for threshold in numpy.arange(0.3, 1, 0.1).tolist():
@@ -627,19 +621,10 @@ if __name__ == '__main__':
         else:
 
             # training
-            if batch_num == 0:
-                curr_label = CONLL_N_LABELS
-                pp = [ p for p in PredictionParser(CoNLL2003( config.conll_datapath + '/eng.train' ), 
+            pp = [ p for p in PredictionParser(gen_parser( train_location ), 
                                                     training_file, 
-                                                    config.n_window ) ]
-
-            #elif batch_num == 1:
-            else:
-                curr_label = ONTONOTES_N_LABELS
-                pp = [p for p in PredictionParser(OntoNotes(ontonotes_valid_path),
-                                                  training_file,
-                                                  config.n_window, n_label_type = ONTONOTES_N_LABELS)]
-
+                                                    config.n_window, n_label_type = curr_label ) ]
+            
             _, _, train_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = curr_label)
             logger.info('training:\n' + info)
             # fb1 score for validation
@@ -648,18 +633,9 @@ if __name__ == '__main__':
             logger.info("train scores array: %s" % str(train_scores))
 
             # validation
-            if batch_num == 0:
-                curr_label = CONLL_N_LABELS
-                pp = [ p for p in PredictionParser(CoNLL2003( config.conll_datapath + '/eng.testa' ), 
+            pp = [ p for p in PredictionParser(gen_parser( valid_location ), 
                                                     validation_file, 
-                                                    config.n_window ) ]
-
-            #elif batch_num == 1:
-            else:
-                curr_label = ONTONOTES_N_LABELS
-                pp = [p for p in PredictionParser(OntoNotes(ontonotes_valid_path),
-                                                  validation_file,
-                                                  config.n_window, n_label_type = ONTONOTES_N_LABELS)]
+                                                    config.n_window, n_label_type = curr_label ) ]
 
             _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = curr_label)
             logger.info('validation:\n' + info)
@@ -669,18 +645,10 @@ if __name__ == '__main__':
             logger.info("valid scores array: %s" % str(valid_scores))
 
             if decode_test:
-                if batch_num == 0:
-                    curr_label = CONLL_N_LABELS
-                    pp = [ p for p in PredictionParser(CoNLL2003( config.conll_datapath + '/eng.testb'), 
-                                                        testing_file, 
-                                                        config.n_window ) ]
 
-                #elif batch_num == 1:
-                else:
-                    curr_label = ONTONOTES_N_LABELS
-                    pp = [p for p in PredictionParser(OntoNotes(ontonotes_test_path),
-                                                      testing_file,
-                                                      config.n_window, n_label_type = ONTONOTES_N_LABELS)]
+                pp = [ p for p in PredictionParser(gen_parser( test_location ), 
+                                                        testing_file, 
+                                                        config.n_window, n_label_type = curr_label ) ]
 
                 _, _, fb1, out = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = curr_label)
                 logger.info('evaluation:\n' + out)
