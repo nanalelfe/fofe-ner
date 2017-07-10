@@ -1531,60 +1531,7 @@ def PredictionParser( sample_generator, result, ner_max_length,
 
     if isinstance(result, str):
         fp.close()
-
-
-def TestParser(generator, test_parsed, ner_max_length, n_label_type):
-    idx2ner = ['PERSON', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'DATE', 'TIME', 'PERCENT',
-                    'MONEY', 'QUANTITY', 'ORDINAL', 'CARDINAL', 'EVENT', 'WORK_OF_ART', 'LAW',
-                    'LANGUAGE', 'NORP', 'O']
-
-    # sg = SampleGenerator( dataset )
-    if isinstance(result, str):
-        fp = open( result, 'rb' )
-    else:
-        fp = result 
-
-    sg = sample_generator
-
-    lines, cnt = fp.readlines(), 0
-
-    while True:
-        s, boe, eoe, cls = sg.next()
-        actual = set( zip(boe, eoe, cls) )
-
-        table = numpy.empty((len(s), len(s)), dtype = object)
-        table[:,:] = None #''
-        estimate = set()
-        actual = set( zip(boe, eoe, cls) )
-
-        for i in xrange(len(s)):
-            for j in xrange(i + 1, len(s) + 1):
-                if j - i <= ner_max_length:
-                    # @xmb 20160717
-                    # line = fp.readline()
-                    line = lines[cnt]
-                    cnt += 1
-
-                    tokens = line.strip().split()
-                    predicted_label = int(tokens[1])
-                    all_prob = numpy.asarray([ numpy.float32(x) for x in tokens[2:] ])
-
-                    if predicted_label == n_label_type:
-                        if all_prob[n_label_type] < reinterpret_threshold:
-                            all_prob[n_label_type] = 0
-                            all_prob /= all_prob.sum()
-                            predicted_label = all_prob.argmax()
-
-                    if predicted_label != n_label_type:
-                        predicted, probability = idx2ner[predicted_label], all_prob[predicted_label]
-                        table[i][j - 1] = (predicted, probability)
-                        estimate.add( (i, j, predicted_label ) )
-
-        yield s, table, estimate, actual
-
-    if isinstance(result, str):
-        fp.close()
-
+        
 
 def SentenceIterator( filename ):
     with open( filename, 'rb' ) as corpus:
