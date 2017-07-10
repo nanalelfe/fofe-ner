@@ -422,6 +422,7 @@ if __name__ == '__main__':
             curr_label = CONLL_N_LABELS
             train_location = config.conll_datapath + '/eng.train'
             valid_location = args.conll_datapath + '/eng.testa'
+            test_location = args.conll_datapath + '/eng.testb'
 
         else:
             # OntoNotes
@@ -436,6 +437,7 @@ if __name__ == '__main__':
             curr_label = ONTONOTES_N_LABELS
             train_location = ontonotes_training_path
             valid_location = ontonotes_valid_path
+            test_location = ontonotes_test_path
 
         logger.info("Epoch " + str(n_epoch) + ", picked: " + str(batch_num) + ", random: " + str(pick))
 
