@@ -1533,87 +1533,25 @@ def PredictionParser( sample_generator, result, ner_max_length,
         fp.close()
 
 
-def SentenceIterator( filename ):
-    with open( filename, 'rb' ) as corpus:
-        sentence = []
-        for line in corpus:
-            line = line.strip()
-            if len(line) > 0:
-                sentence.append( line )
-            else:
-                yield sentence
-                sentence = []
-    # with open( filename, 'rb' ) as corpus:
-    #     sentences = corpus.read().strip().split( '\n\n' )
-    #     for sent in sentences:
-    #         yield sent.strip().split()
-
-
-def TrainingPredictionParser( sample_generator, result, ner_max_length, 
-                      reinterpret_threshold = 0, n_label_type = 4 ):
-    """
-    This function is modified from some legancy code. 'table' was designed for 
-    visualization. 
-
-    Parameters
-    ----------
-        sample_generator : iterable
-            Likes of CoNLL2003 and KBP2015
-
-        result : str
-            path to a filename where each line is predicted class (in integer) 
-            followed by the probabilities of each class
-
-        ner_max_length: int
-            maximum length of mention
-
-        reinterpret_threshold: float
-            NOT USED ANYMORE
-
-        n_label_type : int
-            numer of memtion types
-
-    Yields
-    ------
-        s : list of str
-            words in a sentence
-
-        table : numpy.ndarray
-            table[i][j - 1] is a pair of string represnetation of predicted class
-            and the corresponding probability of s[i][j]
-
-        estimate : tuple
-            (begin,end,class) triples
-
-        actual : tuple
-            (begin,end,class) triples
-    """
-    if n_label_type == 4:
-        idx2ner = [ 'PER', 'LOC', 'ORG', 'MISC', 'O' ]
-
-    elif n_label_type == 18:
-
-        idx2ner = ['PERSON', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'DATE', 'TIME', 'PERCENT',
+def TestParser(generator, test_parsed, ner_max_length, n_label_type):
+    idx2ner = ['PERSON', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'DATE', 'TIME', 'PERCENT',
                     'MONEY', 'QUANTITY', 'ORDINAL', 'CARDINAL', 'EVENT', 'WORK_OF_ART', 'LAW',
                     'LANGUAGE', 'NORP', 'O']
-    else:
-        # idx2ner = [ 'PER_NAM', 'PER_NOM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'TTL_NAM', 'O'  ]
-        idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
-                    'PER_NOM', 'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM',
-                    'O' ]  
 
     # sg = SampleGenerator( dataset )
     if isinstance(result, str):
         fp = open( result, 'rb' )
     else:
-        fp = result
+        fp = result 
+
     sg = sample_generator
 
-    # @xmb 20160717
     lines, cnt = fp.readlines(), 0
 
-    for s, boe, eoe, cls in sg:
+    while True:
+        s, boe, eoe, cls = sg.next()
         actual = set( zip(boe, eoe, cls) )
+
         table = numpy.empty((len(s), len(s)), dtype = object)
         table[:,:] = None #''
         estimate = set()
@@ -1624,12 +1562,8 @@ def TrainingPredictionParser( sample_generator, result, ner_max_length,
                 if j - i <= ner_max_length:
                     # @xmb 20160717
                     # line = fp.readline()
-                    try:
-                        line = lines[cnt]
-                        cnt += 1
-                        break
-                    except IndexError:
-                        logger.info("len of lines" + str(len(lines)) + " , i: " + str(i) + ", j: " + str(j))
+                    line = lines[cnt]
+                    cnt += 1
 
                     tokens = line.strip().split()
                     predicted_label = int(tokens[1])
@@ -1651,6 +1585,23 @@ def TrainingPredictionParser( sample_generator, result, ner_max_length,
     if isinstance(result, str):
         fp.close()
 
+
+def SentenceIterator( filename ):
+    with open( filename, 'rb' ) as corpus:
+        sentence = []
+        for line in corpus:
+            line = line.strip()
+            if len(line) > 0:
+                sentence.append( line )
+            else:
+                yield sentence
+                sentence = []
+    # with open( filename, 'rb' ) as corpus:
+    #     sentences = corpus.read().strip().split( '\n\n' )
+    #     for sent in sentences:
+    #         yield sent.strip().split()
+
+
 ################################################################################
 
 class CustomizedThreshold( object ):
@@ -1663,8 +1614,6 @@ class CustomizedThreshold( object ):
     def keep( self, candidate, estimate, table, global_threshold ):
         b, e, c = candidate
         return table[b][e - 1][1] >= global_threshold
-
-
 
 class ORGcoverGPE( CustomizedThreshold ):
     """
@@ -1682,8 +1631,6 @@ class ORGcoverGPE( CustomizedThreshold ):
                 if bb <= b < e <= ee and cc == 1:
                     return table[b][e - 1][1] >= self.gpe_covered_by_org
         return table[b][e - 1][1] >= global_threshold
-
-
 
 class IndividualThreshold( CustomizedThreshold ):
     """
@@ -1709,7 +1656,6 @@ class IndividualThreshold( CustomizedThreshold ):
 
 ################################################################################
 
-
 def __merge_adjacient( estimate ):
     best, i = set(), 0
     while i < len(estimate):
@@ -1725,8 +1671,6 @@ def __merge_adjacient( estimate ):
         i = j
     estimate = best
     return estimate
-
-
 
 def __decode_algo_1( sentence, estimate, table, threshold, callback = None ):
     """
@@ -1749,8 +1693,6 @@ def __decode_algo_1( sentence, estimate, table, threshold, callback = None ):
     estimate.sort( key = lambda x : x[0] )
     estimate = __merge_adjacient( estimate )
     return estimate
-
-
 
 def __decode_algo_2( sentence, estimate, table, threshold, callback = None ):
     """
@@ -1864,8 +1806,6 @@ def decode( sentence, estimate, table, threshold, algorithm, callback = None ):
                 if callback is not None:
                     callback.restore_state()
         return result
-
-
 
 def evaluation( prediction_parser, threshold, algorithm, 
                 conll2003out = None, analysis = None, sentence_iterator = None,
@@ -2037,6 +1977,8 @@ def distant_supervision_parser( sentence_file, tag_file,
                     sent[i] = u''.join( c if 0 <= ord(c) < 128 \
                                           else chr(0) for c in list(w) )
                 yield sent, boe, eoe, loe
+
+
 
 
 ################################################################################
