@@ -384,7 +384,7 @@ if __name__ == '__main__':
     # Train cost
     training_costs = []
 
-    scheduler = ReduceLROnPlateau(init_lr=mention_net.config.learning_rate, min_lrs=0.0008)
+    # scheduler = ReduceLROnPlateau(init_lr=mention_net.config.learning_rate, min_lrs=0.0008)
 
     for n_epoch in xrange(config.max_iter):
         if not os.path.exists('ontonotes-result'):
@@ -648,15 +648,14 @@ if __name__ == '__main__':
         ########## adjust learning rate ##########
         ##########################################
 
-        scheduler.step(valid_cost)
-        mention_net.config.learning_rate = scheduler.lr
+        # scheduler.step(valid_cost)
+        # mention_net.config.learning_rate = scheduler.lr
 
-
-        # if valid_cost > prev_cost or decay_started:
-        #     mention_net.config.learning_rate *= \
-        #         0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
-        # else:
-        #     prev_cost = valid_cost
+        if valid_cost > prev_cost or decay_started:
+            mention_net.config.learning_rate *= \
+                0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
+        else:
+            prev_cost = valid_cost
 
         if config.drop_rate > 0:
             mention_net.config.drop_rate *= 0.5 ** (2. / config.max_iter)
@@ -675,16 +674,23 @@ if __name__ == '__main__':
     plt.savefig('/local/scratch/nana/fofe-ner/training_costs.png')
 
     plt.figure(2)
+    plt.plot(epochs, train_scores, 'r--')
+    plt.title('F-score on training data')
+
+    plt.savefig('/local/scratch/nana/fofe-ner/train_score.png')
+
+    plt.figure(3)
     plt.plot(epochs, valid_scores, 'r--')
     plt.title('F-score on validation data')
 
-    plt.savefig('/local/scratch/nana/fofe-ner/validation_score.png')
+    plt.savefig('/local/scratch/nana/fofe-ner/valid_score.png')
 
-    plt.figure(3)
+    plt.figure(4)
     plt.plot(epochs, test_scores, 'r--')
     plt.title('F-score on test data')
 
     plt.savefig('/local/scratch/nana/fofe-ner/test_score.png')
+
     #===================
 
     logger.info('results are written in ontonotes-{valid,test}.predicted')
