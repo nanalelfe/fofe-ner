@@ -300,7 +300,7 @@ if __name__ == '__main__':
 
     ontonotes_training_path = ontonotes_directory + "train/conll"
     ontonotes_valid_path = ontonotes_directory + "development/conll"
-    ontonotes_test_path = ontonotes_directory + "test/conll"
+    ontonotes_test_path = ontonotes_directory + "test-key/conll"
 
     # ==================================================================================
     # ----------------------------------------------------------------------------------
@@ -390,66 +390,36 @@ if __name__ == '__main__':
             config.overlap_rate, config.disjoint_rate,
             config.feature_choice, True)
 
+    #===================
+    # ==== Plot =======
+    #===================
+
     # F1 scores
+    train_scores = []
     valid_scores = []
     test_scores = []
 
     # Train cost
     training_costs = []
 
+
     for n_epoch in xrange(config.max_iter):
         if not os.path.exists('multitask-result'):
             os.makedirs('multitask-result')
 
-        # Train batch for CoNLL2003
-        train_mini_batch_conll = train_conll.mini_batch_multi_thread(config.n_batch_size,
-                                                        True,
-                                                        config.overlap_rate,
-                                                        config.disjoint_rate,
-                                                        config.feature_choice)
-
-        # Train batch for OntoNotes
-        train_mini_batch_ontonotes = train_ontonotes.mini_batch_multi_thread(config.n_batch_size,
-                                                        True,
-                                                        config.overlap_rate,
-                                                        config.disjoint_rate,
-                                                        config.feature_choice)
-
-        # Valid batch for CoNLL2003
-        valid_mini_batch_conll = valid_conll.mini_batch_multi_thread(
-                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                    False, 1, 1, config.feature_choice)
-
-        # Valid batch for OntoNotes
-        valid_mini_batch_ontonotes = valid_ontonotes.mini_batch_multi_thread(
-                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                    False, 1, 1, config.feature_choice)
-
-        # Test batch for CoNLL2003
-        test_mini_batch_conll = test_conll.mini_batch_multi_thread(
-                        512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                        False, 1, 1, config.feature_choice)
-
-        # Test batch for OntoNotes
-        test_mini_batch_ontonotes = test_ontonotes.mini_batch_multi_thread(
-                        512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                        False, 1, 1, config.feature_choice)
-
         # Will have to change the range when introducing KBP
         if random.random() < 0.5:
             # CoNLL 2003
-            train_batch = train_mini_batch_conll
-            valid_batch = valid_mini_batch_conll
-            test_batch = test_mini_batch_conll
             train = train_conll
+            valid = valid_conll
+            test = test_conll
             batch_num = 0
 
         else:
             # OntoNotes
-            train_batch = train_mini_batch_ontonotes
-            valid_batch = valid_mini_batch_ontonotes
-            test_batch = test_mini_batch_ontonotes
             train = train_ontonotes
+            valid = valid_ontonotes
+            test = test_ontonotes
             batch_num = 1
 
         #############################################
@@ -460,15 +430,6 @@ if __name__ == '__main__':
         logger.info('epoch %2d, learning-rate: %f' % \
                     (n_epoch + 1, mention_net.config.learning_rate))
 
-        if config.enable_distant_supervision:
-            train = batch_constructor(  # gigaword( 'gigaword/' + filelist[n_epoch] ),
-                CoNLL2003(os.path.join(folder, filelist[n_epoch])),
-                numericizer1, numericizer2,
-                gazetteer=conll2003_gazetteer,
-                alpha=config.word_alpha,
-                window=config.n_window,
-                is2ndPass=args.is_2nd_pass)
-            logger.info('train: ' + str(train))
 
         pbar = tqdm(total=len(train.positive) +
                           int(len(train.overlap) * config.overlap_rate) +
@@ -478,16 +439,17 @@ if __name__ == '__main__':
 
         # example is batch of fragments from a sentence
         for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
-                               train_batch):
+                               train.mini_batch_multi_thread(config.n_batch_size,
+                                                             True,
+                                                             config.overlap_rate,
+                                                             config.disjoint_rate,
+                                                             config.feature_choice)):
 
             c = mention_net.train(example, batch_num)
 
             cost += c * example[-1].shape[0]
             cnt += example[-1].shape[0]
             pbar.update(example[-1].shape[0])
-
-            if config.enable_distant_supervision:
-                mention_net.train(infinite.next())
 
         pbar.close()
         train_cost = cost / cnt
@@ -499,23 +461,62 @@ if __name__ == '__main__':
         logger.info('training set iterated, %f' % train_cost)
 
         # just training from 1st to 9th iterations
-        if 0 < n_epoch < 10:
-            continue
+        # if 0 < n_epoch < 10:
+        #     continue
+
+        ###############################################
+        ########## go through training set ##########
+        ###############################################
+
+        if batch_num == 0:
+            training_file = "multitask-result/multitask-train-conll.predicted"
+            validation_file = 'multitask-result/multitask-valid-conll.predicted'
+            testing_file = 'multitask-result-conll/multitask-test.predicted'
+        else:
+            training_file = "multitask-result/multitask-train-ontonotes.predicted"
+            validation_file = 'multitask-result/multitask-valid-ontonotes.predicted'
+            testing_file = 'multitask-result-conll/multitask-test-ontonotes.predicted'
+
+        train_predicted = open(training_file, 'wb')
+        to_print = []
+
+        cost, cnt = 0, 0
+        to_print = []
+
+        for example in train.mini_batch_multi_thread(
+                512 if config.feature_choice & (1 << 9) > 0 else 1024,
+                False, 1, 1, config.feature_choice):
+
+            c, pi, pv = mention_net.eval(example)
+
+            cost += c * example[-1].shape[0]
+            cnt += example[-1].shape[0]
+
+            for exp, est, prob in zip(example[-1], pi, pv):
+                to_print.append('%d  %d  %s' % \
+                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
+
+        print >> train_predicted, '\n'.join(to_print)
+        train_predicted.close()
+        valid_cost = cost / cnt
+        logger.info('training set passed')
 
         ###############################################
         ########## go through validation set ##########
         ###############################################
 
-        if args.buffer_dir is None:
-            validation_file = 'multitask-result/multitask-valid.predicted'
-        else:
-            validation_file = os.path.join(args.buffer_dir, 'multitask-valid.predicted')
+        # if args.buffer_dir is None:
+        #     validation_file = 'multitask-result/multitask-valid.predicted'
+        # else:
+        #     validation_file = os.path.join(args.buffer_dir, 'multitask-valid.predicted')
 
         valid_predicted = open(validation_file, 'wb')
         cost, cnt = 0, 0
         to_print = []
 
-        for example in valid_batch:
+        for example in valid.mini_batch_multi_thread(
+                512 if config.feature_choice & (1 << 9) > 0 else 1024,
+                False, 1, 1, config.feature_choice):
 
             c, pi, pv = mention_net.eval(example, batch_num)
 
@@ -535,19 +536,22 @@ if __name__ == '__main__':
         ########## go through test set ##########
         #########################################
 
-        decode_test = (n_epoch >= config.max_iter / 2 or n_epoch == 0)
+        # decode_test = (n_epoch >= config.max_iter / 2 or n_epoch == 0)
+        decode_test = True
 
         if args.offical_eval or decode_test:
-            if args.buffer_dir is None:
-                testing_file = 'multitask-result/multitask-test.predicted'
-            else:
-                testing_file = os.path.join(args.buffer_dir, 'multitask-test.predicted')
+            # if args.buffer_dir is None:
+            #     testing_file = 'multitask-result/multitask-test.predicted'
+            # else:
+            #     testing_file = os.path.join(args.buffer_dir, 'multitask-test.PredictionParsercted')
 
             test_predicted = open(testing_file, 'wb')
             cost, cnt = 0, 0
             to_print = []
 
-            for example in test_batch:
+            for example in test.mini_batch_multi_thread(
+                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
+                    False, 1, 1, config.feature_choice):
 
                 c, pi, pv = mention_net.eval(example, batch_num)
 
@@ -578,7 +582,7 @@ if __name__ == '__main__':
                 curr_label = CONLL_N_LABELS
                 pp = [ p for p in PredictionParser(CoNLL2003( args.conll_datapath + '/eng.testa' ), 
                                                     validation_file, 
-                                                    config.n_window ) ]
+                                                    config.n_window, n_label_type = CONLL_N_LABELS ) ]
 
             #elif batch_num == 1:
             else:
@@ -622,18 +626,43 @@ if __name__ == '__main__':
 
         else:
 
+            # training
             if batch_num == 0:
+                curr_label = CONLL_N_LABELS
+                pp = [ p for p in PredictionParser(CoNLL2003( config.conll_datapath + '/eng.train' ), 
+                                                    validation_file, 
+                                                    config.n_window ) ]
+
+            #elif batch_num == 1:
+            else:
+                curr_label = ONTONOTES_N_LABELS
+                pp = [p for p in PredictionParser(OntoNotes(ontonotes_valid_path),
+                                                  validation_file,
+                                                  config.n_window, n_label_type = ONTONOTES_N_LABELS)]
+            pp = [p for p in PredictionParser(OntoNotes(training_path), training_file, config.n_window, n_label_type = config.n_label_type)]
+
+            _, _, train_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = curr_label)
+            logger.info('training:\n' + info)
+            # fb1 score for validation
+            train_scores.append(train_fb1)
+
+            logger.info("train scores array: %s" % str(train_scores))
+
+            # validation
+            if batch_num == 0:
+                curr_label = CONLL_N_LABELS
                 pp = [ p for p in PredictionParser(CoNLL2003( config.conll_datapath + '/eng.testa' ), 
                                                     validation_file, 
                                                     config.n_window ) ]
 
             #elif batch_num == 1:
             else:
+                curr_label = ONTONOTES_N_LABELS
                 pp = [p for p in PredictionParser(OntoNotes(ontonotes_valid_path),
                                                   validation_file,
                                                   config.n_window, n_label_type = ONTONOTES_N_LABELS)]
 
-            _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = config.n_label_type)
+            _, _, test_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = curr_label)
             logger.info('validation:\n' + info)
             # fb1 score for validation
             valid_scores.append(test_fb1)

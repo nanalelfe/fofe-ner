@@ -623,14 +623,14 @@ class multi_fofe_mention_net( object ):
             self.param.extend( self.shared_layer_weights )
             self.param.extend( self.shared_layer_b )
 
-            self.ontonotes_param = self.param 
-            self.conll_param = self.param
             if n_pattern > 0:
                 self.param.extend( self.pattern1 )
                 self.param.extend( self.pattern2 )
                 self.param.extend( self.pattern1_bias )
                 self.param.extend( self.pattern2_bias )
 
+            self.ontonotes_param = self.param[:]
+            self.conll_param = self.param[:]
 
             self.conll_param.append( self.ner_embedding_conll )
             self.conll_param.extend(self.conll_layer_weights)
