@@ -408,7 +408,8 @@ if __name__ == '__main__':
             os.makedirs('multitask-result')
 
         # Will have to change the range when introducing KBP
-        pick = random.random()
+        # pick = random.random()
+        pick = 0.8
         if pick < 0.5:
             # CoNLL 2003
             train = train_conll
