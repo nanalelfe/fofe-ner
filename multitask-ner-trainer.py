@@ -408,7 +408,8 @@ if __name__ == '__main__':
             os.makedirs('multitask-result')
 
         # Will have to change the range when introducing KBP
-        if random.random() < 0.5:
+        pick = random.random()
+        if pick < 0.5:
             # CoNLL 2003
             train = train_conll
             valid = valid_conll
@@ -435,6 +436,8 @@ if __name__ == '__main__':
             curr_label = ONTONOTES_N_LABELS
             train_location = ontonotes_training_path
             valid_location = ontonotes_valid_path
+
+        logger.info("Epoch " + str(n_epoch) + ", picked: " + str(batch_num) + ", random: " + str(pick))
 
         #############################################
         ########## go through training set ##########
