@@ -670,16 +670,19 @@ if __name__ == '__main__':
 
             if decode_test:
                 if batch_num == 0:
+                    curr_label = CONLL_N_LABELS
                     pp = [ p for p in PredictionParser(CoNLL2003( config.conll_datapath + '/eng.testb'), 
                                                         testing_file, 
                                                         config.n_window ) ]
 
                 #elif batch_num == 1:
                 else:
+                    curr_label = ONTONOTES_N_LABELS
                     pp = [p for p in PredictionParser(OntoNotes(ontonotes_test_path),
                                                       testing_file,
                                                       config.n_window, n_label_type = ONTONOTES_N_LABELS)]
 
+                _, _, fb1, out = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = curr_label)
                 logger.info('evaluation:\n' + out)
                 test_scores.append(fb1)
 
