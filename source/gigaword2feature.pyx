@@ -1928,3 +1928,88 @@ def distant_supervision_parser( sentence_file, tag_file,
 
 
 ################################################################################
+
+class TaskHolder:
+    '''
+    Object contains information needed to train with a certain task
+    '''
+
+    def __init__(self, generator, batch_constrs, predicted_files, data_loc, n_label):
+        '''
+        generator: CoNLL2003 or OntoNotes
+        batch_constrs: (train, valid, test) - tuple
+        predicted_files: (train, valid, test) - tuple
+        data_loc: (train, valid, test) - tuple
+        '''
+        self.generator = generator 
+        self.batch_constructors = batch_constrs # (tuple)
+        self.predicted_files = predicted_files 
+        self.data_loc = data_loc
+        self.n_label = n_label
+
+        if n_label == 4:
+            self.batch_num = 0
+        elif n_label == 18:
+            self.batch_num = 1
+
+        self.best_test_fb1 = 0
+        self.valid_cost = None
+        self.test_cost = None
+        self.best_dev_fb1 = None
+        self.best_threshold = None
+        self.best_algorithm = None
+        self.test_fb1 = None
+        self.fb1 = None
+        self.out = None
+        self.best_test_info = None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
