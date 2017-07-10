@@ -639,7 +639,6 @@ if __name__ == '__main__':
                 pp = [p for p in PredictionParser(OntoNotes(ontonotes_valid_path),
                                                   validation_file,
                                                   config.n_window, n_label_type = ONTONOTES_N_LABELS)]
-            pp = [p for p in PredictionParser(OntoNotes(training_path), training_file, config.n_window, n_label_type = config.n_label_type)]
 
             _, _, train_fb1, info = evaluation(pp, best_threshold, best_algorithm, True, n_label_type = curr_label)
             logger.info('training:\n' + info)
