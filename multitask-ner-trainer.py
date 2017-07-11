@@ -402,19 +402,6 @@ if __name__ == '__main__':
     # Train cost
     training_costs = []
 
-    train = train_conll
-    valid = valid_conll
-    test = test_conll
-    gen_parser = CoNLL2003
-    batch_num = 0
-    training_file = "multitask-result/multitask-train-conll.predicted"
-    validation_file = 'multitask-result/multitask-valid-conll.predicted'
-    testing_file = 'multitask-result-conll/multitask-test.predicted'
-    curr_label = CONLL_N_LABELS
-    train_location = config.conll_datapath + '/eng.train'
-    valid_location = args.conll_datapath + '/eng.testa'
-    test_location = args.conll_datapath + '/eng.testb'
-
     conll_task = TaskHolder(CoNLL2003, (train_conll, valid_conll, test_conll), 
                                        ("multitask-result/multitask-train-conll.predicted",
                                         'multitask-result/multitask-valid-conll.predicted',
@@ -518,11 +505,6 @@ if __name__ == '__main__':
         ########## go through validation set ##########
         ###############################################
 
-        # if args.buffer_dir is None:
-        #     validation_file = 'multitask-result/multitask-valid.predicted'
-        # else:
-        #     validation_file = os.path.join(args.buffer_dir, 'multitask-valid.predicted')
-
         for task in [conll_task, ontonotes_task]:
 
             valid_predicted = open(task.predicted_files[1], 'wb')
@@ -554,7 +536,6 @@ if __name__ == '__main__':
 
         # decode_test = (n_epoch >= config.max_iter / 2 or n_epoch == 0)
         decode_test = True
-
 
         for task in [conll_task, ontonotes_task]:
             # if args.buffer_dir is None:
@@ -617,10 +598,9 @@ if __name__ == '__main__':
             task.best_threshold = best_threshold
             task.best_algorithm = best_algorithm
 
-
+        # training evaluation
         for task in [conll_task, ontonotes_task]:
 
-            # training
             pp = [ p for p in PredictionParser(task.generator( task.data_loc[0] ), 
                                                     task.predicted_files[0], 
                                                     config.n_window, n_label_type = task.n_label ) ]
@@ -632,9 +612,9 @@ if __name__ == '__main__':
 
             logger.info("train scores array: %s" % str(train_scores))
 
+        # validation evaluation
         for task in [conll_task, ontonotes_task]:
 
-            # validation
             pp = [ p for p in PredictionParser(task.generator( task.data_loc[1] ), 
                                                     task.predicted_files[1], 
                                                     config.n_window, n_label_type = task.n_label ) ]
@@ -647,13 +627,14 @@ if __name__ == '__main__':
 
             logger.info("valid scores array: %s" % str(valid_scores))
 
+        # test evaluation
         for task in [conll_task, ontonotes_task]:
-
+            
             pp = [ p for p in PredictionParser(task.generator( task.data_loc[2] ), 
                                                     task.predicted_files[2], 
                                                     config.n_window, n_label_type = task.n_label ) ]
 
-            _, _, fb1, out = evaluation(pp, task.best_threshold, task.best_algorithm, True, n_label_type = curr_label)
+            _, _, fb1, out = evaluation(pp, task.best_threshold, task.best_algorithm, True, n_label_type = task.n_label)
             logger.info('batch_num ' + str(task.batch_num) + ', evaluation:\n' + out)
             test_scores.append(fb1)
             task.out = out
@@ -662,8 +643,8 @@ if __name__ == '__main__':
 
             logger.info("test scores array: %s" % str(test_scores))
 
+        # Best so far 
         for task in [conll_task, ontonotes_task]:
-
             if task.test_fb1 > task.best_test_fb1:
                 if decode_test:
                     task.best_test_info = task.out
@@ -671,17 +652,7 @@ if __name__ == '__main__':
                 mention_net.config.threshold = best_threshold
                 mention_net.config.algorithm = best_algorithm
                 mention_net.tofile('./multitask-model/' + args.model)
-
-        # cmd = ('CoNLL2003eval.py --threshold=%f --algorithm=%d --n_window=%d --config=%s ' \
-        #                 % ( best_threshold, best_algorithm, config.n_window,
-        #                     'conll2003-model/%s.config' % args.model ) ) + \
-        #       ('%s/eng.testb conll2003-result/conll2003-test.predicted | conlleval' \
-        #                 % config.data_path)
-        # process = Popen( cmd, shell = True, stdout = PIPE, stderr = PIPE)
-        # (out, err) = process.communicate()
-        # logger.info( 'test, individual thresholds\n' + out )
-
-        for task in [conll_task, ontonotes_task]:
+                
             logger.info('BEST SO FOR BATCH NUM ' + str(task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
                         (mention_net.config.threshold,
                          algo_list[mention_net.config.algorithm - 1],
