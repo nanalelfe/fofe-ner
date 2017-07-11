@@ -441,9 +441,9 @@ if __name__ == '__main__':
                     (n_epoch + 1, mention_net.config.learning_rate))
 
 
-        pbar = tqdm(total=len(train.positive) +
-                          int(len(train.overlap) * config.overlap_rate) +
-                          int(len(train.disjoint) * config.disjoint_rate))
+        pbar = tqdm(total=len(curr_task.batch_constructors[0].positive) +
+                          int(len(curr_task.batch_constructors[0].overlap) * config.overlap_rate) +
+                          int(len(curr_task.batch_constructors[0].disjoint) * config.disjoint_rate))
 
         cost, cnt = 0, 0
 
@@ -505,6 +505,11 @@ if __name__ == '__main__':
         ########## go through validation set ##########
         ###############################################
 
+        # if args.buffer_dir is None:
+        #     validation_file = 'multitask-result/multitask-valid.predicted'
+        # else:
+        #     validation_file = os.path.join(args.buffer_dir, 'multitask-valid.predicted')
+
         for task in [conll_task, ontonotes_task]:
 
             valid_predicted = open(task.predicted_files[1], 'wb')
@@ -536,6 +541,7 @@ if __name__ == '__main__':
 
         # decode_test = (n_epoch >= config.max_iter / 2 or n_epoch == 0)
         decode_test = True
+
 
         for task in [conll_task, ontonotes_task]:
             # if args.buffer_dir is None:
@@ -653,6 +659,13 @@ if __name__ == '__main__':
                 mention_net.config.algorithm = best_algorithm
                 mention_net.tofile('./multitask-model/' + args.model)
                 
+            logger.info('BEST SO FOR BATCH NUM ' + str(task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
+                        (mention_net.config.threshold,
+                         algo_list[mention_net.config.algorithm - 1],
+                         best_test_info))
+
+
+        for task in [conll_task, ontonotes_task]:
             logger.info('BEST SO FOR BATCH NUM ' + str(task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
                         (mention_net.config.threshold,
                          algo_list[mention_net.config.algorithm - 1],
