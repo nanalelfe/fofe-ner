@@ -662,14 +662,7 @@ if __name__ == '__main__':
             logger.info('BEST SO FOR BATCH NUM ' + str(task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
                         (mention_net.config.threshold,
                          algo_list[mention_net.config.algorithm - 1],
-                         best_test_info))
-
-
-        for task in [conll_task, ontonotes_task]:
-            logger.info('BEST SO FOR BATCH NUM ' + str(task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
-                        (mention_net.config.threshold,
-                         algo_list[mention_net.config.algorithm - 1],
-                         best_test_info))
+                         task.best_test_info))
 
         ##########################################
         ########## adjust learning rate ##########
