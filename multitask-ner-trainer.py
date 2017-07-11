@@ -390,18 +390,6 @@ if __name__ == '__main__':
             config.overlap_rate, config.disjoint_rate,
             config.feature_choice, True)
 
-    #===================
-    # ==== Plot =======
-    #===================
-
-    # F1 scores
-    train_scores = []
-    valid_scores = []
-    test_scores = []
-
-    # Train cost
-    training_costs = []
-
     conll_task = TaskHolder(CoNLL2003, (train_conll, valid_conll, test_conll), 
                                        ("multitask-result/multitask-train-conll.predicted",
                                         'multitask-result/multitask-valid-conll.predicted',
@@ -465,8 +453,8 @@ if __name__ == '__main__':
         train_cost = cost / cnt
 
         # for plot
-        training_costs.append(train_cost)
-        logger.info("training costs array: %s" % str(training_costs))
+        curr_task.training_costs.append(train_cost)
+        logger.info("training costs array: %s" % str(curr_task.training_costs))
 
         logger.info('training set iterated, %f' % train_cost)
 
@@ -478,28 +466,26 @@ if __name__ == '__main__':
         ########## go through training set ##########
         ###############################################
 
-        for task in [conll_task, ontonotes_task]:
+        train_predicted = open(curr_task.predicted_files[0], 'wb')
+        to_print = []
+        cost, cnt = 0, 0
 
-            train_predicted = open(task.predicted_files[0], 'wb')
-            to_print = []
-            cost, cnt = 0, 0
+        for example in curr_task.batch_constructors[0].mini_batch_multi_thread(
+                512 if config.feature_choice & (1 << 9) > 0 else 1024,
+                False, 1, 1, config.feature_choice):
 
-            for example in task.batch_constructors[0].mini_batch_multi_thread(
-                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                    False, 1, 1, config.feature_choice):
+            c, pi, pv = mention_net.eval(example, curr_task.batch_num)
 
-                c, pi, pv = mention_net.eval(example, task.batch_num)
+            cost += c * example[-1].shape[0]
+            cnt += example[-1].shape[0]
 
-                cost += c * example[-1].shape[0]
-                cnt += example[-1].shape[0]
+            for exp, est, prob in zip(example[-1], pi, pv):
+                to_print.append('%d  %d  %s' % \
+                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
 
-                for exp, est, prob in zip(example[-1], pi, pv):
-                    to_print.append('%d  %d  %s' % \
-                                    (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
-
-            print >> train_predicted, '\n'.join(to_print)
-            train_predicted.close()
-            logger.info('training set passed for batch_num ' + str(task.batch_num))
+        print >> train_predicted, '\n'.join(to_print)
+        train_predicted.close()
+        logger.info('training set passed for batch_num ' + str(curr_task.batch_num))
 
         ###############################################
         ########## go through validation set ##########
@@ -510,30 +496,29 @@ if __name__ == '__main__':
         # else:
         #     validation_file = os.path.join(args.buffer_dir, 'multitask-valid.predicted')
 
-        for task in [conll_task, ontonotes_task]:
 
-            valid_predicted = open(task.predicted_files[1], 'wb')
-            cost, cnt = 0, 0
-            to_print = []
+        valid_predicted = open(curr_task.predicted_files[1], 'wb')
+        cost, cnt = 0, 0
+        to_print = []
 
-            for example in task.batch_constructors[1].mini_batch_multi_thread(
-                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                    False, 1, 1, config.feature_choice):
+        for example in curr_task.batch_constructors[1].mini_batch_multi_thread(
+                512 if config.feature_choice & (1 << 9) > 0 else 1024,
+                False, 1, 1, config.feature_choice):
 
-                c, pi, pv = mention_net.eval(example, task.batch_num)
+            c, pi, pv = mention_net.eval(example, curr_task.batch_num)
 
-                cost += c * example[-1].shape[0]
-                cnt += example[-1].shape[0]
+            cost += c * example[-1].shape[0]
+            cnt += example[-1].shape[0]
 
-                for exp, est, prob in zip(example[-1], pi, pv):
-                    to_print.append('%d  %d  %s' % \
-                                    (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
+            for exp, est, prob in zip(example[-1], pi, pv):
+                to_print.append('%d  %d  %s' % \
+                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
 
-            print >> valid_predicted, '\n'.join(to_print)
-            valid_predicted.close()
-            valid_cost = cost / cnt
-            task.valid_cost = valid_cost
-            logger.info('validation set passed for batch_num ' + str(task.batch_num))
+        print >> valid_predicted, '\n'.join(to_print)
+        valid_predicted.close()
+        valid_cost = cost / cnt
+        curr_task.valid_cost = valid_cost
+        logger.info('validation set passed for batch_num ' + str(curr_task.batch_num))
 
         #########################################
         ########## go through test set ##########
@@ -543,36 +528,35 @@ if __name__ == '__main__':
         decode_test = True
 
 
-        for task in [conll_task, ontonotes_task]:
-            # if args.buffer_dir is None:
-            #     testing_file = 'multitask-result/multitask-test.predicted'
-            # else:
-            #     testing_file = os.path.join(args.buffer_dir, 'multitask-test.PredictionParsercted')
+        # if args.buffer_dir is None:
+        #     testing_file = 'multitask-result/multitask-test.predicted'
+        # else:
+        #     testing_file = os.path.join(args.buffer_dir, 'multitask-test.PredictionParsercted')
 
-            test_predicted = open(task.predicted_files[2], 'wb')
-            cost, cnt = 0, 0
-            to_print = []
+        test_predicted = open(curr_task.predicted_files[2], 'wb')
+        cost, cnt = 0, 0
+        to_print = []
 
-            for example in task.batch_constructors[2].mini_batch_multi_thread(
-                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                    False, 1, 1, config.feature_choice):
+        for example in curr_task.batch_constructors[2].mini_batch_multi_thread(
+                512 if config.feature_choice & (1 << 9) > 0 else 1024,
+                False, 1, 1, config.feature_choice):
 
-                c, pi, pv = mention_net.eval(example, task.batch_num)
+            c, pi, pv = mention_net.eval(example, curr_task.batch_num)
 
-                cost += c * example[-1].shape[0]
-                cnt += example[-1].shape[0]
+            cost += c * example[-1].shape[0]
+            cnt += example[-1].shape[0]
 
-                for exp, est, prob in zip(example[-1], pi, pv):
-                    to_print.append('%d  %d  %s' % \
-                                    (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
+            for exp, est, prob in zip(example[-1], pi, pv):
+                to_print.append('%d  %d  %s' % \
+                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
 
-            print >> test_predicted, '\n'.join(to_print)
-            test_predicted.close()
-            test_cost = cost / cnt
+        print >> test_predicted, '\n'.join(to_print)
+        test_predicted.close()
+        test_cost = cost / cnt
 
-            task.test_cost = test_cost
+        curr_task.test_cost = test_cost
 
-            logger.info('evaluation set passed for batch_num: ' + str(task.batch_num))
+        logger.info('evaluation set passed for batch_num: ' + str(curr_task.batch_num))
 
         ###################################################################################
         ########## exhaustively iterate 3 decodding algrithms with 0.x cut-off ############
@@ -582,87 +566,81 @@ if __name__ == '__main__':
 
         algo_list = ['highest-first', 'longest-first', 'subsumption-removal']
 
-        for task in [conll_task, ontonotes_task]:
-            best_dev_fb1, best_threshold, best_algorithm = 0, 0.5, 1
+        best_dev_fb1, best_threshold, best_algorithm = 0, 0.5, 1
 
-            pp = [ p for p in PredictionParser(task.generator( task.data_loc[1] ), 
-                                                    task.predicted_files[1], 
-                                                    config.n_window, n_label_type = task.n_label ) ]
+        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+                                                curr_task.predicted_files[1], 
+                                                config.n_window, n_label_type = curr_task.n_label ) ]
 
-            for algorithm, name in zip([1, 2, 3], algo_list):
-                for threshold in numpy.arange(0.3, 1, 0.1).tolist():
-                    precision, recall, f1, _ = evaluation(pp, threshold, algorithm, True, n_label_type = task.n_label)
-                    logger.debug(('batch_num: %d, cut-off: %f, algorithm: %-20s' %
-                                  (task.batch_num, threshold, name)) +
-                                 (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)))
-                    if f1 > best_dev_fb1:
-                        best_dev_fb1, best_threshold, best_algorithm = f1, threshold, algorithm
-                        mention_net.config.threshold = best_threshold
-                        mention_net.config.algorithm = best_algorithm
+        for algorithm, name in zip([1, 2, 3], algo_list):
+            for threshold in numpy.arange(0.3, 1, 0.1).tolist():
+                precision, recall, f1, _ = evaluation(pp, threshold, algorithm, True, n_label_type = curr_task.n_label)
+                logger.debug(('batch_num: %d, cut-off: %f, algorithm: %-20s' %
+                              (curr_task.batch_num, threshold, name)) +
+                             (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)))
+                if f1 > best_dev_fb1:
+                    best_dev_fb1, best_threshold, best_algorithm = f1, threshold, algorithm
+                    mention_net.config.threshold = best_threshold
+                    mention_net.config.algorithm = best_algorithm
 
-            task.best_dev_fb1 = best_dev_fb1
-            task.best_threshold = best_threshold
-            task.best_algorithm = best_algorithm
+        curr_task.best_dev_fb1 = best_dev_fb1
+        curr_task.best_threshold = best_threshold
+        curr_task.best_algorithm = best_algorithm
 
         # training evaluation
-        for task in [conll_task, ontonotes_task]:
+        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
+                                                curr_task.predicted_files[0], 
+                                                config.n_window, n_label_type = curr_task.n_label ) ]
+        
+        _, _, train_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        logger.info('batch_num ' + str(curr_task.batch_num) + ' training:\n' + info)
+        # fb1 score for validation
+        curr_task.train_scores.append(train_fb1)
 
-            pp = [ p for p in PredictionParser(task.generator( task.data_loc[0] ), 
-                                                    task.predicted_files[0], 
-                                                    config.n_window, n_label_type = task.n_label ) ]
-            
-            _, _, train_fb1, info = evaluation(pp, task.best_threshold, task.best_algorithm, True, n_label_type = task.n_label)
-            logger.info('batch_num ' + str(task.batch_num) + ' training:\n' + info)
-            # fb1 score for validation
-            train_scores.append(train_fb1)
-
-            logger.info("train scores array: %s" % str(train_scores))
+        logger.info("train scores array: %s" % str(curr_task.train_scores))
 
         # validation evaluation
-        for task in [conll_task, ontonotes_task]:
 
-            pp = [ p for p in PredictionParser(task.generator( task.data_loc[1] ), 
-                                                    task.predicted_files[1], 
-                                                    config.n_window, n_label_type = task.n_label ) ]
+        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+                                                curr_task.predicted_files[1], 
+                                                config.n_window, n_label_type = curr_task.n_label ) ]
 
-            _, _, test_fb1, info = evaluation(pp, task.best_threshold, task.best_algorithm, True, n_label_type = task.n_label)
-            logger.info('batch_num ' + str(task.batch_num) + ', validation:\n' + info)
-            task.test_fb1 = test_fb1
-            # fb1 score for validation
-            valid_scores.append(test_fb1)
+        _, _, test_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        logger.info('batch_num ' + str(curr_task.batch_num) + ', validation:\n' + info)
+        curr_task.test_fb1 = test_fb1
+        # fb1 score for validation
+        curr_task.valid_scores.append(test_fb1)
 
-            logger.info("valid scores array: %s" % str(valid_scores))
+        logger.info("valid scores array: %s" % str(curr_task.valid_scores))
 
         # test evaluation
-        for task in [conll_task, ontonotes_task]:
             
-            pp = [ p for p in PredictionParser(task.generator( task.data_loc[2] ), 
-                                                    task.predicted_files[2], 
-                                                    config.n_window, n_label_type = task.n_label ) ]
+        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[2] ), 
+                                                curr_task.predicted_files[2], 
+                                                config.n_window, n_label_type = curr_task.n_label ) ]
 
-            _, _, fb1, out = evaluation(pp, task.best_threshold, task.best_algorithm, True, n_label_type = task.n_label)
-            logger.info('batch_num ' + str(task.batch_num) + ', evaluation:\n' + out)
-            test_scores.append(fb1)
-            task.out = out
+        _, _, fb1, out = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        logger.info('batch_num ' + str(curr_task.batch_num) + ', evaluation:\n' + out)
+        curr_task.test_scores.append(fb1)
+        curr_task.out = out
 
-            task.fb1 = fb1
+        curr_task.fb1 = fb1
 
-            logger.info("test scores array: %s" % str(test_scores))
+        logger.info("test scores array: %s" % str(curr_task.test_scores))
 
         # Best so far 
-        for task in [conll_task, ontonotes_task]:
-            if task.test_fb1 > task.best_test_fb1:
-                if decode_test:
-                    task.best_test_info = task.out
-                task.best_test_fb1 = task.test_fb1
-                mention_net.config.threshold = best_threshold
-                mention_net.config.algorithm = best_algorithm
-                mention_net.tofile('./multitask-model/' + args.model)
-                
-            logger.info('BEST SO FOR BATCH NUM ' + str(task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
-                        (mention_net.config.threshold,
-                         algo_list[mention_net.config.algorithm - 1],
-                         task.best_test_info))
+        if curr_task.test_fb1 > curr_task.best_test_fb1:
+            if decode_test:
+                curr_task.best_test_info = curr_task.out
+            curr_task.best_test_fb1 = curr_task.test_fb1
+            mention_net.config.threshold = best_threshold
+            mention_net.config.algorithm = best_algorithm
+            mention_net.tofile('./multitask-model/' + args.model)
+            
+        logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
+                    (mention_net.config.threshold,
+                     algo_list[mention_net.config.algorithm - 1],
+                     curr_task.best_test_info))
 
         ##########################################
         ########## adjust learning rate ##########
