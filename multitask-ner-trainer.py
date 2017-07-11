@@ -417,7 +417,6 @@ if __name__ == '__main__':
         if pick == 0:
             # CoNLL 2003
             curr_task = conll_task
-
         else:
             # OntoNotes
             curr_task = ontonotes_task
@@ -444,7 +443,6 @@ if __name__ == '__main__':
                                                              config.feature_choice)):
 
             c = mention_net.train(example, curr_task.batch_num)
-
             cost += c * example[-1].shape[0]
             cnt += example[-1].shape[0]
             pbar.update(example[-1].shape[0])
@@ -496,7 +494,6 @@ if __name__ == '__main__':
         # else:
         #     validation_file = os.path.join(args.buffer_dir, 'multitask-valid.predicted')
 
-
         valid_predicted = open(curr_task.predicted_files[1], 'wb')
         cost, cnt = 0, 0
         to_print = []
@@ -526,7 +523,6 @@ if __name__ == '__main__':
 
         # decode_test = (n_epoch >= config.max_iter / 2 or n_epoch == 0)
         decode_test = True
-
 
         # if args.buffer_dir is None:
         #     testing_file = 'multitask-result/multitask-test.predicted'

@@ -1964,6 +1964,13 @@ class TaskHolder:
         self.best_test_info = None
 
 
+        # Plot
+        self.train_scores = []
+        self.valid_scores = []
+        self.test_scores = []
+        self.training_costs = []
+
+
 
 
 
