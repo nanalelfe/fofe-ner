@@ -405,7 +405,7 @@ if __name__ == '__main__':
                                   'multitask-result/multitask-test-ontonotes.predicted'),
                                 (ontonotes_training_path, ontonotes_valid_path, ontonotes_test_path),
                                  ONTONOTES_N_LABELS)
-
+    pick = 0
 
     for n_epoch in xrange(config.max_iter):
         if not os.path.exists('multitask-result'):
@@ -413,15 +413,17 @@ if __name__ == '__main__':
 
         # Will have to change the range when introducing KBP
         # pick = random.random()
-        pick = random.choice([0, 1])
+        # pick = random.choice([0, 1])
         if pick == 0:
             # CoNLL 2003
             curr_task = conll_task
+            logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
+            pick = 1
         else:
             # OntoNotes
             curr_task = ontonotes_task
-
-        logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
+            logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
+            pick = 0
 
         # phar is used to observe training progress
         logger.info('epoch %2d, learning-rate: %f' % \
@@ -674,7 +676,7 @@ if __name__ == '__main__':
     plt.savefig('/local/scratch/nana/mtl/fofe-ner/validation_score_conll.png')
 
     plt.figure(4)
-    plt.plot(list(range(len(cconll_task.test_scores))), conll_task.test_scores, 'r--')
+    plt.plot(list(range(len(conll_task.test_scores))), conll_task.test_scores, 'r--')
     plt.title('F-score on test data')
 
     plt.savefig('/local/scratch/nana/mtl/fofe-ner/test_score_conll.png')
