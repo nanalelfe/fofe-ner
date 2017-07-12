@@ -655,25 +655,53 @@ if __name__ == '__main__':
     #===== Plot ========
     #===================
 
-    epochs = list(range(1, n_epoch + 1))
-
     plt.figure(1)
-    plt.plot(epochs, training_costs, 'r--')
+    plt.plot(list(range(len(conll_task.training_costs))), conll_task.training_costs, 'r--')
     plt.title('Cost on training data')
 
-    plt.savefig('/local/scratch/nana/fofe-ner/training_costs.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/training_costs_conll.png')
 
     plt.figure(2)
-    plt.plot(epochs, valid_scores, 'r--')
-    plt.title('F-score on validation data')
+    plt.plot(list(range(len(conll_task.train_scores))), conll_task.train_scores, 'r--')
+    plt.title('F-score on training data')
 
-    plt.savefig('/local/scratch/nana/fofe-ner/validation_score.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/train_score_conll.png')
 
     plt.figure(3)
-    plt.plot(epochs, test_scores, 'r--')
+    plt.plot(list(range(len(conll_task.valid_scores))), conll_task.valid_scores, 'r--')
+    plt.title('F-score on validation data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/validation_score_conll.png')
+
+    plt.figure(4)
+    plt.plot(list(range(len(cconll_task.test_scores))), conll_task.test_scores, 'r--')
     plt.title('F-score on test data')
 
-    plt.savefig('/local/scratch/nana/fofe-ner/test_score.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/test_score_conll.png')
+
+    plt.figure(5)
+    plt.plot(list(range(len(ontonotes_task.training_costs))), ontonotes_task.training_costs, 'r--')
+    plt.title('Cost on training data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/training_costs_ontonotes.png')
+
+    plt.figure(6)
+    plt.plot(list(range(len(ontonotes_task.train_scores))), ontonotes_task.train_scores, 'r--')
+    plt.title('F-score on training data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/train_score_ontonotes.png')
+
+    plt.figure(7)
+    plt.plot(list(range(len(ontonotes_task.valid_scores))), ontonotes_task.valid_scores, 'r--')
+    plt.title('F-score on validation data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/validation_score_ontonotes.png')
+
+    plt.figure(8)
+    plt.plot(list(range(len(ontonotes_task.test_scores))), ontonotes_task.test_scores, 'r--')
+    plt.title('F-score on test data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/test_score_ontonotes.png')
 
     #===================
 
