@@ -1974,5 +1974,3 @@ class TaskHolder:
         self.training_costs = []
 
 
-
-
