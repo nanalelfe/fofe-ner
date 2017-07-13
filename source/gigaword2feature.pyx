@@ -377,7 +377,8 @@ def OntoNotes(directory, test_set=False):
                 elif len(sentence) > 0:
                     yield sentence, ner_begin, ner_end, ner_label
                     sentence, ner_begin, ner_end, ner_label = [], [], [], []
-    logger.info("NUM: " + str(num))
+    if test_set:
+        logger.info("NUM: " + str(num))
 
 ################################################################################
 
@@ -1973,7 +1974,4 @@ class TaskHolder:
         self.valid_scores = []
         self.test_scores = []
         self.training_costs = []
-
-
-
 
