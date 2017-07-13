@@ -347,7 +347,7 @@ def OntoNotes(directory, test_set=False):
 
     files = glob.glob(os.path.join(directory, "*gold*"))
     if test_set:
-        files = os.listdir(directory)
+        files = glob.glob(os.path.join(directory))
 
     for filename in files:
         with codecs.open( filename, 'rb', 'utf8' ) as textfile:
