@@ -347,7 +347,7 @@ if __name__ == '__main__':
     # Test set
     # ----------------------------------------------------------------------------------
 
-    test = batch_constructor(OntoNotes(test_path),
+    test = batch_constructor(OntoNotes(test_path, test_set=True),
                              numericizer1, numericizer2,
                              gazetteer=ontonotes_gazetteer,
                              alpha=config.word_alpha,
