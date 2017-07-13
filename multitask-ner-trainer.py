@@ -405,25 +405,20 @@ if __name__ == '__main__':
                                   'multitask-result/multitask-test-ontonotes.predicted'),
                                 (ontonotes_training_path, ontonotes_valid_path, ontonotes_test_path),
                                  ONTONOTES_N_LABELS)
-    pick = 0
 
     for n_epoch in xrange(config.max_iter):
         if not os.path.exists('multitask-result'):
             os.makedirs('multitask-result')
 
-        # Will have to change the range when introducing KBP
-        # pick = random.random()
-        # pick = random.choice([0, 1])
+        pick = random.choice([0, 1])
         if pick == 0:
             # CoNLL 2003
             curr_task = conll_task
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
-            pick = 1
         else:
             # OntoNotes
             curr_task = ontonotes_task
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
-            pick = 0
 
         # phar is used to observe training progress
         logger.info('epoch %2d, learning-rate: %f' % \
@@ -658,49 +653,49 @@ if __name__ == '__main__':
     #===================
 
     plt.figure(1)
-    plt.plot(list(range(len(conll_task.training_costs))), conll_task.training_costs, 'r--')
+    plt.plot(list(range(len(conll_task.training_costs))), conll_task.training_costs, 'g--')
     plt.title('Cost on training data')
 
     plt.savefig('/local/scratch/nana/mtl/fofe-ner/training_costs_conll.png')
 
     plt.figure(2)
-    plt.plot(list(range(len(conll_task.train_scores))), conll_task.train_scores, 'r--')
+    plt.plot(list(range(len(conll_task.train_scores))), conll_task.train_scores, 'g--')
     plt.title('F-score on training data')
 
     plt.savefig('/local/scratch/nana/mtl/fofe-ner/train_score_conll.png')
 
     plt.figure(3)
-    plt.plot(list(range(len(conll_task.valid_scores))), conll_task.valid_scores, 'r--')
+    plt.plot(list(range(len(conll_task.valid_scores))), conll_task.valid_scores, 'g--')
     plt.title('F-score on validation data')
 
     plt.savefig('/local/scratch/nana/mtl/fofe-ner/validation_score_conll.png')
 
     plt.figure(4)
-    plt.plot(list(range(len(conll_task.test_scores))), conll_task.test_scores, 'r--')
+    plt.plot(list(range(len(conll_task.test_scores))), conll_task.test_scores, 'g--')
     plt.title('F-score on test data')
 
     plt.savefig('/local/scratch/nana/mtl/fofe-ner/test_score_conll.png')
 
     plt.figure(5)
-    plt.plot(list(range(len(ontonotes_task.training_costs))), ontonotes_task.training_costs, 'r--')
+    plt.plot(list(range(len(ontonotes_task.training_costs))), ontonotes_task.training_costs, 'b--')
     plt.title('Cost on training data')
 
     plt.savefig('/local/scratch/nana/mtl/fofe-ner/training_costs_ontonotes.png')
 
     plt.figure(6)
-    plt.plot(list(range(len(ontonotes_task.train_scores))), ontonotes_task.train_scores, 'r--')
+    plt.plot(list(range(len(ontonotes_task.train_scores))), ontonotes_task.train_scores, 'b--')
     plt.title('F-score on training data')
 
     plt.savefig('/local/scratch/nana/mtl/fofe-ner/train_score_ontonotes.png')
 
     plt.figure(7)
-    plt.plot(list(range(len(ontonotes_task.valid_scores))), ontonotes_task.valid_scores, 'r--')
+    plt.plot(list(range(len(ontonotes_task.valid_scores))), ontonotes_task.valid_scores, 'b--')
     plt.title('F-score on validation data')
 
     plt.savefig('/local/scratch/nana/mtl/fofe-ner/validation_score_ontonotes.png')
 
     plt.figure(8)
-    plt.plot(list(range(len(ontonotes_task.test_scores))), ontonotes_task.test_scores, 'r--')
+    plt.plot(list(range(len(ontonotes_task.test_scores))), ontonotes_task.test_scores, 'b--')
     plt.title('F-score on test data')
 
     plt.savefig('/local/scratch/nana/mtl/fofe-ner/test_score_ontonotes.png')
