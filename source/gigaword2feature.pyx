@@ -344,40 +344,40 @@ def OntoNotes(directory, test_set=False):
 
     sentence_end = False
     caught = [False, None]
-
-    files = glob.glob(os.path.join(directory, "*gold*"))
     if test_set:
-        files = os.listdir(directory)
+        num = 0
 
-    for filename in files:
-        if os.path.isfile(filename):
-            with codecs.open( filename, 'rb', 'utf8' ) as textfile:
-                for line in textfile:
-                    tokens = line.strip().split()
-                    if len(tokens) > 5:
-                        ne = tokens[10]
-                        word  = tokens[3]
-                        sentence.append(word)
-                        if ne != '*':
-                            if ne[-1] == '*':
-                                ne = ne.strip('(').strip('*')
-                                caught[0] = True
-                                caught[1] = len(sentence) - 1
-                                ner_begin.append(len(sentence) - 1)
-                                ner_label.append(entity2cls[ne])
-                            elif (ne[0] == '(' and ne[-1] == ')'):
-                                ne = ne.strip('(').strip(')')
-                                ner_begin.append(len(sentence) - 1)
-                                ner_end.append(len(sentence))
-                                ner_label.append(entity2cls[ne])
-                            elif ne == '*)':
-                                ner_end.append(len(sentence))
-                                caught[0] = False
-                                caught[1] = None
+    for filename in glob.glob(os.path.join(directory, "*gold*")):
+        if test_set:
+            num += 1
+        with codecs.open( filename, 'rb', 'utf8' ) as textfile:
+            for line in textfile:
+                tokens = line.strip().split()
+                if len(tokens) > 5:
+                    ne = tokens[10]
+                    word  = tokens[3]
+                    sentence.append(word)
+                    if ne != '*':
+                        if ne[-1] == '*':
+                            ne = ne.strip('(').strip('*')
+                            caught[0] = True
+                            caught[1] = len(sentence) - 1
+                            ner_begin.append(len(sentence) - 1)
+                            ner_label.append(entity2cls[ne])
+                        elif (ne[0] == '(' and ne[-1] == ')'):
+                            ne = ne.strip('(').strip(')')
+                            ner_begin.append(len(sentence) - 1)
+                            ner_end.append(len(sentence))
+                            ner_label.append(entity2cls[ne])
+                        elif ne == '*)':
+                            ner_end.append(len(sentence))
+                            caught[0] = False
+                            caught[1] = None
 
-                    elif len(sentence) > 0:
-                        yield sentence, ner_begin, ner_end, ner_label
-                        sentence, ner_begin, ner_end, ner_label = [], [], [], []
+                elif len(sentence) > 0:
+                    yield sentence, ner_begin, ner_end, ner_label
+                    sentence, ner_begin, ner_end, ner_label = [], [], [], []
+    logger.info("NUM: " + str(num))
 
 ################################################################################
 
