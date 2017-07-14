@@ -34,7 +34,7 @@ language=$1 ; shift
 
 
 dir=`mktemp -d`
-trap "rm -rf ${dir}" EXIT
+
 INFO "intermediate files are put in ${dir}"
 
 
