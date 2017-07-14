@@ -30,6 +30,11 @@ def LoadED( rspecifier, language = 'eng' ):
                     'GPE_NOMINAL' : 7,
                     'LOC_NOMINAL' : 8,
                     'FAC_NOMINAL' : 9,
+                    'PER_NOM' : 5,
+                    'ORG_NOM' : 6,
+                    'GPE_NOM' : 7,
+                    'LOC_NOM' : 8,
+                    'FAC_NOM' : 9,
                     'TITLE_NAME' : 5,
                     'TITLE_NOMINAL' : 5
                 } 
