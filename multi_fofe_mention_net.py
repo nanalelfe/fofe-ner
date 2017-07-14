@@ -287,7 +287,7 @@ class multi_fofe_mention_net( object ):
         n_out_ontonotes = n_in_ontonotes[1:] + [ ONTONOTES_N_LABELS + 1 ]
 
         n_in_kbp = n_out_shared
-        n_out_kbp = n_in_shared[1:] + [ KBP_N_LABELS + 1 ] 
+        n_out_kbp = n_in_kbp[1:] + [ KBP_N_LABELS + 1 ] 
 
         logger.info( 'n_in_shared: ' + str(n_in_shared) )
         logger.info( 'n_out_shared: ' + str(n_out_shared) )
@@ -870,7 +870,7 @@ class multi_fofe_mention_net( object ):
 
             conll_layer_output = shared_layer_output[:]
             ontonotes_layer_output = shared_layer_output[:]
-            kbp
+            kbp_layer_output = shared_layer_output[:]
 
             #============================
             #==== OntoNotes layers ======
