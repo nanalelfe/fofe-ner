@@ -718,49 +718,74 @@ if __name__ == '__main__':
     plt.plot(list(range(len(conll_task.training_costs))), conll_task.training_costs, 'g--')
     plt.title('Cost on training data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/training_costs_conll.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/conll/training_costs_conll.png')
 
     plt.figure(2)
     plt.plot(list(range(len(conll_task.train_scores))), conll_task.train_scores, 'g--')
     plt.title('F-score on training data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/train_score_conll.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/conll/train_score_conll.png')
 
     plt.figure(3)
     plt.plot(list(range(len(conll_task.valid_scores))), conll_task.valid_scores, 'g--')
     plt.title('F-score on validation data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/validation_score_conll.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/conll/validation_score_conll.png')
 
     plt.figure(4)
     plt.plot(list(range(len(conll_task.test_scores))), conll_task.test_scores, 'g--')
     plt.title('F-score on test data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/test_score_conll.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/conll/test_score_conll.png')
 
     plt.figure(5)
     plt.plot(list(range(len(ontonotes_task.training_costs))), ontonotes_task.training_costs, 'b--')
     plt.title('Cost on training data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/training_costs_ontonotes.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/ontonotes/training_costs_ontonotes.png')
 
     plt.figure(6)
     plt.plot(list(range(len(ontonotes_task.train_scores))), ontonotes_task.train_scores, 'b--')
     plt.title('F-score on training data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/train_score_ontonotes.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/ontonotes/train_score_ontonotes.png')
 
     plt.figure(7)
     plt.plot(list(range(len(ontonotes_task.valid_scores))), ontonotes_task.valid_scores, 'b--')
     plt.title('F-score on validation data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/validation_score_ontonotes.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/ontonotes/validation_score_ontonotes.png')
 
     plt.figure(8)
     plt.plot(list(range(len(ontonotes_task.test_scores))), ontonotes_task.test_scores, 'b--')
     plt.title('F-score on test data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/test_score_ontonotes.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/ontonotes/test_score_ontonotes.png')
+
+    plt.figure(9)
+    plt.plot(list(range(len(kbp_task.training_costs))), kbp_task.training_costs, 'r--')
+    plt.title('Cost on training data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/kbp/training_costs_kbp.png')
+
+    plt.figure(10)
+    plt.plot(list(range(len(kbp_task.train_scores))), kbp_task.train_scores, 'r--')
+    plt.title('F-score on training data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/kbp/train_score_kbp.png')
+
+    plt.figure(11)
+    plt.plot(list(range(len(kbp_task.valid_scores))), kbp_task.valid_scores, 'r--')
+    plt.title('F-score on validation data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/kbp/validation_score_kbp.png')
+
+    plt.figure(12)
+    plt.plot(list(range(len(kbp_task.test_scores))), kbp_task.test_scores, 'r--')
+    plt.title('F-score on test data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/kbp/test_score_kbp.png')
+
 
     #===================
 
