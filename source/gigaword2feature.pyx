@@ -246,6 +246,11 @@ def gazetteer( filename, mode = 'CoNLL2003' ):
 
 ################################################################################
 
+def KBP(filename):
+    generator = imap( lambda x: x[:4], LoadED( filename ) )
+    for item in generator:
+        yield item
+
 
 def CoNLL2003( filename ):
     """
@@ -1974,4 +1979,7 @@ class TaskHolder:
         self.valid_scores = []
         self.test_scores = []
         self.training_costs = []
+
+
+
 
