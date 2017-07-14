@@ -30,6 +30,7 @@ from itertools import izip, islice, imap, combinations, chain
 from hanziconv import HanziConv
 import numpy, re, random, logging, codecs, copy, glob, os
 from lxml import etree
+from LinkingUtil import LoadED
 
 logger = logging.getLogger()
 
