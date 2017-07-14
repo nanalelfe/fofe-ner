@@ -1867,7 +1867,6 @@ def evaluation( prediction_parser, threshold, algorithm,
 
 ################################################################################
 
-
 def distant_supervision_parser( sentence_file, tag_file, 
                                 start = 0, stop = None, step = 1,
                                 mode = 'KBP',
