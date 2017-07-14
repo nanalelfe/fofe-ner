@@ -281,7 +281,7 @@ class multi_fofe_mention_net( object ):
         n_out_shared = n_in_shared[1:] + [n_in_shared[-1]]
 
         n_in_conll = n_out_shared
-        n_out_conll = n_in_conll[1:] + [ CONLL_N_LABELS + 1 ]
+        n_out_conll = n_in_conll[-3:] + [ CONLL_N_LABELS + 1 ]
 
         n_in_ontonotes = n_out_shared
         n_out_ontonotes = n_in_ontonotes[1:] + [ ONTONOTES_N_LABELS + 1 ]
@@ -297,7 +297,6 @@ class multi_fofe_mention_net( object ):
         logger.info( 'n_out_conll: ' + str(n_out_conll) )
         logger.info( 'n_in_kbp: ' + str(n_in_kbp) )
         logger.info( 'n_out_kbp: ' + str(n_out_kbp) )
-
 
         with self.graph.as_default():
 
