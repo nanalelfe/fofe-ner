@@ -8,6 +8,7 @@ from Queue import Queue
 from threading import Thread
 from math import floor
 from random import shuffle, random
+from itertools import product, chain
 
 
 logger = logging.getLogger(__name__)
@@ -58,13 +59,20 @@ if __name__ == '__main__':
     parser.add_argument('word_embedding', type=str,
                         help='word_embedding.{-case-insensitive, -case-sensitive}.word2vec are assumed')
 
-
     parser.add_argument('conll_datapath', type=str,
                         help='path to eng.{train, testa, testb} of CoNLL2003')
 
     # - Path to directory where the OntoNotes project is located
     parser.add_argument('ontonotes_datapath', type=str,
                         help='path to the preparsed OntoNotes dataset')
+
+    parser.add_argument('kbp_train_datapath', type=str, help='path to the preparsed KBP training dataset')
+
+    parser.add_argument('kbp_valid_datapath', type=str, help='path to the preparsed KBP valid dataset')
+
+    parser.add_argument('kbp_test_datapath', type=str, help='path to the preparsed KBP test dataset')
+
+    parser.add_argument('kbp_gazetteer', type=str, help='path to the kbp gazetteer file')
 
     # - Character embedding dimension
     parser.add_argument('--n_char_embedding', type=int, default=32,
@@ -264,6 +272,7 @@ if __name__ == '__main__':
 
     CONLL_N_LABELS = 4
     ONTONOTES_N_LABELS = 18
+    KBP_N_LABELS = 10
 
     # there are 2 sets of vocabulary, case-insensitive and case sensitive
     nt = config.n_label_type if config.is_2nd_pass else 0
@@ -289,6 +298,10 @@ if __name__ == '__main__':
     else:
         conll2003_gazetteer = [set() for _ in xrange( CONLL_N_LABELS )]
         ontonotes_gazetteer = [set() for _ in xrange( ONTONOTES_N_LABELS )]
+
+    kbp_gazetteer = gazetteer( args.kbp_gazetteer, mode = 'KBP' )
+
+    
 
     # ==================================================================================
     # Official OntoNotes split
@@ -325,8 +338,21 @@ if __name__ == '__main__':
                               n_label_type = ONTONOTES_N_LABELS,
                               is2ndPass=args.is_2nd_pass)
 
+    train_kbp = batch_constructor( 
+                    KBP(args.kbp_train_datapath),
+                    numericizer1, 
+                    numericizer2, 
+                    gazetteer = kbp_gazetteer, 
+                    alpha = config.word_alpha, 
+                    window = config.n_window, 
+                    n_label_type = config.n_label_type,
+                    language = config.language,
+                    is2ndPass = args.is_2nd_pass 
+                )
+
     logger.info('train conll: ' + str(train_conll))
     logger.info('train ontonotes: ' + str(train_ontonotes))
+    logger.info('train kbp: ' + str(train_kbp))
 
     # ----------------------------------------------------------------------------------
     # Validation set
@@ -348,8 +374,21 @@ if __name__ == '__main__':
                               n_label_type = ONTONOTES_N_LABELS,
                               is2ndPass=args.is_2nd_pass)
 
+    valid_kbp = batch_constructor( 
+                    KBP(args.kbp_valid_datapath), 
+                    numericizer1, 
+                    numericizer2, 
+                    gazetteer = kbp_gazetteer, 
+                    alpha = config.word_alpha, 
+                    window = config.n_window, 
+                    n_label_type = config.n_label_type,
+                    language = config.language,
+                    is2ndPass = args.is_2nd_pass 
+                )
+
     logger.info('valid conll: ' + str(valid_conll))
     logger.info('valid ontonotes: ' + str(valid_ontonotes))
+    logger.info('valid kbp: ' + str(valid_kbp))
 
     # ----------------------------------------------------------------------------------
     # Test set
@@ -371,8 +410,21 @@ if __name__ == '__main__':
                              n_label_type = ONTONOTES_N_LABELS,
                              is2ndPass=args.is_2nd_pass)
 
+    test_kbp = batch_constructor( 
+                    KBP(args.kbp_test_datapath),
+                    numericizer1, 
+                    numericizer2, 
+                    gazetteer = kbp_gazetteer, 
+                    alpha = config.word_alpha, 
+                    window = config.n_window, 
+                    n_label_type = config.n_label_type,
+                    language = config.language,
+                    is2ndPass = args.is_2nd_pass 
+                )
+
     logger.info('test conll: ' + str(test_conll))
     logger.info('test ontonotes: ' + str(test_ontonotes))
+    logger.info('test kbp: ' + str(test_kbp))
 
     logger.info('data set loaded')
 
@@ -406,18 +458,28 @@ if __name__ == '__main__':
                                 (ontonotes_training_path, ontonotes_valid_path, ontonotes_test_path),
                                  ONTONOTES_N_LABELS)
 
+    kbp_task = TaskHolder(KBP, (train_kbp, valid_kbp, test_kbp), 
+                                ('multitask-result/multitask-train-kbp.predicted',
+                                 'multitask-result/multitask-valid-kbp.predicted',
+                                 'multitask-result/multitask-test-kbp.predicted'),
+                                (args.kbp_train_datapath, args.kbp_valid_datapath, args.kbp_test_datapath),
+                                 KBP_N_LABELS)
+
     for n_epoch in xrange(config.max_iter):
         if not os.path.exists('multitask-result'):
             os.makedirs('multitask-result')
 
-        pick = random.choice([0, 1])
+        pick = random.choice([0, 1, 2])
         if pick == 0:
             # CoNLL 2003
             curr_task = conll_task
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
-        else:
+        elif pick == 1:
             # OntoNotes
             curr_task = ontonotes_task
+            logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
+        else:
+            curr_task = kbp_task
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
 
         # phar is used to observe training progress
@@ -656,49 +718,74 @@ if __name__ == '__main__':
     plt.plot(list(range(len(conll_task.training_costs))), conll_task.training_costs, 'g--')
     plt.title('Cost on training data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/training_costs_conll.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/conll/training_costs_conll.png')
 
     plt.figure(2)
     plt.plot(list(range(len(conll_task.train_scores))), conll_task.train_scores, 'g--')
     plt.title('F-score on training data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/train_score_conll.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/conll/train_score_conll.png')
 
     plt.figure(3)
     plt.plot(list(range(len(conll_task.valid_scores))), conll_task.valid_scores, 'g--')
     plt.title('F-score on validation data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/validation_score_conll.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/conll/validation_score_conll.png')
 
     plt.figure(4)
     plt.plot(list(range(len(conll_task.test_scores))), conll_task.test_scores, 'g--')
     plt.title('F-score on test data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/test_score_conll.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/conll/test_score_conll.png')
 
     plt.figure(5)
     plt.plot(list(range(len(ontonotes_task.training_costs))), ontonotes_task.training_costs, 'b--')
     plt.title('Cost on training data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/training_costs_ontonotes.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/ontonotes/training_costs_ontonotes.png')
 
     plt.figure(6)
     plt.plot(list(range(len(ontonotes_task.train_scores))), ontonotes_task.train_scores, 'b--')
     plt.title('F-score on training data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/train_score_ontonotes.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/ontonotes/train_score_ontonotes.png')
 
     plt.figure(7)
     plt.plot(list(range(len(ontonotes_task.valid_scores))), ontonotes_task.valid_scores, 'b--')
     plt.title('F-score on validation data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/validation_score_ontonotes.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/ontonotes/validation_score_ontonotes.png')
 
     plt.figure(8)
     plt.plot(list(range(len(ontonotes_task.test_scores))), ontonotes_task.test_scores, 'b--')
     plt.title('F-score on test data')
 
-    plt.savefig('/local/scratch/nana/mtl/fofe-ner/test_score_ontonotes.png')
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/ontonotes/test_score_ontonotes.png')
+
+    plt.figure(9)
+    plt.plot(list(range(len(kbp_task.training_costs))), kbp_task.training_costs, 'r--')
+    plt.title('Cost on training data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/kbp/training_costs_kbp.png')
+
+    plt.figure(10)
+    plt.plot(list(range(len(kbp_task.train_scores))), kbp_task.train_scores, 'r--')
+    plt.title('F-score on training data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/kbp/train_score_kbp.png')
+
+    plt.figure(11)
+    plt.plot(list(range(len(kbp_task.valid_scores))), kbp_task.valid_scores, 'r--')
+    plt.title('F-score on validation data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/kbp/validation_score_kbp.png')
+
+    plt.figure(12)
+    plt.plot(list(range(len(kbp_task.test_scores))), kbp_task.test_scores, 'r--')
+    plt.title('F-score on test data')
+
+    plt.savefig('/local/scratch/nana/mtl/fofe-ner/graphs/kbp/test_score_kbp.png')
+
 
     #===================
 
