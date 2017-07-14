@@ -299,7 +299,7 @@ def CoNLL2003( filename ):
 
 ################################################################################
 
-def OntoNotes(directory):
+def OntoNotes(directory, test_set=False):
     """
     Parameters
     ----------
@@ -344,8 +344,12 @@ def OntoNotes(directory):
 
     sentence_end = False
     caught = [False, None]
+    if test_set:
+        num = 0
 
     for filename in glob.glob(os.path.join(directory, "*gold*")):
+        if test_set:
+            num += 1
         with codecs.open( filename, 'rb', 'utf8' ) as textfile:
             for line in textfile:
                 tokens = line.strip().split()
@@ -373,6 +377,8 @@ def OntoNotes(directory):
                 elif len(sentence) > 0:
                     yield sentence, ner_begin, ner_end, ner_label
                     sentence, ner_begin, ner_end, ner_label = [], [], [], []
+    if test_set:
+        logger.info("NUM: " + str(num))
 
 ################################################################################
 
@@ -1926,7 +1932,6 @@ def distant_supervision_parser( sentence_file, tag_file,
 
 
 
-
 ################################################################################
 
 class TaskHolder:
@@ -1969,54 +1974,4 @@ class TaskHolder:
         self.valid_scores = []
         self.test_scores = []
         self.training_costs = []
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
