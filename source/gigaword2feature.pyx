@@ -84,6 +84,11 @@ def KBP2015( filename ):
                     'GPE_NOMINAL' : 7,
                     'LOC_NOMINAL' : 8,
                     'FAC_NOMINAL' : 9,
+                    'PER_NOM' : 5,
+                    'ORG_NOM' : 6,
+                    'GPE_NOM' : 7,
+                    'LOC_NOM' : 8,
+                    'FAC_NOM' : 9,
                     'TITLE_NAME' : 5,
                     'TITLE_NOMINAL' : 5
                 } 
@@ -1961,6 +1966,8 @@ class TaskHolder:
             self.batch_num = 0
         elif n_label == 18:
             self.batch_num = 1
+        else:
+            self.batch_num = 2
 
         self.best_test_fb1 = 0
         self.valid_cost = None
