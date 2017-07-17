@@ -1076,7 +1076,7 @@ class multi_fofe_mention_net( object ):
                                                                               use_locking = True ) \
                                           .minimize( self.ontonotes_xent, var_list = [ self.ner_embedding_ontonotes ] )
                 kbp_ner_embedding_train_step = tf.train.GradientDescentOptimizer(self.lr,
-                                                                                use_locking = True)
+                                                                                use_locking = True) \
                                             .minimize(self.kbp_xent, var_list = [self.ner_embedding_kbp])
 
                 self.conll_train_step.append( conll_ner_embedding_train_step )
