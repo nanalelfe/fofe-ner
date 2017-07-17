@@ -1170,10 +1170,17 @@ class multi_fofe_mention_net( object ):
             train = self.conll_train_step + [self.conll_xent]
             ner_cls_match_conll = dense_feature[:,512:]
             ner_cls_match_ontonotes = numpy.zeros((512, 19))
-        else:
+            ner_cls_match_kbp = numpy.zeros((512, 11))
+        elif dataset == 1:
             train = self.ontonotes_train_step + [self.ontonotes_xent]
             ner_cls_match_conll = numpy.zeros((512, 5))
             ner_cls_match_ontonotes = dense_feature[:,512:]
+            ner_cls_match_kbp = numpy.zeros((512, 11))
+        else: 
+            train = self.kbp_train_step + [self.kbp_xent]
+            ner_cls_match_conll = numpy.zeros((512, 5))
+            ner_cls_match_ontonotes = numpy.zeros((512, 19))
+            ner_cls_match_kbp = dense_feature[:,512:]
 
         c = self.session.run(  
             train,
@@ -1205,6 +1212,7 @@ class multi_fofe_mention_net( object ):
                             self.ri_fofe: dense_feature[:,384:512],
                             self.ner_cls_match_conll: ner_cls_match_conll,
                             self.ner_cls_match_ontonotes: ner_cls_match_ontonotes,
+                            self.ner_cls_match_kbp: ner_cls_match_kbp,
                             self.char_idx: conv_idx,
                             self.lbc_values : l5_values,
                             self.lbc_indices : l5_indices,
@@ -1257,10 +1265,17 @@ class multi_fofe_mention_net( object ):
             train = [self.conll_xent, self.conll_predicted_indices, self.conll_predicted_values]
             ner_cls_match_conll = dense_feature[:,512:]
             ner_cls_match_ontonotes = numpy.zeros((512, 19))
-        else:
+            ner_cls_match_kbp = numpy.zeros((512, 11))
+        elif dataset == 1:
             train = [self.ontonotes_xent, self.ontonotes_predicted_indices, self.ontonotes_predicted_values]
             ner_cls_match_conll = numpy.zeros((512, 5))
             ner_cls_match_ontonotes = dense_feature[:,512:]
+            ner_cls_match_kbp = numpy.zeros((512, 11))
+        else:
+            train = [self.kbp_xent, self.kbp_predicted_indices, self.kbp_predicted_values]
+            ner_cls_match_conll = numpy.zeros((512, 5))
+            ner_cls_match_ontonotes = numpy.zeros((512, 19))
+            ner_cls_match_kbp = dense_feature[:,512:]
 
 
         c, pi, pv = self.session.run( train, 
@@ -1292,6 +1307,7 @@ class multi_fofe_mention_net( object ):
                                                         self.ri_fofe: dense_feature[:,384:512],
                                                         self.ner_cls_match_conll: ner_cls_match_conll,
                                                         self.ner_cls_match_ontonotes: ner_cls_match_ontonotes,
+                                                        self.ner_cls_match_kbp : ner_cls_match_kbp,
                                                         self.char_idx: conv_idx,
                                                         self.lbc_values : l5_values,
                                                         self.lbc_indices : l5_indices,
