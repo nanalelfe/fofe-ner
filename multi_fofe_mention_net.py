@@ -273,21 +273,17 @@ class multi_fofe_mention_net( object ):
 
         CONLL_N_LABELS = 4
         ONTONOTES_N_LABELS = 18
-        KBP_N_LABELS = 10
 
         # add a U matrix between projected feature and fully-connected layers
 
         n_in_shared = [ hope_out if hope_out > 0 else hope_in ] + [ int(s) for s in layer_size.split(',') ]
         n_out_shared = n_in_shared[1:] + [n_in_shared[-1]]
 
-        n_in_conll = n_out_shared[-4:]
-        n_out_conll = n_in_conll[-3:] + [ CONLL_N_LABELS + 1 ]
+        n_in_conll = n_out_shared
+        n_out_conll = n_in_conll[1:] + [ CONLL_N_LABELS + 1 ]
 
-        n_in_ontonotes = n_out_shared[-4:]
-        n_out_ontonotes = n_in_ontonotes[-3:] + [ ONTONOTES_N_LABELS + 1 ]
-
-        n_in_kbp = n_out_shared[-4:]
-        n_out_kbp = n_in_kbp[-3:] + [ KBP_N_LABELS + 1 ] 
+        n_in_ontonotes = n_out_shared
+        n_out_ontonotes = n_in_ontonotes[1:] + [ ONTONOTES_N_LABELS + 1 ]
 
         logger.info( 'n_in_shared: ' + str(n_in_shared) )
         logger.info( 'n_out_shared: ' + str(n_out_shared) )
@@ -295,8 +291,6 @@ class multi_fofe_mention_net( object ):
         logger.info( 'n_out_ontonotes: ' + str(n_out_ontonotes) )
         logger.info( 'n_in_conll: ' + str(n_in_conll) )
         logger.info( 'n_out_conll: ' + str(n_out_conll) )
-        logger.info( 'n_in_kbp: ' + str(n_in_kbp) )
-        logger.info( 'n_out_kbp: ' + str(n_out_kbp) )
 
         with self.graph.as_default():
 
@@ -396,7 +390,6 @@ class multi_fofe_mention_net( object ):
             # column number:
             self.ner_cls_match_conll = tf.placeholder( tf.float32, [None, CONLL_N_LABELS + 1], name = 'gazetteer_conll' )
             self.ner_cls_match_ontonotes = tf.placeholder( tf.float32, [None, ONTONOTES_N_LABELS + 1], name = 'gazetteer_ontonotes' )
-            self.ner_cls_match_kbp = tf.placeholder(tf.float32, [None, KBP_N_LABELS + 1], name='gazetteer_kbp')
 
             # Each entity type is associated with a label
             self.label = tf.placeholder( tf.int64, [None], 'label' )
@@ -436,13 +429,11 @@ class multi_fofe_mention_net( object ):
             self.shared_layer_weights = []
             self.ontonotes_layer_weights = []
             self.conll_layer_weights = []
-            self.kbp_layer_weights = []
 
             # Bias
             self.shared_layer_b = []   
             self.ontonotes_layer_b = []
             self.conll_layer_b = []
-            self.kbp_layer_b = []
             self.param = []
 
             # network weights are randomly initialized based on the uniform distribution
@@ -459,7 +450,6 @@ class multi_fofe_mention_net( object ):
                 # value range
                 val_rng_conll = numpy.float32(2.5 / numpy.sqrt(CONLL_N_LABELS + n_ner_embedding + 1))
                 val_rng_ontonotes = numpy.float32(2.5 / numpy.sqrt(ONTONOTES_N_LABELS + n_ner_embedding + 1))
-                val_rng_kbp = numpy.float32(2.5 / numpy.sqrt(KBP_N_LABELS + n_ner_embedding + 1))
 
                 # random initialization of word embeddings
                 self.ner_embedding_conll = tf.Variable( tf.random_uniform( 
@@ -467,9 +457,6 @@ class multi_fofe_mention_net( object ):
 
                 self.ner_embedding_ontonotes = tf.Variable( tf.random_uniform( 
                                         [ONTONOTES_N_LABELS + 1 ,n_ner_embedding], minval = -val_rng_ontonotes, maxval = val_rng_ontonotes ) )
-
-                self.ner_embedding_kbp = tf.Variable( tf.random_uniform( 
-                                        [KBP_N_LABELS + 1 ,n_ner_embedding], minval = -val_rng_kbp, maxval = val_rng_kbp ) )
                 
                 val_rng = numpy.float32(2.5 / numpy.sqrt(96 * 96 + n_char_embedding))
                 self.bigram_embedding = tf.Variable( tf.random_uniform( 
@@ -501,20 +488,14 @@ class multi_fofe_mention_net( object ):
                 for i, o in zip( n_in_ontonotes, n_out_ontonotes ):
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
 
-                    self.ontonotes_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng_ontonotes, maxval = val_rng_ontonotes ) ) )
+                    self.ontonotes_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
                     self.ontonotes_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
                 for i, o in zip( n_in_conll, n_out_conll ):
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
 
-                    self.conll_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng_conll, maxval = val_rng_conll ) ) )
+                    self.conll_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng, maxval = val_rng ) ) )
                     self.conll_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
-
-                for i, o in zip( n_in_kbp, n_out_kbp ):
-                    val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
-
-                    self.kbp_layer_weights.append( tf.Variable( tf.random_uniform( [i, o], minval = -val_rng_kbp, maxval = val_rng_kbp ) ) )
-                    self.kbp_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
 
                 if n_pattern > 0:
@@ -594,11 +575,6 @@ class multi_fofe_mention_net( object ):
                     self.conll_layer_weights.append( tf.Variable( tf.truncated_normal( [i, o], stddev = numpy.sqrt(2./(i * o)) ) ) )
                     self.conll_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
-                for i, o in zip( n_in_kbp, n_out_kbp ):
-                    self.kbp_layer_weights.append( tf.Variable( tf.truncated_normal( [i, o], stddev = numpy.sqrt(2./(i * o)) ) ) )
-                    self.kbp_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
-
-
                 if n_pattern > 0:
                     # case-insensitive patterns
                     # stddev = numpy.sqrt(2./(n_pattern * n_word1))
@@ -655,7 +631,6 @@ class multi_fofe_mention_net( object ):
 
             self.ontonotes_param = self.param[:]
             self.conll_param = self.param[:]
-            self.kbp_param = self.param[:]
 
             self.conll_param.append( self.ner_embedding_conll )
             self.conll_param.extend(self.conll_layer_weights)
@@ -664,12 +639,9 @@ class multi_fofe_mention_net( object ):
             self.ontonotes_param.append( self.ner_embedding_ontonotes )
             self.ontonotes_param.extend(self.ontonotes_layer_weights)
             self.ontonotes_param.extend(self.ontonotes_layer_b)
-
-            self.kbp_param.append( self.ner_embedding_kbp )
-            self.kbp_param.extend(self.kbp_layer_weights)
-            self.kbp_param.extend(self.kbp_layer_b)
             
             # add KBP later
+
             logger.info( 'variable defined' )
 
             ################################################################################
@@ -820,12 +792,11 @@ class multi_fofe_mention_net( object ):
 
             ner_projection_conll = tf.matmul( self.ner_cls_match_conll, self.ner_embedding_conll )
             ner_projection_ontonotes = tf.matmul( self.ner_cls_match_ontonotes, self.ner_embedding_ontonotes )
-            ner_projection_kbp = tf.matmul( self.ner_cls_match_kbp, self.ner_embedding_kbp )
 
             # all possible features
             feature_list = [ [lwp1, rwp1], [lwp2, rwp2], [bowp1],
                              [lwp3, rwp3], [lwp4, rwp4], [bowp2],
-                             [lcp, rcp], [lip, rip], [ner_projection_conll, ner_projection_ontonotes, ner_projection_kbp],
+                             [lcp, rcp], [lip, rip], [ner_projection_conll, ner_projection_ontonotes],
                              char_conv, [lbcp, rbcp] ]
 
             # divide up the used and unused features
@@ -869,7 +840,6 @@ class multi_fofe_mention_net( object ):
 
             conll_layer_output = shared_layer_output[:]
             ontonotes_layer_output = shared_layer_output[:]
-            kbp_layer_output = shared_layer_output[:]
 
             #============================
             #==== OntoNotes layers ======
@@ -897,19 +867,6 @@ class multi_fofe_mention_net( object ):
                     # Dropout layer
                     conll_layer_output[-1] = tf.nn.dropout(conll_layer_output[-1], self.keep_prob )
 
-            #======================
-            #==== KBP layers ======
-            #======================
-
-            for i in xrange(len(self.kbp_layer_weights)):
-                kbp_layer_output.append( tf.matmul(kbp_layer_output[-1], self.kbp_layer_weights[i] ) + self.kbp_layer_b[i] )
-                if i < len(self.kbp_layer_weights) - 1:
-                    # ReLU layer
-                    kbp_layer_output[-1] = tf.nn.relu(kbp_layer_output[-1] )
-                if i < len(self.kbp_layer_weights) - 2:
-                    # Dropout layer
-                    kbp_layer_output[-1] = tf.nn.dropout(kbp_layer_output[-1], self.keep_prob )
-
             #=============================
 
             # 13th layer: log_softmax
@@ -919,8 +876,6 @@ class multi_fofe_mention_net( object ):
             self.conll_xent = tf.reduce_mean( tf.nn.sparse_softmax_cross_entropy_with_logits( 
                                             logits = conll_layer_output[-1], labels = self.label ) )
 
-            self.kbp_xent = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = kbp_layer_output[-1], labels = self.label))
-
             if config.l1 > 0:
                 # self.param contains weights, bias, character conv embedding variables etc
                 for param in self.ontonotes_param:
@@ -928,9 +883,6 @@ class multi_fofe_mention_net( object ):
 
                 for param in self.conll_param:
                     self.conll_xent = self.conll_xent + config.l1 * tf.reduce_sum( tf.abs( param ) )
-
-                for param in self.kbp_param:
-                    self.kbp_xent = self.kbp_xent + config.l1 * tf.reduce_sum(tf.abs(param))
 
 
             if config.l2 > 0:
@@ -940,9 +892,6 @@ class multi_fofe_mention_net( object ):
                 for param in self.conll_param:
                     self.conll_xent = self.conll_xent + config.l2 * tf.nn.l2_loss( param )
 
-                for param in self.kbp_param:
-                    self.kbp_xent = self.kbp_xent + config.l2 * tf.nn.l2_loss(param)
-
             self.ontonotes_predicted_values = tf.nn.softmax( ontonotes_layer_output[-1] )
             _, top_ontonotes_indices = tf.nn.top_k( self.ontonotes_predicted_values )
             self.ontonotes_predicted_indices = tf.reshape( top_ontonotes_indices, [-1] )
@@ -950,10 +899,6 @@ class multi_fofe_mention_net( object ):
             self.conll_predicted_values = tf.nn.softmax( conll_layer_output[-1] )
             _, top_conll_indices = tf.nn.top_k( self.conll_predicted_values )
             self.conll_predicted_indices = tf.reshape( top_conll_indices, [-1] )
-
-            self.kbp_predicted_values = tf.nn.softmax(kbp_layer_output[-1])
-            _, top_kbp_indices = tf.nn.top_k(self.kbp_predicted_values)
-            self.kbp_predicted_indices = tf.reshape(top_kbp_indices, [-1])
 
             varlist = self.shared_layer_weights + self.shared_layer_b
             # add KBP later
@@ -965,7 +910,7 @@ class multi_fofe_mention_net( object ):
             ontonotes_fully_connected_train_step = tf.train.MomentumOptimizer( self.lr, 
                                                                      self.config.momentum, 
                                                                      use_locking = False ) \
-                                        .minimize(self.ontonotes_xent, var_list = ontonotes_varlist)
+                                           .minimize(self.ontonotes_xent, var_list = ontonotes_varlist)
 
             conll_varlist = varlist + self.conll_layer_weights + self.conll_layer_b
             conll_fully_connected_train_step = tf.train.MomentumOptimizer(self.lr,
@@ -973,16 +918,9 @@ class multi_fofe_mention_net( object ):
                                                                 use_locking = False) \
                                         .minimize(self.conll_xent, var_list = conll_varlist)
 
-            kbp_varlist = varlist + self.kbp_layer_weights + self.kbp_layer_b
-            kbp_fully_connected_train_step = tf.train.MomentumOptimizer(self.lr,
-                                                                self.config.momentum,
-                                                                use_locking = False) \
-                                        .minimize(self.kbp_xent, var_list = kbp_varlist)
-
             # a list of things to train
             self.conll_train_step = [ conll_fully_connected_train_step ]
             self.ontonotes_train_step = [ ontonotes_fully_connected_train_step ]
-            self.kbp_train_step = [ kbp_fully_connected_train_step ]
 
             if n_pattern > 0:
                 __lambda = 0.001
@@ -1022,14 +960,8 @@ class multi_fofe_mention_net( object ):
                 ontonotes_insensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
                                                                             use_locking = True ) \
                                           .minimize( self.ontonotes_xent, var_list = [ self.word_embedding_1 ] )
-
-                kbp_insensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
-                                                                            use_locking = True ) \
-                                          .minimize( self.kbp_xent, var_list = [ self.word_embedding_1 ] )
-
                 self.conll_train_step.append( conll_insensitive_train_step )
                 self.ontonotes_train_step.append( ontonotes_insensitive_train_step )
-                self.kbp_train_step.append( kbp_insensitive_train_step )
 
             # train the word embedding for sensitive case
             if feature_choice & (0b111 << 3) > 0:
@@ -1039,14 +971,8 @@ class multi_fofe_mention_net( object ):
                 ontonotes_sensitive_train_step = tf.train.GradientDescentOptimizer( self.lr / 4, 
                                                                           use_locking = True ) \
                                           .minimize( self.ontonotes_xent, var_list = [ self.word_embedding_2 ] )
-
-                kbp_sensitive_train_step = tf.train.GradientDescentOptimizer(self.lr / 4,   
-                                                                    use_locking = True) \
-                                            .minimize( self.kbp_xent, var_list = [ self.word_embedding_2 ] )
-
                 self.conll_train_step.append( conll_sensitive_train_step )
                 self.ontonotes_train_step.append( ontonotes_sensitive_train_step )
-                self.kbp_train_step.append(kbp_sensitive_train_step)
 
             # train the char embedding for insensitive case
             if feature_choice & (0b11 << 6) > 0:
@@ -1056,13 +982,8 @@ class multi_fofe_mention_net( object ):
                 ontonotes_char_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr / 2, 
                                                                                use_locking = True ) \
                                               .minimize( self.ontonotes_xent, var_list = [ self.char_embedding ] )
-                kbp_char_embedding_train_step = tf.train.GradientDescentOptimizer(self.lr / 2,
-                                                                                use_locking = True) \
-                                                .minimize(self.kbp_xent, var_list = [self.char_embedding])
-
                 self.conll_train_step.append( conll_char_embedding_train_step )
                 self.ontonotes_train_step.append( ontonotes_char_embedding_train_step )
-                self.kbp_train_step.append(kbp_char_embedding_train_step)
 
             # train the NER embedding
             if feature_choice & (1 << 8) > 0:
@@ -1072,12 +993,8 @@ class multi_fofe_mention_net( object ):
                 ontonotes_ner_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr, 
                                                                               use_locking = True ) \
                                           .minimize( self.ontonotes_xent, var_list = [ self.ner_embedding_ontonotes ] )
-                kbp_ner_embedding_train_step = tf.train.GradientDescentOptimizer(self.lr,
-                                                                                use_locking = True) \
-
                 self.conll_train_step.append( conll_ner_embedding_train_step )
                 self.ontonotes_train_step.append( ontonotes_ner_embedding_train_step )
-                self.kbp_train_step.append(kbp_ner_embedding_train_step)
 
             if feature_choice & (1 << 9) > 0:
                 conll_char_conv_train_step = tf.train.MomentumOptimizer( self.lr, momentum )\
@@ -1088,24 +1005,16 @@ class multi_fofe_mention_net( object ):
                                              .minimize( self.ontonotes_xent, 
                                                 var_list = [ self.conv_embedding ] + \
                                                              self.kernels + self.kernel_bias )
-                kbp_char_conv_train_step = tf.train.MomentumOptimizer(self.lr, momentum) \
-                                            .minimize(self.kbp_xent, var_list = [self.conv_embedding] + \
-                                                self.kernels + self.kernel_bias)
-
                 self.conll_train_step.append( conll_char_conv_train_step )
                 self.ontonotes_train_step.append( ontonotes_char_conv_train_step )
-                self.kbp_train_step.append(kbp_char_conv_train_step)
 
             if feature_choice & (1 << 10) > 0:
                 conll_bigram_train_step = tf.train.GradientDescentOptimizer( self.lr / 2, use_locking = True )\
                                             .minimize( self.conll_xent, var_list = [ self.bigram_embedding ] )
                 ontonotes_bigram_train_step = tf.train.GradientDescentOptimizer( self.lr / 2, use_locking = True )\
                                             .minimize( self.ontonotes_xent, var_list = [ self.bigram_embedding ] )
-                kbp_bigram_train_step = tf.train.GradientDescentOptimizer(self.lr / 2, use_locking = True) \
-                                            .minimize(self.kbp_xent, var_list = [self.bigram_embedding])
                 self.conll_train_step.append( conll_bigram_train_step )
                 self.ontonotes_train_step.append( ontonotes_bigram_train_step )
-                self.kbp_train_step.append(kbp_bigram_train_step)
 
             if hope_out > 0:
                 __lambda = 0.001
@@ -1166,17 +1075,10 @@ class multi_fofe_mention_net( object ):
             train = self.conll_train_step + [self.conll_xent]
             ner_cls_match_conll = dense_feature[:,512:]
             ner_cls_match_ontonotes = numpy.zeros((512, 19))
-            ner_cls_match_kbp = numpy.zeros((512, 11))
-        elif dataset == 1:
+        else:
             train = self.ontonotes_train_step + [self.ontonotes_xent]
             ner_cls_match_conll = numpy.zeros((512, 5))
             ner_cls_match_ontonotes = dense_feature[:,512:]
-            ner_cls_match_kbp = numpy.zeros((512, 11))
-        else: 
-            train = self.kbp_train_step + [self.kbp_xent]
-            ner_cls_match_conll = numpy.zeros((512, 5))
-            ner_cls_match_ontonotes = numpy.zeros((512, 19))
-            ner_cls_match_kbp = dense_feature[:,512:]
 
         c = self.session.run(  
             train,
@@ -1208,7 +1110,6 @@ class multi_fofe_mention_net( object ):
                             self.ri_fofe: dense_feature[:,384:512],
                             self.ner_cls_match_conll: ner_cls_match_conll,
                             self.ner_cls_match_ontonotes: ner_cls_match_ontonotes,
-                            self.ner_cls_match_kbp: ner_cls_match_kbp,
                             self.char_idx: conv_idx,
                             self.lbc_values : l5_values,
                             self.lbc_indices : l5_indices,
@@ -1261,17 +1162,11 @@ class multi_fofe_mention_net( object ):
             train = [self.conll_xent, self.conll_predicted_indices, self.conll_predicted_values]
             ner_cls_match_conll = dense_feature[:,512:]
             ner_cls_match_ontonotes = numpy.zeros((512, 19))
-            ner_cls_match_kbp = numpy.zeros((512, 11))
-        elif dataset == 1:
+        else:
             train = [self.ontonotes_xent, self.ontonotes_predicted_indices, self.ontonotes_predicted_values]
             ner_cls_match_conll = numpy.zeros((512, 5))
             ner_cls_match_ontonotes = dense_feature[:,512:]
-            ner_cls_match_kbp = numpy.zeros((512, 11))
-        else:
-            train = [self.kbp_xent, self.kbp_predicted_indices, self.kbp_predicted_values]
-            ner_cls_match_conll = numpy.zeros((512, 5))
-            ner_cls_match_ontonotes = numpy.zeros((512, 19))
-            ner_cls_match_kbp = dense_feature[:,512:]
+
 
         c, pi, pv = self.session.run( train, 
                                         feed_dict = {   self.lw1_values: l1_values,
@@ -1302,7 +1197,6 @@ class multi_fofe_mention_net( object ):
                                                         self.ri_fofe: dense_feature[:,384:512],
                                                         self.ner_cls_match_conll: ner_cls_match_conll,
                                                         self.ner_cls_match_ontonotes: ner_cls_match_ontonotes,
-                                                        self.ner_cls_match_kbp: ner_cls_match_kbp,
                                                         self.char_idx: conv_idx,
                                                         self.lbc_values : l5_values,
                                                         self.lbc_indices : l5_indices,
