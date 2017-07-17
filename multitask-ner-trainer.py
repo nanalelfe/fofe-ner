@@ -345,7 +345,7 @@ if __name__ == '__main__':
                     gazetteer = kbp_gazetteer, 
                     alpha = config.word_alpha, 
                     window = config.n_window, 
-                    n_label_type = config.n_label_type,
+                    n_label_type = KBP_N_LABELS,
                     language = config.language,
                     is2ndPass = args.is_2nd_pass 
                 )
@@ -381,7 +381,7 @@ if __name__ == '__main__':
                     gazetteer = kbp_gazetteer, 
                     alpha = config.word_alpha, 
                     window = config.n_window, 
-                    n_label_type = config.n_label_type,
+                    n_label_type = KBP_N_LABELS,
                     language = config.language,
                     is2ndPass = args.is_2nd_pass 
                 )
@@ -417,7 +417,7 @@ if __name__ == '__main__':
                     gazetteer = kbp_gazetteer, 
                     alpha = config.word_alpha, 
                     window = config.n_window, 
-                    n_label_type = config.n_label_type,
+                    n_label_type = KBP_N_LABELS,
                     language = config.language,
                     is2ndPass = args.is_2nd_pass 
                 )
