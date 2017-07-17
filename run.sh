@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export THIS_DIR=$(cd $(dirname $0); pwd)
-export CUDA_VISIBLE_DEVICES='0'
+export CUDA_VISIBLE_DEVICES='1'
 
 ${THIS_DIR}/multitask-ner-trainer.py \
 	"/eecs/research/asr/mingbin/ner-advance/word2vec/gw128" \
