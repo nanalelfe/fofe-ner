@@ -1133,7 +1133,7 @@ class multi_fofe_mention_net( object ):
             self.saver = tf.train.Saver()
 
 
-    def train( self, mini_batch, dataset, profile = False ):
+    def train( self, mini_batch, curr_task, profile = False ):
         """
         Parameters
         ----------
@@ -1166,12 +1166,12 @@ class multi_fofe_mention_net( object ):
         else:
             options, run_metadata = None, None
 
-        if dataset == 0:
+        if curr_task.batch_num == 0:
             train = self.conll_train_step + [self.conll_xent]
             ner_cls_match_conll = dense_feature[:,512:]
             ner_cls_match_ontonotes = numpy.zeros((512, 19))
             ner_cls_match_kbp = numpy.zeros((512, 11))
-        elif dataset == 1:
+        elif curr_task.batch_num == 1:
             train = self.ontonotes_train_step + [self.ontonotes_xent]
             ner_cls_match_conll = numpy.zeros((512, 5))
             ner_cls_match_ontonotes = dense_feature[:,512:]
@@ -1220,7 +1220,7 @@ class multi_fofe_mention_net( object ):
                             self.rbc_indices : r5_indices,
                             self.shape3 : (target.shape[0], 96 * 96),
                             self.label: target,
-                            self.lr: self.config.learning_rate,
+                            self.lr: curr_task.lr,
                             self.keep_prob: 1 - self.config.drop_rate },
             options = options, 
             run_metadata = run_metadata
@@ -1236,7 +1236,7 @@ class multi_fofe_mention_net( object ):
         return c
         
 
-    def eval( self, mini_batch, dataset ):
+    def eval( self, mini_batch, curr_task ):
         """
         Parameters
         ----------
@@ -1261,12 +1261,12 @@ class multi_fofe_mention_net( object ):
         if not self.config.strictly_one_hot:
             dense_feature[:,-1] = 0
 
-        if dataset == 0:
+        if curr_task.batch_num == 0:
             train = [self.conll_xent, self.conll_predicted_indices, self.conll_predicted_values]
             ner_cls_match_conll = dense_feature[:,512:]
             ner_cls_match_ontonotes = numpy.zeros((512, 19))
             ner_cls_match_kbp = numpy.zeros((512, 11))
-        elif dataset == 1:
+        elif curr_task.batch_num == 1:
             train = [self.ontonotes_xent, self.ontonotes_predicted_indices, self.ontonotes_predicted_values]
             ner_cls_match_conll = numpy.zeros((512, 5))
             ner_cls_match_ontonotes = dense_feature[:,512:]

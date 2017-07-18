@@ -442,7 +442,8 @@ if __name__ == '__main__':
             config.overlap_rate, config.disjoint_rate,
             config.feature_choice, True)
 
-    conll_task = TaskHolder(CoNLL2003, (train_conll, valid_conll, test_conll), 
+    conll_task = TaskHolder(CoNLL2003, args.learning_rate,
+                                         (train_conll, valid_conll, test_conll), 
                                        ("multitask-result/multitask-train-conll.predicted",
                                         'multitask-result/multitask-valid-conll.predicted',
                                         'multitask-result/multitask-test-conll.predicted'),
@@ -451,14 +452,15 @@ if __name__ == '__main__':
                                          args.conll_datapath + '/eng.testb'),
                                         CONLL_N_LABELS)
 
-    ontonotes_task = TaskHolder(OntoNotes, (train_ontonotes, valid_ontonotes, test_ontonotes),
+    ontonotes_task = TaskHolder(OntoNotes, args.learning_rate,
+                                 (train_ontonotes, valid_ontonotes, test_ontonotes),
                                 ("multitask-result/multitask-train-ontonotes.predicted",
                                  'multitask-result/multitask-valid-ontonotes.predicted',
                                   'multitask-result/multitask-test-ontonotes.predicted'),
                                 (ontonotes_training_path, ontonotes_valid_path, ontonotes_test_path),
                                  ONTONOTES_N_LABELS)
 
-    kbp_task = TaskHolder(KBP, (train_kbp, valid_kbp, test_kbp), 
+    kbp_task = TaskHolder(KBP, args.learning_rate, (train_kbp, valid_kbp, test_kbp), 
                                 ('multitask-result/multitask-train-kbp.predicted',
                                  'multitask-result/multitask-valid-kbp.predicted',
                                  'multitask-result/multitask-test-kbp.predicted'),
@@ -482,9 +484,11 @@ if __name__ == '__main__':
             curr_task = kbp_task
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
 
+        #mention_net.config.learning_rate = curr_task.lr
+
         # phar is used to observe training progress
         logger.info('epoch %2d, learning-rate: %f' % \
-                    (n_epoch + 1, mention_net.config.learning_rate))
+                    (n_epoch + 1, curr_task.lr))
 
         pbar = tqdm(total=len(curr_task.batch_constructors[0].positive) +
                           int(len(curr_task.batch_constructors[0].overlap) * config.overlap_rate) +
@@ -500,7 +504,7 @@ if __name__ == '__main__':
                                                              config.disjoint_rate,
                                                              config.feature_choice)):
 
-            c = mention_net.train(example, curr_task.batch_num)
+            c = mention_net.train(example, curr_task)
             cost += c * example[-1].shape[0]
             cnt += example[-1].shape[0]
             pbar.update(example[-1].shape[0])
@@ -530,7 +534,7 @@ if __name__ == '__main__':
                 512 if config.feature_choice & (1 << 9) > 0 else 1024,
                 False, 1, 1, config.feature_choice):
 
-            c, pi, pv = mention_net.eval(example, curr_task.batch_num)
+            c, pi, pv = mention_net.eval(example, curr_task)
 
             cost += c * example[-1].shape[0]
             cnt += example[-1].shape[0]
@@ -560,7 +564,7 @@ if __name__ == '__main__':
                 512 if config.feature_choice & (1 << 9) > 0 else 1024,
                 False, 1, 1, config.feature_choice):
 
-            c, pi, pv = mention_net.eval(example, curr_task.batch_num)
+            c, pi, pv = mention_net.eval(example, curr_task)
 
             cost += c * example[-1].shape[0]
             cnt += example[-1].shape[0]
@@ -595,7 +599,7 @@ if __name__ == '__main__':
                 512 if config.feature_choice & (1 << 9) > 0 else 1024,
                 False, 1, 1, config.feature_choice):
 
-            c, pi, pv = mention_net.eval(example, curr_task.batch_num)
+            c, pi, pv = mention_net.eval(example, curr_task)
 
             cost += c * example[-1].shape[0]
             cnt += example[-1].shape[0]
