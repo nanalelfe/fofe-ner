@@ -1365,7 +1365,7 @@ class batch_constructor:
                     rbc_indices.clear()
                     rbc_values.clear()
 
-                dense_buffer = numpy.zeros( (n_batch_size, 513 + self.n_label_type), 
+                dense_buffer = numpy.zeros( (n_batch_size, 513 + self.n_label_type),
                                             dtype = numpy.float32 )
 
 
@@ -1949,7 +1949,7 @@ class TaskHolder:
     Object contains information needed to train with a certain task
     '''
 
-    def __init__(self, generator, batch_constrs, predicted_files, data_loc, n_label):
+    def __init__(self, generator, lr, batch_constrs, predicted_files, data_loc, n_label):
         '''
         generator: CoNLL2003 or OntoNotes
         batch_constrs: (train, valid, test) - tuple
@@ -1961,6 +1961,7 @@ class TaskHolder:
         self.predicted_files = predicted_files 
         self.data_loc = data_loc
         self.n_label = n_label
+        self.lr = lr
 
         if n_label == 4:
             self.batch_num = 0
