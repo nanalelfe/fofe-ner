@@ -281,13 +281,13 @@ class multi_fofe_mention_net( object ):
         n_out_shared = n_in_shared[1:] + [n_in_shared[-1]]
 
         n_in_conll = n_out_shared
-        n_out_conll = n_in_conll[1:] + [ CONLL_N_LABELS + 1 ]
+        n_out_conll = n_in_conll[-3:] + [ CONLL_N_LABELS + 1 ]
 
         n_in_ontonotes = n_out_shared
-        n_out_ontonotes = n_in_ontonotes[1:] + [ ONTONOTES_N_LABELS + 1 ]
+        n_out_ontonotes = n_in_ontonotes[-3:] + [ ONTONOTES_N_LABELS + 1 ]
 
         n_in_kbp = n_out_shared 
-        n_out_kbp = n_in_kbp[1:] +  [KBP_N_LABELS + 1]
+        n_out_kbp = n_in_kbp[-3:] +  [KBP_N_LABELS + 1]
 
         logger.info( 'n_in_shared: ' + str(n_in_shared) )
         logger.info( 'n_out_shared: ' + str(n_out_shared) )
