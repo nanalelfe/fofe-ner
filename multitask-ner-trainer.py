@@ -484,7 +484,7 @@ if __name__ == '__main__':
             curr_task = kbp_task
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
 
-        #mention_net.config.learning_rate = curr_task.lr
+        mention_net.config.learning_rate = curr_task.lr
 
         # phar is used to observe training progress
         logger.info('epoch %2d, learning-rate: %f' % \
@@ -705,7 +705,7 @@ if __name__ == '__main__':
         ##########################################
 
         if valid_cost > prev_cost or decay_started:
-            mention_net.config.learning_rate *= \
+            curr_task.lr *= \
                 0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
         else:
             prev_cost = valid_cost
