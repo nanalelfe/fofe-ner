@@ -471,7 +471,7 @@ if __name__ == '__main__':
         if not os.path.exists('multitask-result'):
             os.makedirs('multitask-result')
 
-        pick = random.choice([2])
+        pick = random.choice([0, 1, 2])
         if pick == 0:
             # CoNLL 2003
             curr_task = conll_task
