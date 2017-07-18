@@ -1,16 +1,16 @@
-import cython, numpy
-from libcpp.string import string
-from libcpp.vector import vector
-from libcpp.map import map as ordered_map
-from cython.operator import dereference, preincrement
+cimport cython, numpy
+from libcpp.string cimport string
+from libcpp.vector cimport vector
+from libcpp.map cimport map as ordered_map
+from cython.operator cimport dereference, preincrement
 
+from scipy.sparse import csr_matrix
 from Queue import Queue
 from threading import Thread
 from itertools import izip, islice, imap, combinations, chain
 from hanziconv import HanziConv
 import numpy, re, random, logging, codecs, copy, glob, os
 from lxml import etree
-
 
 
 def KBP2015( filename ):
