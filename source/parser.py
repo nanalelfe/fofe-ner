@@ -1,8 +1,8 @@
 import cython, numpy
-from libcpp.string cimport string
-from libcpp.vector cimport vector
-from libcpp.map cimport map as ordered_map
-from cython.operator cimport dereference, preincrement
+from libcpp.string import string
+from libcpp.vector import vector
+from libcpp.map import map as ordered_map
+from cython.operator import dereference, preincrement
 
 from Queue import Queue
 from threading import Thread
