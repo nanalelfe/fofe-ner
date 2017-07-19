@@ -1981,6 +1981,8 @@ class TaskHolder:
         self.out = None
         self.best_test_info = None
 
+        self.prev_cost = 2054
+
 
         # Plot
         self.train_scores = []
