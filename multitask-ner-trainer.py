@@ -76,6 +76,8 @@ if __name__ == '__main__':
 
     parser.add_argument('kbp_gazetteer', type=str, help='path to the kbp gazetteer file')
 
+    parser.add_argument('iflytek_checked_eng', type=str, help='path to the preparsed iFLYTEK checked dataset')
+
     # - Character embedding dimension
     parser.add_argument('--n_char_embedding', type=int, default=32,
                         help='char embedding dimension')
@@ -245,6 +247,7 @@ if __name__ == '__main__':
     logger.info("Here is config: ")
     pprint (vars(config))
 
+
     ################################################################################
 
     # TODO, try wikiNER
@@ -341,7 +344,7 @@ if __name__ == '__main__':
                               is2ndPass=args.is_2nd_pass)
 
     train_kbp = batch_constructor( 
-                    KBP(args.kbp_train_datapath),
+                    KBP(args.kbp_train_datapath, args.iflytek_checked_eng),
                     numericizer1, 
                     numericizer2, 
                     gazetteer = kbp_gazetteer, 
