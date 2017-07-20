@@ -252,8 +252,10 @@ def gazetteer( filename, mode = 'CoNLL2003' ):
 
 ################################################################################
 
-def KBP(filename):
+def KBP(filename, iflytek=None):
     generator = imap( lambda x: x[:4], LoadED( filename ) )
+    if iflytek is not None:
+        generator = chain(generator, imap( lambda x: x[:4], LoadED( iflytek ) ))
     for item in generator:
         yield item
 
@@ -1980,6 +1982,8 @@ class TaskHolder:
         self.fb1 = None
         self.out = None
         self.best_test_info = None
+
+        self.prev_cost = 2054
 
 
         # Plot

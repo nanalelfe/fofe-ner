@@ -1,5 +1,6 @@
-#!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
+#!/home/chwang/anaconda2/envs/tensorflow/bin/python
 
+#/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 import numpy, logging, time, copy, os, cPickle
 
 import tensorflow as tf
@@ -277,16 +278,16 @@ class multi_fofe_mention_net( object ):
 
         # add a U matrix between projected feature and fully-connected layers
 
-        n_in_shared = [ hope_out if hope_out > 0 else hope_in ] + [ int(s) for s in layer_size.split(',') ]
+        n_in_shared = [ hope_out if hope_out > 0 else hope_in ] + [ int(s) for s in layer_size.split(',') ]*3
         n_out_shared = n_in_shared[1:] + [n_in_shared[-1]]
 
-        n_in_conll = n_out_shared
+        n_in_conll = n_out_shared[-4:]
         n_out_conll = n_in_conll[1:] + [ CONLL_N_LABELS + 1 ]
 
-        n_in_ontonotes = n_out_shared
+        n_in_ontonotes = n_out_shared[-4:]
         n_out_ontonotes = n_in_ontonotes[1:] + [ ONTONOTES_N_LABELS + 1 ]
 
-        n_in_kbp = n_out_shared 
+        n_in_kbp = n_out_shared[-4:]
         n_out_kbp = n_in_kbp[1:] +  [KBP_N_LABELS + 1]
 
         logger.info( 'n_in_shared: ' + str(n_in_shared) )

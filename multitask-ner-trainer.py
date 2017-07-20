@@ -1,4 +1,6 @@
-#!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
+#!/home/chwang/anaconda2/envs/tensorflow/bin/python
+
+#/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -73,6 +75,8 @@ if __name__ == '__main__':
     parser.add_argument('kbp_test_datapath', type=str, help='path to the preparsed KBP test dataset')
 
     parser.add_argument('kbp_gazetteer', type=str, help='path to the kbp gazetteer file')
+
+    parser.add_argument('iflytek_checked_eng', type=str, help='path to the preparsed iFLYTEK checked dataset')
 
     # - Character embedding dimension
     parser.add_argument('--n_char_embedding', type=int, default=32,
@@ -243,6 +247,7 @@ if __name__ == '__main__':
     logger.info("Here is config: ")
     pprint (vars(config))
 
+
     ################################################################################
 
     # TODO, try wikiNER
@@ -339,7 +344,7 @@ if __name__ == '__main__':
                               is2ndPass=args.is_2nd_pass)
 
     train_kbp = batch_constructor( 
-                    KBP(args.kbp_train_datapath),
+                    KBP(args.kbp_train_datapath, args.iflytek_checked_eng),
                     numericizer1, 
                     numericizer2, 
                     gazetteer = kbp_gazetteer, 
@@ -471,7 +476,7 @@ if __name__ == '__main__':
         if not os.path.exists('multitask-result'):
             os.makedirs('multitask-result')
 
-        pick = random.choice([2])
+        pick = random.choice([0, 1, 2])
         if pick == 0:
             # CoNLL 2003
             curr_task = conll_task
@@ -484,7 +489,7 @@ if __name__ == '__main__':
             curr_task = kbp_task
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
 
-        #mention_net.config.learning_rate = curr_task.lr
+        mention_net.config.learning_rate = curr_task.lr
 
         # phar is used to observe training progress
         logger.info('epoch %2d, learning-rate: %f' % \
@@ -704,11 +709,11 @@ if __name__ == '__main__':
         ########## adjust learning rate ##########
         ##########################################
 
-        if valid_cost > prev_cost or decay_started:
-            mention_net.config.learning_rate *= \
+        if curr_task.valid_cost > curr_task.prev_cost or decay_started:
+            curr_task.lr *= \
                 0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
         else:
-            prev_cost = valid_cost
+            curr_task.prev_cost = curr_task.valid_cost
 
         if config.drop_rate > 0:
             mention_net.config.drop_rate *= 0.5 ** (2. / config.max_iter)
