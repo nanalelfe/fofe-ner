@@ -1,6 +1,4 @@
-#!/home/chwang/anaconda2/envs/tensorflow/bin/python
-
-#/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
+#!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 import numpy, logging, time, copy, os, cPickle
 
 import tensorflow as tf
