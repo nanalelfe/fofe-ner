@@ -278,7 +278,7 @@ class multi_fofe_mention_net( object ):
 
         # add a U matrix between projected feature and fully-connected layers
 
-        n_in_shared = [ hope_out if hope_out > 0 else hope_in ] + [ int(s) for s in layer_size.split(',') ]*3
+        n_in_shared = [ hope_out if hope_out > 0 else hope_in ] + [ int(s) for s in layer_size.split(',') ]*4
         n_out_shared = n_in_shared[1:] + [n_in_shared[-1]]
 
         n_in_conll = n_out_shared[-4:]
@@ -933,9 +933,6 @@ class multi_fofe_mention_net( object ):
 
                 for param in self.kbp_param:
                     self.kbp_xent = self.kbp_xent + config.l1 * tf.reduce_sum( tf.abs( param ) )
-
-
-
 
             if config.l2 > 0:
                 for param in self.ontonotes_param:

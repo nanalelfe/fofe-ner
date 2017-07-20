@@ -344,7 +344,8 @@ if __name__ == '__main__':
                               is2ndPass=args.is_2nd_pass)
 
     train_kbp = batch_constructor( 
-                    KBP(args.kbp_train_datapath, args.iflytek_checked_eng),
+                    # KBP(args.kbp_train_datapath, args.iflytek_checked_eng),
+                    KBP(args.kbp_train_datapath),
                     numericizer1, 
                     numericizer2, 
                     gazetteer = kbp_gazetteer, 
