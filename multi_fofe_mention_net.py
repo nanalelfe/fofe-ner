@@ -278,7 +278,9 @@ class multi_fofe_mention_net( object ):
 
         # add a U matrix between projected feature and fully-connected layers
 
-        n_in_shared = [ hope_out if hope_out > 0 else hope_in ] + [ int(s) for s in layer_size.split(',') ]*3
+        middle = [ int(s) for s in layer_size.split(',') ]
+
+        n_in_shared = [ hope_out if hope_out > 0 else hope_in ] + middle + [middle[0]]
         n_out_shared = n_in_shared[1:] + [n_in_shared[-1]]
 
         n_in_conll = n_out_shared[-4:]
@@ -311,30 +313,35 @@ class multi_fofe_mention_net( object ):
             # case insensitive excluding fragment
             self.lw1_values = tf.placeholder( dtype = tf.float32, shape = [None], 
                                               name = 'left-context-values' )
+
             self.lw1_indices = tf.placeholder( tf.int64, [None, 2], 
                                                name = 'left-context-indices' )
 
             # case insensitive excluding fragment
             self.rw1_values = tf.placeholder( tf.float32, [None], 
                                               name = 'right-context-values' )
+
             self.rw1_indices = tf.placeholder( tf.int64, [None, 2], 
                                                name = 'right-context-indices' )
 
             # case insensitive including fragment
             self.lw2_values = tf.placeholder( tf.float32, [None], 
                                               name = 'left-context-values' )
+
             self.lw2_indices = tf.placeholder( tf.int64, [None, 2], 
                                                name = 'left-context-indices' )
 
             # case insensitive including fragment
             self.rw2_values = tf.placeholder( tf.float32, [None], 
                                               name = 'right-context-values' )
+
             self.rw2_indices = tf.placeholder( tf.int64, [None, 2], 
                                                name = 'right-context-indices' )
 
             # case insensitive bow fragment
             self.bow1_values = tf.placeholder( tf.float32, [None], 
                                                name = 'bow-values' )
+            
             self.bow1_indices = tf.placeholder( tf.int64, [None, 2], 
                                                 name = 'bow-indices' )
 
@@ -484,14 +491,6 @@ class multi_fofe_mention_net( object ):
 
                 self.kernel_bias = [ tf.Variable( tf.zeros( [d] ) ) for d in kernel_depth ]
 
-                if hope_out > 0:
-                    val_rng = 2.5 / numpy.sqrt( hope_in + hope_out )
-                    u_matrix = numpy.random.uniform( -val_rng, val_rng, 
-                                                    [hope_in, hope_out] ).astype( numpy.float32 )
-                    u_matrix = u_matrix / (u_matrix ** 2).sum( 0 )
-                    self.U = tf.Variable( u_matrix )
-                    del u_matrix
-
                 # Initialize the weights of each module using uniform
                 for i, o in zip( n_in_shared, n_out_shared ):
                     val_rng = numpy.float32(2.5 / numpy.sqrt(i + o))
@@ -518,46 +517,6 @@ class multi_fofe_mention_net( object ):
                     self.kbp_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
 
-                if n_pattern > 0:
-                    # case-insensitive patterns
-                    val_rng = numpy.sqrt(3)
-
-                    # val_rng = numpy.float32(2.5 / numpy.sqrt(n_pattern + n_word1)) 
-                    self.pattern1 = []
-                    self.pattern1_bias = []
-                    for _ in xrange(4):
-                        self.pattern1.append(
-                            tf.Variable(
-                                tf.random_uniform( [n_pattern, n_word1],
-                                                    minval = -val_rng, maxval = val_rng )
-                            )
-                        )
-                        self.pattern1_bias.append(
-                            tf.Variable(
-                                tf.random_uniform( [n_pattern],
-                                                    minval = -val_rng, maxval = val_rng )
-                            )
-                        )
-
-                    # case-sensitive patterns
-                    # val_rng = numpy.float32(2.5 / numpy.sqrt(n_pattern + n_word2))
-                    self.pattern2 = []
-                    self.pattern2_bias = []
-                    for _ in xrange(4):
-                        self.pattern2.append(
-                            tf.Variable(
-                                tf.random_uniform( [n_pattern, n_word2],
-                                                    minval = -val_rng, maxval = val_rng )
-                            )
-                        )
-                        self.pattern2_bias.append(
-                            tf.Variable(
-                                tf.random_uniform( [n_pattern],
-                                                    minval = -val_rng, maxval = val_rng )
-                            )
-                        )
-
-                del val_rng
                 
             else:
                 self.char_embedding = tf.Variable( tf.truncated_normal( [n_char, n_char_embedding], 
@@ -578,10 +537,6 @@ class multi_fofe_mention_net( object ):
 
                 self.kernel_bias = [ tf.Variable( tf.zeros( [d] ) ) for d in kernel_depth ]
 
-                # the U matrix in the HOPE paper
-                if hope_out > 0:
-                    self.U = tf.Variable( tf.truncated_normal( [hope_in, hope_out],
-                                                          stddev = numpy.sqrt(2./(hope_in * hope_out)) ) )
 
                 for i, o in zip( n_in_shared, n_out_shared ):
                     self.shared_layer_weights.append( tf.Variable( tf.truncated_normal( [i, o], stddev = numpy.sqrt(2./(i * o)) ) ) )
@@ -599,46 +554,8 @@ class multi_fofe_mention_net( object ):
                     self.kbp_layer_weights.append( tf.Variable( tf.truncated_normal( [i, o], stddev = numpy.sqrt(2./(i * o)) ) ) )
                     self.kbp_layer_b.append( tf.Variable( tf.zeros( [o] ) )  )
 
-                if n_pattern > 0:
-                    # case-insensitive patterns
-                    # stddev = numpy.sqrt(2./(n_pattern * n_word1))
-                    stddev = numpy.sqrt(2./n_word1 )
-                    self.pattern1 = []
-                    self.pattern1_bias = []
-                    for _ in xrange(4):
-                        self.pattern1.append(
-                            tf.Variable(
-                                tf.truncated_normal( [n_pattern, n_word1], stddev = stddev )
-                            )
-                        )
-                        self.pattern1_bias.append(
-                            tf.Variable(
-                                tf.truncated_normal( [n_pattern], stddev = stddev )
-                            )
-                        )
-
-                    # case-sensitive patterns
-                    # stddev = numpy.sqrt(2./(n_pattern * n_word2))
-                    stddev = numpy.sqrt(2./n_word2)
-                    self.pattern2 = []
-                    self.pattern2_bias = []
-                    for _ in xrange(4):
-                        self.pattern2.append(
-                            tf.Variable(
-                                tf.truncated_normal( [n_pattern, n_word2], stddev = stddev )
-                            )
-                        )
-                        self.pattern2_bias.append(
-                            tf.Variable(
-                                tf.truncated_normal( [n_pattern], stddev = stddev )
-                            )
-                        )
-
-                    del stddev
-
             # parameters that need calculation for the cost function
-            if hope_out > 0:
-                self.param.append( self.U )
+
             self.param.append( self.char_embedding )
             self.param.append( self.conv_embedding )
             self.param.append( self.bigram_embedding )
@@ -646,12 +563,6 @@ class multi_fofe_mention_net( object ):
             self.param.extend( self.kernel_bias )
             self.param.extend( self.shared_layer_weights )
             self.param.extend( self.shared_layer_b )
-
-            if n_pattern > 0:
-                self.param.extend( self.pattern1 )
-                self.param.extend( self.pattern2 )
-                self.param.extend( self.pattern1_bias )
-                self.param.extend( self.pattern2_bias )
 
             self.ontonotes_param = self.param[:]
             self.conll_param = self.param[:]
@@ -716,60 +627,6 @@ class multi_fofe_mention_net( object ):
             # left and right bigram context
             lbc = tf.SparseTensor( self.lbc_indices, self.lbc_values, self.shape3 )
             rbc = tf.SparseTensor( self.rbc_indices, self.rbc_values, self.shape3 )
-
-            if n_pattern > 0:
-                def sparse_fofe( fofe, pattern, pattern_bias ):
-                    indices_f32 = tf.to_float( fofe.indices )
-                    # n_pattern * n_example
-                    sp_w = tf.transpose(
-                                # tf.nn.relu( 
-                                tf.nn.softmax(
-                                    tf.sparse_tensor_dense_matmul( 
-                                            fofe, pattern, adjoint_b = True,
-                                            name = 'sparse-weight' )
-                                    + pattern_bias
-                                )
-                            )
-                    # replicate the indices
-                    indices_rep = tf.tile( indices_f32, [n_pattern, 1] )
-                    # add n_pattern as highest dimension
-                    nnz = tf.to_int64( tf.shape(fofe.indices)[0] )
-                    indices_high = tf.to_float(
-                                        tf.reshape(
-                                            tf.range( n_pattern * nnz) / nnz,
-                                            [-1, 1]
-                                        )
-                                    )
-                    # effectively n_pattern * n_example * n_word
-                    indices_ext = tf.concat( [ indices_high, indices_rep ], 1 )
-                    # pattern * fofe
-                    values_ext = tf.multiply( 
-                                        tf.tile( fofe.values, [n_pattern] ),
-                                        tf.gather_nd( 
-                                            pattern,
-                                            tf.to_int64(
-                                                tf.concat( [ indices_ext[:,0:1], indices_ext[:,2:3] ], 1 )
-                                            )
-                                        )
-                                    )
-                    # re-weight by pattern importance
-                    values_ext_2d = tf.multiply(
-                                        values_ext,
-                                        tf.gather_nd( sp_w, tf.to_int64(indices_ext[:,0:2]) )
-                                    )
-                    values_att = tf.reduce_sum( tf.reshape( values_ext_2d, [n_pattern, -1] ), 0 )
-                    # re-group it as a SparseTensor
-                    return tf.SparseTensor( fofe.indices, values_att, fofe.dense_shape )
-
-                lw1 = sparse_fofe( lw1, self.pattern1[0], self.pattern1_bias[0] )
-                rw1 = sparse_fofe( rw1, self.pattern1[1], self.pattern1_bias[1] )
-                lw2 = sparse_fofe( lw2, self.pattern1[2], self.pattern2_bias[2] )
-                rw2 = sparse_fofe( rw2, self.pattern1[3], self.pattern2_bias[3] )
-
-                lw3 = sparse_fofe( lw3, self.pattern2[0], self.pattern2_bias[0] )
-                rw3 = sparse_fofe( rw3, self.pattern2[1], self.pattern2_bias[1] )
-                lw4 = sparse_fofe( lw4, self.pattern2[2], self.pattern2_bias[2] )
-                rw4 = sparse_fofe( rw4, self.pattern2[3], self.pattern2_bias[3] )
 
             # all sparse feature after projection
 
@@ -846,12 +703,8 @@ class multi_fofe_mention_net( object ):
             # 2nd layer: concatenate
             feature = tf.concat( feature_list, 1 )
 
-            if hope_out > 0:
-                hope = tf.matmul( feature, self.U )
-                shared_layer_output = [ hope ]
-            else:
-                # layer 1 and 2
-                shared_layer_output = [ tf.nn.dropout( feature, self.keep_prob ) ]
+            # layer 1 and 2
+            shared_layer_output = [ tf.nn.dropout( feature, self.keep_prob ) ]
 
             #=======================
             #==== Shared layers ====
@@ -868,9 +721,9 @@ class multi_fofe_mention_net( object ):
                 # Dropout layer
                 shared_layer_output[-1] = tf.nn.dropout(shared_layer_output[-1], self.keep_prob )
 
-            conll_layer_output = shared_layer_output[:]
-            ontonotes_layer_output = shared_layer_output[:]
-            kbp_layer_output = shared_layer_output[:]
+            conll_layer_output = [shared_layer_output[-1]]
+            ontonotes_layer_output = [shared_layer_output[-1]]
+            kbp_layer_output = [shared_layer_output[-1]]
 
             #============================
             #==== OntoNotes layers ======
@@ -923,30 +776,6 @@ class multi_fofe_mention_net( object ):
             self.kbp_xent = tf.reduce_mean( tf.nn.sparse_softmax_cross_entropy_with_logits( 
                                             logits = kbp_layer_output[-1], labels = self.label ) )
 
-            if config.l1 > 0:
-                # self.param contains weights, bias, character conv embedding variables etc
-                for param in self.ontonotes_param:
-                    self.ontonotes_xent = self.ontonotes_xent + config.l1 * tf.reduce_sum( tf.abs( param ) )
-
-                for param in self.conll_param:
-                    self.conll_xent = self.conll_xent + config.l1 * tf.reduce_sum( tf.abs( param ) )
-
-                for param in self.kbp_param:
-                    self.kbp_xent = self.kbp_xent + config.l1 * tf.reduce_sum( tf.abs( param ) )
-
-
-
-
-            if config.l2 > 0:
-                for param in self.ontonotes_param:
-                    self.ontonotes_xent = self.ontonotes_xent + config.l2 * tf.nn.l2_loss( param )
-
-                for param in self.conll_param:
-                    self.conll_xent = self.conll_xent + config.l2 * tf.nn.l2_loss( param )
-
-                for param in self.kbp_param:
-                    self.kbp_xent = self.kbp_xent + config.l2 * tf.nn.l2_loss( param )
-
             self.ontonotes_predicted_values = tf.nn.softmax( ontonotes_layer_output[-1] )
             _, top_ontonotes_indices = tf.nn.top_k( self.ontonotes_predicted_values )
             self.ontonotes_predicted_indices = tf.reshape( top_ontonotes_indices, [-1] )
@@ -988,34 +817,6 @@ class multi_fofe_mention_net( object ):
             self.conll_train_step = [ conll_fully_connected_train_step ]
             self.ontonotes_train_step = [ ontonotes_fully_connected_train_step ]
             self.kbp_train_step = [kbp_fully_connected_train_step]
-            if n_pattern > 0:
-                __lambda = 0.001
-                self.xentPlusSparse = self.xent
-                # L1-norm, not working
-                # for i in xrange(4):
-                #     self.xentPlusSparse += __lambda * tf.reduce_sum( tf.abs( self.pattern1[i] ) )
-                #     self.xentPlusSparse += __lambda * tf.reduce_sum( tf.abs( self.pattern2[i] ) )
-                
-                # orthogonality
-                for p in self.pattern1 + self.pattern2:
-                    self.xentPlusSparse += tf.reduce_sum(
-                                                tf.abs(
-                                                    tf.matmul( p, p, 
-                                                               transpose_a = False,
-                                                               transpose_b = True ) 
-                                                    - tf.eye( n_pattern )
-                                                )
-                                            ) * __lambda
-                sparse_fofe_step = tf.train.GradientDescentOptimizer(
-                                        self.lr,
-                                        use_locking = True
-                                    ).minimize( 
-                                        self.xentPlusSparse,
-                                        var_list = self.pattern1 + self.pattern2 +
-                                                   self.pattern1_bias +
-                                                   self.pattern2_bias
-                                    )
-                self.train_step.append( sparse_fofe_step )
 
             # train the word embedding for insensitive case
             if feature_choice & 0b111 > 0:
@@ -1111,20 +912,6 @@ class multi_fofe_mention_net( object ):
                 self.conll_train_step.append( conll_bigram_train_step )
                 self.ontonotes_train_step.append( ontonotes_bigram_train_step )
                 self.kbp_train_step.append(kbp_bigram_train_step)
-
-            if hope_out > 0:
-                __lambda = 0.001
-                orthogonal_penalty = tf.reduce_sum(
-                                            tf.abs(
-                                                tf.matmul( self.U, self.U, transpose_a = True ) - tf.eye(hope_out)
-                                            ) 
-                                        ) * __lambda
-                U_train_step_1 = tf.train.GradientDescentOptimizer(self.lr, use_locking = True) \
-                                         .minimize( orthogonal_penalty , var_list = [ self.U ] )
-                U_train_step_2 = tf.train.MomentumOptimizer( self.lr, momentum, use_locking = True ) \
-                                         .minimize( self.xent, var_list = [ self.U ] )
-                self.train_step.append( U_train_step_1 )
-                self.train_step.append( U_train_step_2 )
 
         logger.info( 'computational graph built\n' )
 

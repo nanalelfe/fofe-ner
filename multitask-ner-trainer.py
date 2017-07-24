@@ -271,7 +271,7 @@ if __name__ == '__main__':
     ################################################################################
 
     mention_net = multi_fofe_mention_net(config, args.gpu_fraction)
-    mention_net.tofile('./ontonotes-model/' + args.model)
+    mention_net.tofile('./multitask-model/' + args.model)
 
     ################################################################################
 
@@ -344,7 +344,8 @@ if __name__ == '__main__':
                               is2ndPass=args.is_2nd_pass)
 
     train_kbp = batch_constructor( 
-                    KBP(args.kbp_train_datapath, args.iflytek_checked_eng),
+                    # KBP(args.kbp_train_datapath, args.iflytek_checked_eng),
+                    KBP(args.kbp_train_datapath),
                     numericizer1, 
                     numericizer2, 
                     gazetteer = kbp_gazetteer, 
@@ -477,6 +478,7 @@ if __name__ == '__main__':
             os.makedirs('multitask-result')
 
         pick = random.choice([0, 1, 2])
+
         if pick == 0:
             # CoNLL 2003
             curr_task = conll_task
@@ -486,6 +488,7 @@ if __name__ == '__main__':
             curr_task = ontonotes_task
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
         else:
+            # KBP
             curr_task = kbp_task
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
 
@@ -528,7 +531,7 @@ if __name__ == '__main__':
         #     continue
 
         ###############################################
-        ########## go through training set ##########
+        ########## go through training set ############
         ###############################################
 
         train_predicted = open(curr_task.predicted_files[0], 'wb')
