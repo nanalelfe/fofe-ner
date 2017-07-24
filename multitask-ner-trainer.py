@@ -1,4 +1,7 @@
-#!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
+#!/home/chwang/anaconda2/envs/tensorflow/bin/python
+
+#/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -245,6 +248,9 @@ if __name__ == '__main__':
     logger.info("Here is config: ")
     pprint (vars(config))
 
+    for item in KBP(args.kbp_valid_datapath):
+        logger.info(item)
+
 
     ################################################################################
 
@@ -292,6 +298,7 @@ if __name__ == '__main__':
                               config.char_alpha, True,
                               n_label_type=nt)
 
+
     if args.feature_choice & 256 > 0: # NOT USED
         # Gazetteer is a list of names grouped by the pre-defined categories an NER
         # system is targeting at. Gazetteer is shown to be one of the most effective
@@ -324,6 +331,7 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------
     # Batch constructor initializes sets of processed_sentence objects, sentence1
     # (case insensitive) and sentence2 (case sensitive)
+
 
     train_conll = batch_constructor(CoNLL2003( args.conll_datapath + '/eng.train' ), 
                                numericizer1, numericizer2, 

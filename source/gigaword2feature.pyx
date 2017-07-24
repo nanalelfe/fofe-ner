@@ -195,7 +195,7 @@ def gigaword( filename ):
 
 def gazetteer( filename, mode = 'CoNLL2003' ):
     """
-    Gazetteer is a list of names grouped by the pre- defined categories an NER system is targeting
+    Gazetteer is a list of names grouped by the pre-defined categories an NER system is targeting
     at. Gazetteer is shown to be one of the most effec- tive external knowledge sources to improve
     NER performance.
 

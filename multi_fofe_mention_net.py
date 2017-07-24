@@ -1,4 +1,7 @@
-#!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
+#!/home/chwang/anaconda2/envs/tensorflow/bin/python
+
+#/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
+
 import numpy, logging, time, copy, os, cPickle
 
 import tensorflow as tf
@@ -278,16 +281,16 @@ class multi_fofe_mention_net( object ):
 
         middle = [ int(s) for s in layer_size.split(',') ]
 
-        n_in_shared = [ hope_out if hope_out > 0 else hope_in ] + middle + [middle[0]]
+        n_in_shared = [ hope_out if hope_out > 0 else hope_in ] + middle[0:2]
         n_out_shared = n_in_shared[1:] + [n_in_shared[-1]]
 
-        n_in_conll = n_out_shared[-4:]
-        n_out_conll = n_in_conll[1:] + [ CONLL_N_LABELS + 1 ]
+        n_in_conll = n_out_shared[-1:]
+        n_out_conll = [ CONLL_N_LABELS + 1 ]
 
-        n_in_ontonotes = n_out_shared[-4:]
-        n_out_ontonotes = n_in_ontonotes[1:] + [ ONTONOTES_N_LABELS + 1 ]
+        n_in_ontonotes = n_out_shared[-1:]
+        n_out_ontonotes = [ ONTONOTES_N_LABELS + 1 ]
 
-        n_in_kbp = n_out_shared[-4:]
+        n_in_kbp = n_out_shared[-2:]
         n_out_kbp = n_in_kbp[1:] +  [KBP_N_LABELS + 1]
 
         logger.info( 'n_in_shared: ' + str(n_in_shared) )
@@ -307,7 +310,6 @@ class multi_fofe_mention_net( object ):
 
             # CASE INSENSITIVE
             # ----------------
-
             # case insensitive excluding fragment
             self.lw1_values = tf.placeholder( dtype = tf.float32, shape = [None], 
                                               name = 'left-context-values' )
@@ -346,7 +348,6 @@ class multi_fofe_mention_net( object ):
             # CASE SENSITIVE
             # --------------
             # value vectors in FOFE code
-
             # case sensitive excluding fragment
             self.lw3_values = tf.placeholder( tf.float32, [None], 
                                               name = 'left-context-values' )
@@ -927,7 +928,6 @@ class multi_fofe_mention_net( object ):
             dataset:    0 - CoNLL2003 
                         1 - OntoNotes 
                         2 - KBP
-
         Returns
         -------
             c : float
