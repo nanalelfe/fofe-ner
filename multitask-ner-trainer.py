@@ -1,6 +1,4 @@
-#!/home/chwang/anaconda2/envs/tensorflow/bin/python
-
-#/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
+#!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
