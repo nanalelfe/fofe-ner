@@ -537,9 +537,9 @@ if __name__ == '__main__':
 
         while len(nums) > 0:
 
-            pbar = tqdm(total=len(curr_task.batch_constructors[0].positive) +
-                              int(len(curr_task.batch_constructors[0].overlap) * config.overlap_rate) +
-                              int(len(curr_task.batch_constructors[0].disjoint) * config.disjoint_rate))
+            pbar = tqdm(total=len(tasks[0].batch_constructors[0].positive + tasks[1].batch_constructors[0].positive + tasks[2].batch_constructors[0].positive) +
+                              int(len(tasks[0].batch_constructors[0].overlap + tasks[1].batch_constructors[0].overlap + tasks[2].batch_constructors[0].overlap) * config.overlap_rate) +
+                              int(len(tasks[0].batch_constructors[0].disjoint + tasks[1].batch_constructors[0].disjoint + tasks[2].batch_constructors[0].disjoint) * config.disjoint_rate))
 
             cost, cnt = 0, 0
 
