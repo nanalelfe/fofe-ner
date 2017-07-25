@@ -1982,6 +1982,8 @@ class TaskHolder:
         self.fb1 = None
         self.out = None
         self.best_test_info = None
+        self.best_precision = None
+        self.best_recall = None
 
         self.prev_cost = 2054
 
