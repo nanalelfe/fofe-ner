@@ -508,18 +508,45 @@ if __name__ == '__main__':
 
         cost, cnt = 0, 0
 
-        # example is batch of fragments from a sentence
-        for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
-                               curr_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
-                                                             True,
-                                                             config.overlap_rate,
-                                                             config.disjoint_rate,
-                                                             config.feature_choice)):
+        if curr_task.batch_num == 2:
+            for x in ifilter(
+                                lambda x : x[-1].shape[0] == config.n_batch_size,
+                                curr_task.batch_constructors[0].mini_batch_multi_thread(
+                                    config.n_batch_size,
+                                    True,
+                                    config.overlap_rate,
+                                    config.disjoint_rate,
+                                    config.feature_choice
+                                )
+                            ):
+                if config.enable_distant_supervision:
+                    x = [ x, infinite_human.next() ]
+                    if choice( [ True, False ] ):
+                        x.append( infinite_human.next() )
+                else:
+                    x = [ x ]
 
-            c = mention_net.train(example, curr_task)
-            cost += c * example[-1].shape[0]
-            cnt += example[-1].shape[0]
-            pbar.update(example[-1].shape[0])
+                for example in x:
+                    c = mention_net.train( example, curr_task )
+
+                    cost += c * example[-1].shape[0]
+                    cnt += example[-1].shape[0]
+                pbar.update( example[-1].shape[0] )
+
+        else:
+            # example is batch of fragments from a sentence
+            for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
+                                   curr_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
+                                                                 True,
+                                                                 config.overlap_rate,
+                                                                 config.disjoint_rate,
+                                                                 config.feature_choice)):
+
+                c = mention_net.train(example, curr_task)
+                cost += c * example[-1].shape[0]
+                cnt += example[-1].shape[0]
+                pbar.update(example[-1].shape[0])
+
 
         pbar.close()
         train_cost = cost / cnt
@@ -628,172 +655,172 @@ if __name__ == '__main__':
 
         logger.info('evaluation set passed for batch_num: ' + str(curr_task.batch_num))
 
-        ###################################################################################
-        ########## exhaustively iterate 3 decodding algrithms with 0.x cut-off ############
-        ###################################################################################
-
-        # logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
-        logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
-
-        # algo_list = ['highest-first', 'longest-first', 'subsumption-removal']
-        idx2algo = { 1: 'highest-first', 2: 'longest-first', 3:'subsumption-removal'  }
-        algo2idx = { 'highest-first': 1, 'longest-first': 2, 'subsumption-removal': 3 }
-
-        best_dev_fb1, best_threshold, best_algorithm = 0, [0.5, 0.5], [1, 1]
-
-        if True: #n_epoch >= config.max_iter / 2:
-            pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
-                                                curr_task.predicted_files[1], 
-                                                config.n_window, n_label_type = curr_task.n_label ) ]
-
-            for algorithm in product( [1, 2], repeat = 2 ):
-                algorithm = list( algorithm )
-                name = [ idx2algo[i] for i in algorithm  ]
-                for threshold in product( [ 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ], repeat = 2 ):
-                    threshold = list( threshold )
-
-                    precision, recall, f1, _ = evaluation( pp, threshold, algorithm, True,
-                                                           n_label_type = curr_task.n_label )
-                    # logger.debug( ('cut-off: %f, algorithm: %-20s' % (threshold, name)) + 
-                    #               (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)) )
-                    if f1 > best_dev_fb1:
-                        curr_task.best_dev_fb1, curr_task.best_threshold, curr_task.best_algorithm = f1, threshold, algorithm
-                        curr_task.best_precision, curr_task.best_recall = precision, recall
-                        mention_net.config.algorithm = best_algorithm
-                        mention_net.config.threshold = best_threshold
-                        mention_net.tofile( args.model )
-
-        logger.info( 'cut-off: %s, algorithm: %-20s' % \
-                     (str(best_threshold), str([ idx2algo[i] for i in curr_task.best_algorithm ])) )
-
-        precision, recall, f1, info = evaluation( PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
-                                                curr_task.predicted_files[0], 
-                                                config.n_window, n_label_type = curr_task.n_label ), 
-                                                  curr_task.best_threshold, curr_task.best_algorithm, True,
-                                                  analysis = None, #analysis,
-                                                  n_label_type = curr_task.n_label )
-        logger.info( '%s\n%s' % ('training', info) ) 
-        curr_task.train_scores.append(f1)
-
-
-        precision, recall, f1, info = evaluation( PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
-                                                curr_task.predicted_files[1], 
-                                                config.n_window, n_label_type = curr_task.n_label ), 
-                                                  curr_task.best_threshold, curr_task.best_algorithm, True,
-                                                  analysis = None, #analysis,
-                                                  n_label_type = curr_task.n_label )
-        logger.info( '%s\n%s' % ('validation', info) ) 
-        curr_task.valid_scores.append(f1)
-
-        precision, recall, f1, info = evaluation( PredictionParser(curr_task.generator( curr_task.data_loc[2] ), 
-                                                curr_task.predicted_files[2], 
-                                                config.n_window, n_label_type = curr_task.n_label ), 
-                                                  curr_task.best_threshold, curr_task.best_algorithm, True,
-                                                  analysis = None, #analysis,
-                                                  n_label_type = curr_task.n_label )
-        logger.info( '%s\n%s' % ('test', info) ) 
-        curr_task.test_scores.append(f1)
-
-        mention_net.config.learning_rate *= 0.5 ** ((4./ config.max_iter) if config.drop_rate > 0 else (1./ 2))
-        mention_net.config.drop_rate *= 0.5 ** (2./ config.max_iter)
-
-
         # ###################################################################################
         # ########## exhaustively iterate 3 decodding algrithms with 0.x cut-off ############
         # ###################################################################################
-        # logger.info('cost: %f (train), %f (valid)', train_cost, valid_cost)
+
         # # logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
+        # logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
 
-        # algo_list = ['highest-first', 'longest-first', 'subsumption-removal']
+        # # algo_list = ['highest-first', 'longest-first', 'subsumption-removal']
+        # idx2algo = { 1: 'highest-first', 2: 'longest-first', 3:'subsumption-removal'  }
+        # algo2idx = { 'highest-first': 1, 'longest-first': 2, 'subsumption-removal': 3 }
 
-        # best_dev_fb1, best_threshold, best_algorithm = 0, 0.5, 1
+        # best_dev_fb1, best_threshold, best_algorithm = 0, [0.5, 0.5], [1, 1]
 
-        # pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+        # if True: #n_epoch >= config.max_iter / 2:
+        #     pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
         #                                         curr_task.predicted_files[1], 
         #                                         config.n_window, n_label_type = curr_task.n_label ) ]
 
-        # for algorithm, name in zip([1, 2, 3], algo_list):
-        #     for threshold in numpy.arange(0.3, 1, 0.1).tolist():
-        #         precision, recall, f1, _ = evaluation(pp, threshold, algorithm, True, n_label_type = curr_task.n_label)
-        #         logger.debug(('batch_num: %d, cut-off: %f, algorithm: %-20s' %
-        #                       (curr_task.batch_num, threshold, name)) +
-        #                      (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)))
-        #         if f1 > best_dev_fb1:
-        #             best_dev_fb1, best_threshold, best_algorithm = f1, threshold, algorithm
-        #             mention_net.config.threshold = best_threshold
-        #             mention_net.config.algorithm = best_algorithm
+        #     for algorithm in product( [1, 2], repeat = 2 ):
+        #         algorithm = list( algorithm )
+        #         name = [ idx2algo[i] for i in algorithm  ]
+        #         for threshold in product( [ 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ], repeat = 2 ):
+        #             threshold = list( threshold )
 
-        # curr_task.best_dev_fb1 = best_dev_fb1
-        # curr_task.best_threshold = best_threshold
-        # curr_task.best_algorithm = best_algorithm
+        #             precision, recall, f1, _ = evaluation( pp, threshold, algorithm, True,
+        #                                                    n_label_type = curr_task.n_label )
+        #             # logger.debug( ('cut-off: %f, algorithm: %-20s' % (threshold, name)) + 
+        #             #               (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)) )
+        #             if f1 > best_dev_fb1:
+        #                 curr_task.best_dev_fb1, curr_task.best_threshold, curr_task.best_algorithm = f1, threshold, algorithm
+        #                 curr_task.best_precision, curr_task.best_recall = precision, recall
+        #                 mention_net.config.algorithm = best_algorithm
+        #                 mention_net.config.threshold = best_threshold
+        #                 mention_net.tofile( args.model )
 
-        # # training evaluation
-        # pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
+        # logger.info( 'cut-off: %s, algorithm: %-20s' % \
+        #              (str(best_threshold), str([ idx2algo[i] for i in curr_task.best_algorithm ])) )
+
+        # precision, recall, f1, info = evaluation( PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
         #                                         curr_task.predicted_files[0], 
-        #                                         config.n_window, n_label_type = curr_task.n_label ) ]
-        
-        # _, _, train_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
-        # logger.info('batch_num ' + str(curr_task.batch_num) + ' training:\n' + info)
-        # # fb1 score for validation
-        # curr_task.train_scores.append(train_fb1)
+        #                                         config.n_window, n_label_type = curr_task.n_label ), 
+        #                                           curr_task.best_threshold, curr_task.best_algorithm, True,
+        #                                           analysis = None, #analysis,
+        #                                           n_label_type = curr_task.n_label )
+        # logger.info( '%s\n%s' % ('training', info) ) 
+        # curr_task.train_scores.append(f1)
 
-        # logger.info("train scores array: %s" % str(curr_task.train_scores))
 
-        # # validation evaluation
-
-        # pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+        # precision, recall, f1, info = evaluation( PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
         #                                         curr_task.predicted_files[1], 
-        #                                         config.n_window, n_label_type = curr_task.n_label ) ]
+        #                                         config.n_window, n_label_type = curr_task.n_label ), 
+        #                                           curr_task.best_threshold, curr_task.best_algorithm, True,
+        #                                           analysis = None, #analysis,
+        #                                           n_label_type = curr_task.n_label )
+        # logger.info( '%s\n%s' % ('validation', info) ) 
+        # curr_task.valid_scores.append(f1)
 
-        # _, _, test_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
-        # logger.info('batch_num ' + str(curr_task.batch_num) + ', validation:\n' + info)
-        # curr_task.test_fb1 = test_fb1
-        # # fb1 score for validation
-        # curr_task.valid_scores.append(test_fb1)
-
-        # logger.info("valid scores array: %s" % str(curr_task.valid_scores))
-
-        # # test evaluation
-            
-        # pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[2] ), 
+        # precision, recall, f1, info = evaluation( PredictionParser(curr_task.generator( curr_task.data_loc[2] ), 
         #                                         curr_task.predicted_files[2], 
-        #                                         config.n_window, n_label_type = curr_task.n_label ) ]
+        #                                         config.n_window, n_label_type = curr_task.n_label ), 
+        #                                           curr_task.best_threshold, curr_task.best_algorithm, True,
+        #                                           analysis = None, #analysis,
+        #                                           n_label_type = curr_task.n_label )
+        # logger.info( '%s\n%s' % ('test', info) ) 
+        # curr_task.test_scores.append(f1)
 
-        # _, _, fb1, out = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
-        # logger.info('batch_num ' + str(curr_task.batch_num) + ', evaluation:\n' + out)
-        # curr_task.test_scores.append(fb1)
-        # curr_task.out = out
+        # mention_net.config.learning_rate *= 0.5 ** ((4./ config.max_iter) if config.drop_rate > 0 else (1./ 2))
+        # mention_net.config.drop_rate *= 0.5 ** (2./ config.max_iter)
 
-        # curr_task.fb1 = fb1
 
-        # logger.info("test scores array: %s" % str(curr_task.test_scores))
+        ###################################################################################
+        ########## exhaustively iterate 3 decodding algrithms with 0.x cut-off ############
+        ###################################################################################
+        logger.info('cost: %f (train), %f (valid)', train_cost, valid_cost)
+        # logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
 
-        # # Best so far 
-        # if curr_task.test_fb1 > curr_task.best_test_fb1:
-        #     if decode_test:
-        #         curr_task.best_test_info = curr_task.out
-        #     curr_task.best_test_fb1 = curr_task.test_fb1
-        #     mention_net.config.threshold = best_threshold
-        #     mention_net.config.algorithm = best_algorithm
-        #     mention_net.tofile('./multitask-model/' + args.model)
+        algo_list = ['highest-first', 'longest-first', 'subsumption-removal']
+
+        best_dev_fb1, best_threshold, best_algorithm = 0, 0.5, 1
+
+        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+                                                curr_task.predicted_files[1], 
+                                                config.n_window, n_label_type = curr_task.n_label ) ]
+
+        for algorithm, name in zip([1, 2, 3], algo_list):
+            for threshold in numpy.arange(0.3, 1, 0.1).tolist():
+                precision, recall, f1, _ = evaluation(pp, threshold, algorithm, True, n_label_type = curr_task.n_label)
+                logger.debug(('batch_num: %d, cut-off: %f, algorithm: %-20s' %
+                              (curr_task.batch_num, threshold, name)) +
+                             (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)))
+                if f1 > best_dev_fb1:
+                    best_dev_fb1, best_threshold, best_algorithm = f1, threshold, algorithm
+                    mention_net.config.threshold = best_threshold
+                    mention_net.config.algorithm = best_algorithm
+
+        curr_task.best_dev_fb1 = best_dev_fb1
+        curr_task.best_threshold = best_threshold
+        curr_task.best_algorithm = best_algorithm
+
+        # training evaluation
+        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
+                                                curr_task.predicted_files[0], 
+                                                config.n_window, n_label_type = curr_task.n_label ) ]
+        
+        _, _, train_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        logger.info('batch_num ' + str(curr_task.batch_num) + ' training:\n' + info)
+        # fb1 score for validation
+        curr_task.train_scores.append(train_fb1)
+
+        logger.info("train scores array: %s" % str(curr_task.train_scores))
+
+        # validation evaluation
+
+        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+                                                curr_task.predicted_files[1], 
+                                                config.n_window, n_label_type = curr_task.n_label ) ]
+
+        _, _, test_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        logger.info('batch_num ' + str(curr_task.batch_num) + ', validation:\n' + info)
+        curr_task.test_fb1 = test_fb1
+        # fb1 score for validation
+        curr_task.valid_scores.append(test_fb1)
+
+        logger.info("valid scores array: %s" % str(curr_task.valid_scores))
+
+        # test evaluation
             
-        # logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
-        #             (mention_net.config.threshold,
-        #              algo_list[mention_net.config.algorithm - 1],
-        #              curr_task.best_test_info))
+        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[2] ), 
+                                                curr_task.predicted_files[2], 
+                                                config.n_window, n_label_type = curr_task.n_label ) ]
 
-        # ##########################################
-        # ########## adjust learning rate ##########
-        # ##########################################
+        _, _, fb1, out = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        logger.info('batch_num ' + str(curr_task.batch_num) + ', evaluation:\n' + out)
+        curr_task.test_scores.append(fb1)
+        curr_task.out = out
 
-        # if curr_task.valid_cost > curr_task.prev_cost or decay_started:
-        #     curr_task.lr *= \
-        #         0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
-        # else:
-        #     curr_task.prev_cost = curr_task.valid_cost
+        curr_task.fb1 = fb1
 
-        # if config.drop_rate > 0:
-        #     mention_net.config.drop_rate *= 0.5 ** (2. / config.max_iter)
+        logger.info("test scores array: %s" % str(curr_task.test_scores))
+
+        # Best so far 
+        if curr_task.test_fb1 > curr_task.best_test_fb1:
+            if decode_test:
+                curr_task.best_test_info = curr_task.out
+            curr_task.best_test_fb1 = curr_task.test_fb1
+            mention_net.config.threshold = best_threshold
+            mention_net.config.algorithm = best_algorithm
+            mention_net.tofile('./multitask-model/' + args.model)
+            
+        logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
+                    (mention_net.config.threshold,
+                     algo_list[mention_net.config.algorithm - 1],
+                     curr_task.best_test_info))
+
+        ##########################################
+        ########## adjust learning rate ##########
+        ##########################################
+
+        if curr_task.valid_cost > curr_task.prev_cost or decay_started:
+            curr_task.lr *= \
+                0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
+        else:
+            curr_task.prev_cost = curr_task.valid_cost
+
+        if config.drop_rate > 0:
+            mention_net.config.drop_rate *= 0.5 ** (2. / config.max_iter)
 
     #===================
     #===== Plot ========
