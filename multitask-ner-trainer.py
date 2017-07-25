@@ -479,9 +479,13 @@ if __name__ == '__main__':
                                 (args.kbp_train_datapath, args.kbp_valid_datapath, args.kbp_test_datapath),
                                  KBP_N_LABELS)
 
+    tasks = [conll_task, ontonotes_task, kbp_task]
+
     for n_epoch in xrange(config.max_iter):
         if not os.path.exists('multitask-result'):
             os.makedirs('multitask-result')
+
+        # tasks = random.shuffle(tasks)
 
         pick = random.choice([0, 1, 2])
 
@@ -501,8 +505,31 @@ if __name__ == '__main__':
         mention_net.config.learning_rate = curr_task.lr
 
         # phar is used to observe training progress
+
+        # conll_batch = ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
+        #                        conll_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
+        #                                                      True,
+        #                                                      config.overlap_rate,
+        #                                                      config.disjoint_rate,
+        #                                                      config.feature_choice))
+
+        # ontonotes_batch = ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
+        #                        ontonotes_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
+        #                                                      True,
+        #                                                      config.overlap_rate,
+        #                                                      config.disjoint_rate,
+        #                                                      config.feature_choice))
+
+        # kbp_batch = ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
+        #                                kbp_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
+        #                                                              True,
+        #                                                              config.overlap_rate,
+        #                                                              config.disjoint_rate,
+        #                                                              config.feature_choice))
+
+
         logger.info('epoch %2d, learning-rate: %f' % \
-                    (n_epoch + 1, curr_task.lr))
+                    (n_epoch + 1, mention_net.config.learning_rate))
 
         pbar = tqdm(total=len(curr_task.batch_constructors[0].positive) +
                           int(len(curr_task.batch_constructors[0].overlap) * config.overlap_rate) +
@@ -510,18 +537,44 @@ if __name__ == '__main__':
 
         cost, cnt = 0, 0
 
-        # example is batch of fragments from a sentence
-        for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
-                               curr_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
-                                                             True,
-                                                             config.overlap_rate,
-                                                             config.disjoint_rate,
-                                                             config.feature_choice)):
+        if curr_task.batch_num == 2:
+            for x in ifilter( 
+                                lambda x : x[-1].shape[0] == config.n_batch_size,
+                                curr_task.batch_constructors[0].mini_batch_multi_thread( 
+                                    config.n_batch_size, 
+                                    True, 
+                                    config.overlap_rate, 
+                                    config.disjoint_rate, 
+                                    config.feature_choice 
+                                ) 
+                            ):
+                if config.enable_distant_supervision:
+                    x = [ x, infinite_human.next() ]
+                    if choice( [ True, False ] ):
+                        x.append( infinite_human.next() )
+                else:
+                    x = [ x ]
 
-            c = mention_net.train(example, curr_task)
-            cost += c * example[-1].shape[0]
-            cnt += example[-1].shape[0]
-            pbar.update(example[-1].shape[0])
+                for example in x:
+                    c = mention_net.train( example )
+
+                    cost += c * example[-1].shape[0]
+                    cnt += example[-1].shape[0]
+                pbar.update( example[-1].shape[0] )
+
+        else: 
+            # example is batch of fragments from a sentence
+            for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
+                                   curr_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
+                                                                 True,
+                                                                 config.overlap_rate,
+                                                                 config.disjoint_rate,
+                                                                 config.feature_choice)):
+
+                c = mention_net.train(example, curr_task)
+                cost += c * example[-1].shape[0]
+                cnt += example[-1].shape[0]
+                pbar.update(example[-1].shape[0])
 
         pbar.close()
         train_cost = cost / cnt
