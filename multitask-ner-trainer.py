@@ -519,11 +519,11 @@ if __name__ == '__main__':
                                 (args.kbp_train_datapath, args.kbp_valid_datapath, args.kbp_test_datapath),
                                  KBP_N_LABELS)
 
+    pick = 2
+
     for n_epoch in xrange(config.max_iter):
         if not os.path.exists('multitask-result'):
             os.makedirs('multitask-result')
-
-        pick = random.choice([0, 1, 2])
 
         if pick == 0:
             # CoNLL 2003
@@ -540,6 +540,9 @@ if __name__ == '__main__':
             curr_task = kbp_task
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
             f_num = 256
+
+        pick = random.choice([0, 1, 2])
+
 
         mention_net.config.learning_rate = curr_task.lr
         mention_net.config.algorithm = curr_task.best_algorithm
@@ -796,7 +799,41 @@ if __name__ == '__main__':
 
         ###################################################################################
         # training evaluation
-        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
+
+        source = chain( 
+            imap( 
+                lambda x: x[1],
+                ifilter( 
+                    lambda x : x[0] % 10 < 9,
+                    enumerate( 
+                        imap(
+                            lambda x: x[:4], 
+                            LoadED( args.kbp_train_datapath )
+                        ) 
+                    ) 
+                )
+            ),
+            imap( 
+                lambda x: x[:4],
+                LoadED(args.kbp_valid_datapath)
+            ) 
+        ) 
+
+
+        # load 90% iflytek data
+        if args.iflytek:
+            source = chain( source, 
+                            imap( lambda x: x[1],
+                                  ifilter( lambda x : x[0] % 10 < 9,
+                                           enumerate( imap( lambda x: x[:4], 
+                                                      LoadED( args.iflytek_checked_eng ) ) ) ) ) )
+
+        if curr_task.batch_num == 2:
+            pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
+                                                    curr_task.predicted_files[0], 
+                                                    config.n_window, n_label_type = curr_task.n_label ) ]
+        else:
+            pp = [ p for p in PredictionParser(source, 
                                                 curr_task.predicted_files[0], 
                                                 config.n_window, n_label_type = curr_task.n_label ) ]
         
@@ -809,9 +846,29 @@ if __name__ == '__main__':
 
         ###################################################################################
         # validation evaluation
-        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+
+        source = imap( lambda x: x[1],
+                   ifilter( lambda x : x[0] % 10 >= 9,
+                   enumerate( imap( lambda x: x[:4], 
+                                    LoadED( args.kbp_valid_datapath ) ) ) ) )
+
+        # load 10% iflytek data
+        if args.iflytek:
+            source = chain( source, 
+                            imap( lambda x: x[1],
+                                  ifilter( lambda x : 90 <= x[0] % 100 < 95,
+                                           enumerate( imap( lambda x: x[:4], 
+                                                      LoadED( args.iflytek_checked_eng ) ) ) ) ) )
+
+        if curr_task.batch_num == 2:
+            pp = [ p for p in PredictionParser(source, 
                                                 curr_task.predicted_files[1], 
                                                 config.n_window, n_label_type = curr_task.n_label ) ]
+
+        else:
+            pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+                                                    curr_task.predicted_files[1], 
+                                                    config.n_window, n_label_type = curr_task.n_label ) ]
 
         _, _, test_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
         logger.info('batch_num ' + str(curr_task.batch_num) + ', validation:\n' + info)
