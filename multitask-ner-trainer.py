@@ -842,7 +842,7 @@ if __name__ == '__main__':
             if decode_test:
                 curr_task.best_test_info = curr_task.out
             curr_task.best_test_fb1 = curr_task.test_fb1
-            # mention_net.tofile('./multitask-model/' + args.model)
+            mention_net.tofile('./multitask-model/' + args.model)
             
         logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
                     (mention_net.config.threshold,

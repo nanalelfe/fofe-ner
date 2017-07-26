@@ -28,14 +28,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
     logger.info( str(args) + '\n' )
 
-    from fofe_mention_net import *
+    from multi_fofe_mention_net import *
 
     with open( args.basename + '.config', 'rb' ) as fp:
         config = cPickle.load( fp )
     logger.info( config.__dict__ )
     logger.info( 'configuration loaded' )
 
-    mention_net = fofe_mention_net( config )
+    mention_net = multi_fofe_mention_net(config)
     mention_net.fromfile( args.basename )
     logger.info( 'model loaded' )
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     logger.info( 'vocabulary loaded' )
 
     # kbp_gazetteer = gazetteer( config.data_path + '/kbp-gazetteer' )
-    kbp_gazetteer = gazetteer( config.data_path + '/eng-gaz', mode = 'KBP' )
+    kbp_gazetteer = gazetteer( "/local/scratch/nana/EDL-DATA/KBP-EDL-2015/kbp-gazetteer", mode = 'KBP' )
 
     # idx2ner = [ 'PER_NAM', 'PER_NOM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'TTL_NAM', 'O'  ]
     idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
@@ -61,30 +61,38 @@ if __name__ == '__main__':
     # ==========================================================================================
     # go through validation set to see if we load the correct file
 
+    KBP_N_LABELS = 10
+
     # load 10% KBP test data
     def __LoadValidation():
         source = imap( lambda x: x[1],
                        ifilter( lambda x : x[0] % 10 >= 9,
                        enumerate( imap( lambda x: x[:4], 
-                                        LoadED( config.data_path + '/%s-eval-parsed' % config.language ) ) ) ) )
+                                        LoadED( "/local/scratch/nana/EDL-DATA/KBP-EDL-2015/eng-eval-parsed" ) ) ) ) )
         # load 5% iflytek data
         if config.language != 'spa':
             source = chain( source, 
                             imap( lambda x: x[1],
                                   ifilter( lambda x : 90 <= x[0] % 100 < 95,
                                            enumerate( imap( lambda x: x[:4], 
-                                                      LoadED( 'iflytek-clean-%s' % config.language ) ) ) ) ) )
+                                                      LoadED( "/local/scratch/nana/iflytek-clean-eng/checked" ) ) ) ) ) )
         return source
 
     # istantiate a batch constructor
     valid = batch_constructor( __LoadValidation(),
                                numericizer1, numericizer2, gazetteer = kbp_gazetteer, 
                                alpha = config.word_alpha, window = config.n_window, 
-                               n_label_type = config.n_label_type,
+                               n_label_type = KBP_N_LABELS,
                                language = config.language )
 
     logger.info( 'valid: ' + str(valid) )
 
+    kbp_task = TaskHolder(KBP, config.learning_rate, (None, None, None), 
+                                ('multitask-result/multitask-train-kbp.predicted',
+                                 'multitask-result/multitask-valid-kbp.predicted',
+                                 'multitask-result/multitask-test-kbp.predicted'),
+                                (None, None, None),
+                                 KBP_N_LABELS)
 
     # go through validation set
     with open( args.buffer, 'wb' ) as valid_predicted:
@@ -93,7 +101,7 @@ if __name__ == '__main__':
                         256 if config.feature_choice & (1 << 9 ) > 0 else 1024, 
                         False, 1, 1, config.feature_choice ):
 
-            c, pi, pv = mention_net.eval( example )
+            c, pi, pv = mention_net.eval( example, kbp_task )
 
             cost += c * example[-1].shape[0]
             cnt += example[-1].shape[0]
@@ -108,10 +116,10 @@ if __name__ == '__main__':
     pp = [ p for p in PredictionParser( __LoadValidation(),
                                         args.buffer, 
                                         config.n_window,
-                                        n_label_type = config.n_label_type ) ]
+                                        n_label_type = KBP_N_LABELS ) ]
 
     _, _, best_dev_fb1, info = evaluation( pp, config.threshold, config.algorithm, True, 
-                                            n_label_type = config.n_label_type,
+                                            n_label_type = KBP_N_LABELS,
                                             decoder_callback = config.customized_threshold )
     logger.info( '%s\n%s' % ('validation', info) ) 
 
@@ -133,13 +141,13 @@ if __name__ == '__main__':
                                       imap( lambda x: x[:4], LoadED( full_name ) ),
                                       numericizer1, numericizer2, gazetteer = kbp_gazetteer, 
                                       alpha = config.word_alpha, window = config.n_window, 
-                                      n_label_type = config.n_label_type,
+                                      n_label_type = KBP_N_LABELS,
                                       language = config.language )
             logger.info( 'data: ' + str(data) )
 
             with open( args.buffer, 'wb' ) as buff_file:
                 for example in data.mini_batch_multi_thread( 512, False, 1, 1, config.feature_choice ):
-                    _, pi, pv = mention_net.eval( example )
+                    _, pi, pv = mention_net.eval( example, kbp_task )
 
                     # expcted has gargadge values
                     for estimate, probability in zip( pi, pv ):
@@ -151,7 +159,7 @@ if __name__ == '__main__':
                     PredictionParser( # imap( lambda x: (x[0].split(u' '), [], [], []), texts ),
                                       imap( lambda x: x[:4], LoadED( full_name ) ),
                                       args.buffer, config.n_window,
-                                      n_label_type = config.n_label_type ) ):
+                                      n_label_type = KBP_N_LABELS ) ):
 
                 estimate = decode( s, estimate, table, config.threshold, config.algorithm,
                                    config.customized_threshold ) 
