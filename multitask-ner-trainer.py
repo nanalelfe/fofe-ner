@@ -337,8 +337,7 @@ if __name__ == '__main__':
                     ) 
                 ) 
             )
-        ),
-        imap( 
+        ), imap( 
             lambda x: x[:4],
             LoadED(args.kbp_valid_datapath) )
         ) 
