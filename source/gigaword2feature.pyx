@@ -259,7 +259,6 @@ def KBP(filename, iflytek=None):
     for item in generator:
         yield item
 
-
 def CoNLL2003( filename ):
     """
     Parameters

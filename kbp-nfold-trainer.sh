@@ -127,6 +127,7 @@ done
 kbp-ed-trainer.py \
 /eecs/research/asr/mingbin/ner-advance/word2vec/gw128 \
 /local/scratch/nana/EDL-DATA/KBP-EDL-2015 \
+/local/scratch/nana/EDL-DATA/KBP-EDL-2016 \
 --layer_size 512,512,512 \
 --n_batch_size 512 \
 --learning_rate 0.128 \

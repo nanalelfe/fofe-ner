@@ -23,6 +23,7 @@ if __name__ == '__main__':
                          help = 'word_embedding.{-case-insensitive, -case-sensitive}.word2vec are assumed'  )
     parser.add_argument( 'data_path', type = str, 
                          help = 'path to ed-eng-{train,eval} of KBP2015' )
+    parser.add_argument( 'eval_path', type = str)
 
     # training-related arguments
     parser.add_argument( '--n_char_embedding', type = int, default = 32,
