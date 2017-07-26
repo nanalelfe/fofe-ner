@@ -124,7 +124,6 @@ do
 		--model "kbp-result/kbp-split-${i}"
 done
 
-
 INFO "evaluating ... "
 
 ${this_dir}/kbp-nfold-eval.py \

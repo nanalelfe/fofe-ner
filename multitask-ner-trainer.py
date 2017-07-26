@@ -1,7 +1,6 @@
 #!/home/chwang/anaconda2/envs/tensorflow/bin/python
 
 #/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
-
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -307,6 +306,8 @@ if __name__ == '__main__':
 
     kbp_gazetteer = gazetteer( args.kbp_gazetteer, mode = 'KBP' )
 
+    
+
     # ==================================================================================
     # Official OntoNotes split
     # ==================================================================================
@@ -325,6 +326,7 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------
     # Batch constructor initializes sets of processed_sentence objects, sentence1
     # (case insensitive) and sentence2 (case sensitive)
+
 
     train_conll = batch_constructor(CoNLL2003( args.conll_datapath + '/eng.train' ), 
                                numericizer1, numericizer2, 
@@ -472,360 +474,354 @@ if __name__ == '__main__':
                                 (args.kbp_train_datapath, args.kbp_valid_datapath, args.kbp_test_datapath),
                                  KBP_N_LABELS)
 
-    tasks = [conll_task, ontonotes_task, kbp_task]
-
     for n_epoch in xrange(config.max_iter):
         if not os.path.exists('multitask-result'):
             os.makedirs('multitask-result')
 
-        # tasks = random.shuffle(tasks)
+        pick = random.choice([0, 1, 2])
 
-        # pick = random.choice([0, 1, 2])
+        if pick == 0:
+            # CoNLL 2003
+            curr_task = conll_task
+            logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
+            f_num = 512
+        elif pick == 1:
+            # OntoNotes
+            curr_task = ontonotes_task
+            logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
+            f_num = 512
+        else:
+            # KBP
+            curr_task = kbp_task
+            logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
+            f_num = 256
 
-        # if pick == 0:
-        #     # CoNLL 2003
-        #     curr_task = conll_task
-        #     logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
-        # elif pick == 1:
-        #     # OntoNotes
-        #     curr_task = ontonotes_task
-        #     logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
-        # else:
-        #     # KBP
-        #     curr_task = kbp_task
-        #     logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
-
-        # mention_net.config.learning_rate = curr_task.lr
+        mention_net.config.learning_rate = curr_task.lr
 
         # phar is used to observe training progress
-
-        conll_batch = ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
-                               conll_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
-                                                             True,
-                                                             config.overlap_rate,
-                                                             config.disjoint_rate,
-                                                             config.feature_choice))
-
-        ontonotes_batch = ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
-                               ontonotes_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
-                                                             True,
-                                                             config.overlap_rate,
-                                                             config.disjoint_rate,
-                                                             config.feature_choice))
-
-        kbp_batch = ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
-                                       kbp_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
-                                                                     True,
-                                                                     config.overlap_rate,
-                                                                     config.disjoint_rate,
-                                                                     config.feature_choice))
-
-        task_batches = [conll_batch, ontonotes_batch, kbp_batch]
-        nums = [0, 1, 2]
-        pick = random.choice(nums)
-
-
         logger.info('epoch %2d, learning-rate: %f' % \
-                    (n_epoch + 1, mention_net.config.learning_rate))
+                    (n_epoch + 1, curr_task.lr))
 
-        while len(nums) > 0:
+        pbar = tqdm(total=len(curr_task.batch_constructors[0].positive) +
+                          int(len(curr_task.batch_constructors[0].overlap) * config.overlap_rate) +
+                          int(len(curr_task.batch_constructors[0].disjoint) * config.disjoint_rate))
 
-            mention_net.config.learning_rate = tasks[pick].lr
+        cost, cnt = 0, 0
 
-            pbar = tqdm(total=len(tasks[0].batch_constructors[0].positive + tasks[1].batch_constructors[0].positive + tasks[2].batch_constructors[0].positive) +
-                              int(len(tasks[0].batch_constructors[0].overlap + tasks[1].batch_constructors[0].overlap + tasks[2].batch_constructors[0].overlap) * config.overlap_rate) +
-                              int(len(tasks[0].batch_constructors[0].disjoint + tasks[1].batch_constructors[0].disjoint + tasks[2].batch_constructors[0].disjoint) * config.disjoint_rate))
+        if curr_task.batch_num == 2:
+            for x in ifilter(
+                                lambda x : x[-1].shape[0] == config.n_batch_size,
+                                curr_task.batch_constructors[0].mini_batch_multi_thread(
+                                    config.n_batch_size,
+                                    True,
+                                    config.overlap_rate,
+                                    config.disjoint_rate,
+                                    config.feature_choice
+                                )
+                            ):
+                
+                x = [ x ]
 
-            cost, cnt = 0, 0
+                for example in x:
+                    c = mention_net.train( example, curr_task )
 
-            if pick == 2:
-                try:
-                    x = task_batches[pick].next()
-                    x = [x]
+                    cost += c * example[-1].shape[0]
+                    cnt += example[-1].shape[0]
+                pbar.update( example[-1].shape[0] )
 
-                    for example in x:
-                        c = mention_net.train( example, tasks[pick] )
-                        tasks[pick].cost += c * example[-1].shape[0]
-                        tasks[pick].cnt += example[-1].shape[0]
-                    pbar.update( example[-1].shape[0] )
-                except StopIteration:
-                    nums.remove(pick)
+        else:
+            # example is batch of fragments from a sentence
+            for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
+                                   curr_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
+                                                                 True,
+                                                                 config.overlap_rate,
+                                                                 config.disjoint_rate,
+                                                                 config.feature_choice)):
 
-            else: 
-                try:
-                    example = task_batches[pick].next()
-                    c = mention_net.train(example, tasks[pick])
-                    tasks[pick].cost += c * example[-1].shape[0]
-                    tasks[pick].cnt += example[-1].shape[0]
-                    pbar.update(example[-1].shape[0])
+                c = mention_net.train(example, curr_task)
+                cost += c * example[-1].shape[0]
+                cnt += example[-1].shape[0]
+                pbar.update(example[-1].shape[0])
 
-                except StopIteration:
-                    nums.remove(pick)
-
-            pick = random.choice(nums)
 
         pbar.close()
+        train_cost = cost / cnt
 
-        for curr_task in tasks:
-            train_cost = curr_task.cost / curr_task.cnt
+        # for plot
+        curr_task.training_costs.append(train_cost)
+        logger.info("training costs array: %s" % str(curr_task.training_costs))
 
-            # for plot
-            curr_task.training_costs.append(train_cost)
-            logger.info("training costs array: %s" % str(curr_task.training_costs))
+        logger.info('training set iterated, %f' % train_cost)
 
-            logger.info('training set iterated, %f' % train_cost)
+        # just training from 1st to 9th iterations
+        # if 0 < n_epoch < 10:
+        #     continue
 
-            # just training from 1st to 9th iterations
-            # if 0 < n_epoch < 10:
-            #     continue
+        ###############################################
+        ########## go through training set ############
+        ###############################################
 
-            ###############################################
-            ########## go through training set ############
-            ###############################################
+        train_predicted = open(curr_task.predicted_files[0], 'wb')
+        to_print = []
+        cost, cnt = 0, 0
 
-            train_predicted = open(curr_task.predicted_files[0], 'wb')
-            to_print = []
-            cost, cnt = 0, 0
+        for example in curr_task.batch_constructors[0].mini_batch_multi_thread(
+                f_num if config.feature_choice & (1 << 9) > 0 else 1024,
+                False, 1, 1, config.feature_choice):
 
-            for example in curr_task.batch_constructors[0].mini_batch_multi_thread(
-                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                    False, 1, 1, config.feature_choice):
+            c, pi, pv = mention_net.eval(example, curr_task)
 
-                c, pi, pv = mention_net.eval(example, curr_task)
+            cost += c * example[-1].shape[0]
+            cnt += example[-1].shape[0]
 
-                cost += c * example[-1].shape[0]
-                cnt += example[-1].shape[0]
+            for exp, est, prob in zip(example[-1], pi, pv):
+                to_print.append('%d  %d  %s' % \
+                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
 
-                for exp, est, prob in zip(example[-1], pi, pv):
-                    to_print.append('%d  %d  %s' % \
-                                    (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
+        print >> train_predicted, '\n'.join(to_print)
+        train_predicted.close()
+        logger.info('training set passed for batch_num ' + str(curr_task.batch_num))
 
-            print >> train_predicted, '\n'.join(to_print)
-            train_predicted.close()
-            logger.info('training set passed for batch_num ' + str(curr_task.batch_num))
+        ###############################################
+        ########## go through validation set ##########
+        ###############################################
 
-            ###############################################
-            ########## go through validation set ##########
-            ###############################################
+        # if args.buffer_dir is None:
+        #     validation_file = 'multitask-result/multitask-valid.predicted'
+        # else:
+        #     validation_file = os.path.join(args.buffer_dir, 'multitask-valid.predicted')
 
-            # if args.buffer_dir is None:
-            #     validation_file = 'multitask-result/multitask-valid.predicted'
-            # else:
-            #     validation_file = os.path.join(args.buffer_dir, 'multitask-valid.predicted')
+        valid_predicted = open(curr_task.predicted_files[1], 'wb')
+        cost, cnt = 0, 0
+        to_print = []
 
-            valid_predicted = open(curr_task.predicted_files[1], 'wb')
-            cost, cnt = 0, 0
-            to_print = []
+        for example in curr_task.batch_constructors[1].mini_batch_multi_thread(
+                f_num if config.feature_choice & (1 << 9) > 0 else 1024,
+                False, 1, 1, config.feature_choice):
 
-            for example in curr_task.batch_constructors[1].mini_batch_multi_thread(
-                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                    False, 1, 1, config.feature_choice):
+            c, pi, pv = mention_net.eval(example, curr_task)
 
-                c, pi, pv = mention_net.eval(example, curr_task)
+            cost += c * example[-1].shape[0]
+            cnt += example[-1].shape[0]
 
-                cost += c * example[-1].shape[0]
-                cnt += example[-1].shape[0]
+            for exp, est, prob in zip(example[-1], pi, pv):
+                to_print.append('%d  %d  %s' % \
+                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
 
-                for exp, est, prob in zip(example[-1], pi, pv):
-                    to_print.append('%d  %d  %s' % \
-                                    (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
+        print >> valid_predicted, '\n'.join(to_print)
+        valid_predicted.close()
+        valid_cost = cost / cnt
+        curr_task.valid_cost = valid_cost
+        logger.info('validation set passed for batch_num ' + str(curr_task.batch_num))
 
-            print >> valid_predicted, '\n'.join(to_print)
-            valid_predicted.close()
-            valid_cost = cost / cnt
-            curr_task.valid_cost = valid_cost
-            logger.info('validation set passed for batch_num ' + str(curr_task.batch_num))
+        #########################################
+        ########## go through test set ##########
+        #########################################
 
-            #########################################
-            ########## go through test set ##########
-            #########################################
+        # decode_test = (n_epoch >= config.max_iter / 2 or n_epoch == 0)
+        decode_test = True
 
-            # decode_test = (n_epoch >= config.max_iter / 2 or n_epoch == 0)
-            decode_test = True
+        # if args.buffer_dir is None:
+        #     testing_file = 'multitask-result/multitask-test.predicted'
+        # else:
+        #     testing_file = os.path.join(args.buffer_dir, 'multitask-test.PredictionParsercted')
 
-            # if args.buffer_dir is None:
-            #     testing_file = 'multitask-result/multitask-test.predicted'
-            # else:
-            #     testing_file = os.path.join(args.buffer_dir, 'multitask-test.PredictionParsercted')
+        test_predicted = open(curr_task.predicted_files[2], 'wb')
+        cost, cnt = 0, 0
+        to_print = []
 
-            test_predicted = open(curr_task.predicted_files[2], 'wb')
-            cost, cnt = 0, 0
-            to_print = []
+        for example in curr_task.batch_constructors[2].mini_batch_multi_thread(
+                f_num if config.feature_choice & (1 << 9) > 0 else 1024,
+                False, 1, 1, config.feature_choice):
 
-            for example in curr_task.batch_constructors[2].mini_batch_multi_thread(
-                    512 if config.feature_choice & (1 << 9) > 0 else 1024,
-                    False, 1, 1, config.feature_choice):
+            c, pi, pv = mention_net.eval(example, curr_task)
 
-                c, pi, pv = mention_net.eval(example, curr_task)
+            cost += c * example[-1].shape[0]
+            cnt += example[-1].shape[0]
 
-                cost += c * example[-1].shape[0]
-                cnt += example[-1].shape[0]
+            for exp, est, prob in zip(example[-1], pi, pv):
+                to_print.append('%d  %d  %s' % \
+                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
 
-                for exp, est, prob in zip(example[-1], pi, pv):
-                    to_print.append('%d  %d  %s' % \
-                                    (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
+        print >> test_predicted, '\n'.join(to_print)
+        test_predicted.close()
+        test_cost = cost / cnt
 
-            print >> test_predicted, '\n'.join(to_print)
-            test_predicted.close()
-            test_cost = cost / cnt
+        curr_task.test_cost = test_cost
 
-            curr_task.test_cost = test_cost
+        logger.info('evaluation set passed for batch_num: ' + str(curr_task.batch_num))
 
-            logger.info('evaluation set passed for batch_num: ' + str(curr_task.batch_num))
+        # ###################################################################################
+        # ########## exhaustively iterate 3 decodding algrithms with 0.x cut-off ############
+        # ###################################################################################
 
-            # ###################################################################################
-            # ########## exhaustively iterate 3 decodding algrithms with 0.x cut-off ############
-            # ###################################################################################
+        # # logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
+        # logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
 
-            # # logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
-            # logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
+        # # algo_list = ['highest-first', 'longest-first', 'subsumption-removal']
+        # idx2algo = { 1: 'highest-first', 2: 'longest-first', 3:'subsumption-removal'  }
+        # algo2idx = { 'highest-first': 1, 'longest-first': 2, 'subsumption-removal': 3 }
 
-            # # algo_list = ['highest-first', 'longest-first', 'subsumption-removal']
-            # idx2algo = { 1: 'highest-first', 2: 'longest-first', 3:'subsumption-removal'  }
-            # algo2idx = { 'highest-first': 1, 'longest-first': 2, 'subsumption-removal': 3 }
+        # best_dev_fb1, best_threshold, best_algorithm = 0, [0.5, 0.5], [1, 1]
 
-            # best_dev_fb1, best_threshold, best_algorithm = 0, [0.5, 0.5], [1, 1]
+        # if True: #n_epoch >= config.max_iter / 2:
+        #     pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+        #                                         curr_task.predicted_files[1], 
+        #                                         config.n_window, n_label_type = curr_task.n_label ) ]
 
-            # if True: #n_epoch >= config.max_iter / 2:
-            #     pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
-            #                                         curr_task.predicted_files[1], 
-            #                                         config.n_window, n_label_type = curr_task.n_label ) ]
+        #     for algorithm in product( [1, 2], repeat = 2 ):
+        #         algorithm = list( algorithm )
+        #         name = [ idx2algo[i] for i in algorithm  ]
+        #         for threshold in product( [ 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ], repeat = 2 ):
+        #             threshold = list( threshold )
 
-            #     for algorithm in product( [1, 2], repeat = 2 ):
-            #         algorithm = list( algorithm )
-            #         name = [ idx2algo[i] for i in algorithm  ]
-            #         for threshold in product( [ 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ], repeat = 2 ):
-            #             threshold = list( threshold )
+        #             precision, recall, f1, _ = evaluation( pp, threshold, algorithm, True,
+        #                                                    n_label_type = curr_task.n_label )
+        #             # logger.debug( ('cut-off: %f, algorithm: %-20s' % (threshold, name)) + 
+        #             #               (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)) )
+        #             if f1 > best_dev_fb1:
+        #                 curr_task.best_dev_fb1, curr_task.best_threshold, curr_task.best_algorithm = f1, threshold, algorithm
+        #                 curr_task.best_precision, curr_task.best_recall = precision, recall
+        #                 mention_net.config.algorithm = best_algorithm
+        #                 mention_net.config.threshold = best_threshold
+        #                 mention_net.tofile( args.model )
 
-            #             precision, recall, f1, _ = evaluation( pp, threshold, algorithm, True,
-            #                                                    n_label_type = curr_task.n_label )
-            #             # logger.debug( ('cut-off: %f, algorithm: %-20s' % (threshold, name)) + 
-            #             #               (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)) )
-            #             if f1 > best_dev_fb1:
-            #                 curr_task.best_dev_fb1, curr_task.best_threshold, curr_task.best_algorithm = f1, threshold, algorithm
-            #                 curr_task.best_precision, curr_task.best_recall = precision, recall
-            #                 mention_net.config.algorithm = best_algorithm
-            #                 mention_net.config.threshold = best_threshold
-            #                 mention_net.tofile( args.model )
+        # logger.info( 'cut-off: %s, algorithm: %-20s' % \
+        #              (str(best_threshold), str([ idx2algo[i] for i in curr_task.best_algorithm ])) )
 
-            # logger.info( 'cut-off: %s, algorithm: %-20s' % \
-            #              (str(best_threshold), str([ idx2algo[i] for i in curr_task.best_algorithm ])) )
+        # precision, recall, f1, info = evaluation( PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
+        #                                         curr_task.predicted_files[0], 
+        #                                         config.n_window, n_label_type = curr_task.n_label ), 
+        #                                           curr_task.best_threshold, curr_task.best_algorithm, True,
+        #                                           analysis = None, #analysis,
+        #                                           n_label_type = curr_task.n_label )
+        # logger.info( '%s\n%s' % ('training', info) ) 
+        # curr_task.train_scores.append(f1)
 
-            # precision, recall, f1, info = evaluation( PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
-            #                                         curr_task.predicted_files[1], 
-            #                                         config.n_window, n_label_type = curr_task.n_label ), 
-            #                                           curr_task.best_threshold, curr_task.best_algorithm, True,
-            #                                           analysis = None, #analysis,
-            #                                           n_label_type = curr_task.n_label )
-            # logger.info( '%s\n%s' % ('validation', info) ) 
 
-            # precision, recall, f1, info = evaluation( PredictionParser(curr_task.generator( curr_task.data_loc[2] ), 
-            #                                         curr_task.predicted_files[2], 
-            #                                         config.n_window, n_label_type = curr_task.n_label ), 
-            #                                           curr_task.best_threshold, curr_task.best_algorithm, True,
-            #                                           analysis = None, #analysis,
-            #                                           n_label_type = curr_task.n_label )
-            # logger.info( '%s\n%s' % ('test', info) ) 
+        # precision, recall, f1, info = evaluation( PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+        #                                         curr_task.predicted_files[1], 
+        #                                         config.n_window, n_label_type = curr_task.n_label ), 
+        #                                           curr_task.best_threshold, curr_task.best_algorithm, True,
+        #                                           analysis = None, #analysis,
+        #                                           n_label_type = curr_task.n_label )
+        # logger.info( '%s\n%s' % ('validation', info) ) 
+        # curr_task.valid_scores.append(f1)
 
-            # mention_net.config.learning_rate *= 0.5 ** ((4./ config.max_iter) if config.drop_rate > 0 else (1./ 2))
-            # mention_net.config.drop_rate *= 0.5 ** (2./ config.max_iter)
+        # precision, recall, f1, info = evaluation( PredictionParser(curr_task.generator( curr_task.data_loc[2] ), 
+        #                                         curr_task.predicted_files[2], 
+        #                                         config.n_window, n_label_type = curr_task.n_label ), 
+        #                                           curr_task.best_threshold, curr_task.best_algorithm, True,
+        #                                           analysis = None, #analysis,
+        #                                           n_label_type = curr_task.n_label )
+        # logger.info( '%s\n%s' % ('test', info) ) 
+        # curr_task.test_scores.append(f1)
 
-            ###################################################################################
-            ########## exhaustively iterate 3 decodding algrithms with 0.x cut-off ############
-            ###################################################################################
-            logger.info('cost: %f (train), %f (valid)', train_cost, valid_cost)
-            # logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
+        # mention_net.config.learning_rate *= 0.5 ** ((4./ config.max_iter) if config.drop_rate > 0 else (1./ 2))
+        # mention_net.config.drop_rate *= 0.5 ** (2./ config.max_iter)
 
-            algo_list = ['highest-first', 'longest-first', 'subsumption-removal']
 
-            best_dev_fb1, best_threshold, best_algorithm = 0, 0.5, 1
+        ###################################################################################
+        ########## exhaustively iterate 3 decodding algrithms with 0.x cut-off ############
+        ###################################################################################
+        logger.info('cost: %f (train), %f (valid)', train_cost, valid_cost)
+        # logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
 
-            pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
-                                                    curr_task.predicted_files[1], 
-                                                    config.n_window, n_label_type = curr_task.n_label ) ]
+        algo_list = ['highest-first', 'longest-first', 'subsumption-removal']
 
-            for algorithm, name in zip([1, 2, 3], algo_list):
-                for threshold in numpy.arange(0.3, 1, 0.1).tolist():
-                    precision, recall, f1, _ = evaluation(pp, threshold, algorithm, True, n_label_type = curr_task.n_label)
-                    logger.debug(('batch_num: %d, cut-off: %f, algorithm: %-20s' %
-                                  (curr_task.batch_num, threshold, name)) +
-                                 (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)))
-                    if f1 > best_dev_fb1:
-                        best_dev_fb1, best_threshold, best_algorithm = f1, threshold, algorithm
-                        mention_net.config.threshold = best_threshold
-                        mention_net.config.algorithm = best_algorithm
+        best_dev_fb1, best_threshold, best_algorithm = 0, 0.5, 1
 
-            curr_task.best_dev_fb1 = best_dev_fb1
-            curr_task.best_threshold = best_threshold
-            curr_task.best_algorithm = best_algorithm
+        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+                                                curr_task.predicted_files[1], 
+                                                config.n_window, n_label_type = curr_task.n_label ) ]
 
-            # training evaluation
-            pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
-                                                    curr_task.predicted_files[0], 
-                                                    config.n_window, n_label_type = curr_task.n_label ) ]
+        for algorithm, name in zip([1, 2, 3], algo_list):
+            for threshold in numpy.arange(0.3, 1, 0.1).tolist():
+                precision, recall, f1, _ = evaluation(pp, threshold, algorithm, True, n_label_type = curr_task.n_label)
+                logger.debug(('batch_num: %d, cut-off: %f, algorithm: %-20s' %
+                              (curr_task.batch_num, threshold, name)) +
+                             (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)))
+                if f1 > best_dev_fb1:
+                    best_dev_fb1, best_threshold, best_algorithm = f1, threshold, algorithm
+                    mention_net.config.threshold = best_threshold
+                    mention_net.config.algorithm = best_algorithm
+
+        curr_task.best_dev_fb1 = best_dev_fb1
+        curr_task.best_threshold = best_threshold
+        curr_task.best_algorithm = best_algorithm
+
+        # training evaluation
+        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
+                                                curr_task.predicted_files[0], 
+                                                config.n_window, n_label_type = curr_task.n_label ) ]
+        
+        _, _, train_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        logger.info('batch_num ' + str(curr_task.batch_num) + ' training:\n' + info)
+        # fb1 score for validation
+        curr_task.train_scores.append(train_fb1)
+
+        logger.info("train scores array: %s" % str(curr_task.train_scores))
+
+        # validation evaluation
+
+        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+                                                curr_task.predicted_files[1], 
+                                                config.n_window, n_label_type = curr_task.n_label ) ]
+
+        _, _, test_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        logger.info('batch_num ' + str(curr_task.batch_num) + ', validation:\n' + info)
+        curr_task.test_fb1 = test_fb1
+        # fb1 score for validation
+        curr_task.valid_scores.append(test_fb1)
+
+        logger.info("valid scores array: %s" % str(curr_task.valid_scores))
+
+        # test evaluation
             
-            _, _, train_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
-            logger.info('batch_num ' + str(curr_task.batch_num) + ' training:\n' + info)
-            # fb1 score for validation
-            curr_task.train_scores.append(train_fb1)
+        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[2] ), 
+                                                curr_task.predicted_files[2], 
+                                                config.n_window, n_label_type = curr_task.n_label ) ]
 
-            logger.info("train scores array: %s" % str(curr_task.train_scores))
+        _, _, fb1, out = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        logger.info('batch_num ' + str(curr_task.batch_num) + ', evaluation:\n' + out)
+        curr_task.test_scores.append(fb1)
+        curr_task.out = out
 
-            # validation evaluation
+        curr_task.fb1 = fb1
 
-            pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
-                                                    curr_task.predicted_files[1], 
-                                                    config.n_window, n_label_type = curr_task.n_label ) ]
+        logger.info("test scores array: %s" % str(curr_task.test_scores))
 
-            _, _, test_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
-            logger.info('batch_num ' + str(curr_task.batch_num) + ', validation:\n' + info)
-            curr_task.test_fb1 = test_fb1
-            # fb1 score for validation
-            curr_task.valid_scores.append(test_fb1)
+        # Best so far 
+        if curr_task.test_fb1 > curr_task.best_test_fb1:
+            if decode_test:
+                curr_task.best_test_info = curr_task.out
+            curr_task.best_test_fb1 = curr_task.test_fb1
+            mention_net.config.threshold = best_threshold
+            mention_net.config.algorithm = best_algorithm
+            mention_net.tofile('./multitask-model/' + args.model)
+            
+        logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
+                    (mention_net.config.threshold,
+                     algo_list[mention_net.config.algorithm - 1],
+                     curr_task.best_test_info))
 
-            logger.info("valid scores array: %s" % str(curr_task.valid_scores))
+        ##########################################
+        ########## adjust learning rate ##########
+        ##########################################
 
-            # test evaluation
-                
-            pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[2] ), 
-                                                    curr_task.predicted_files[2], 
-                                                    config.n_window, n_label_type = curr_task.n_label ) ]
+        if curr_task.batch_num == 2:
+            curr_task.lr *= \
+                    0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
 
-            _, _, fb1, out = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
-            logger.info('batch_num ' + str(curr_task.batch_num) + ', evaluation:\n' + out)
-            curr_task.test_scores.append(fb1)
-            curr_task.out = out
-
-            curr_task.fb1 = fb1
-
-            logger.info("test scores array: %s" % str(curr_task.test_scores))
-
-            # Best so far 
-            if curr_task.test_fb1 > curr_task.best_test_fb1:
-                if decode_test:
-                    curr_task.best_test_info = curr_task.out
-                curr_task.best_test_fb1 = curr_task.test_fb1
-                mention_net.config.threshold = best_threshold
-                mention_net.config.algorithm = best_algorithm
-                mention_net.tofile('./multitask-model/' + args.model)
-                
-            logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
-                        (mention_net.config.threshold,
-                         algo_list[mention_net.config.algorithm - 1],
-                         curr_task.best_test_info))
-
-            ##########################################
-            ########## adjust learning rate ##########
-            ##########################################
-
+        else:
             if curr_task.valid_cost > curr_task.prev_cost or decay_started:
                 curr_task.lr *= \
                     0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
             else:
                 curr_task.prev_cost = curr_task.valid_cost
 
-            if config.drop_rate > 0:
-                mention_net.config.drop_rate *= 0.5 ** (2. / config.max_iter)
+        if config.drop_rate > 0:
+            mention_net.config.drop_rate *= 0.5 ** (2. / config.max_iter)
 
     #===================
     #===== Plot ========

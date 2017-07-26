@@ -1987,8 +1987,8 @@ class TaskHolder:
 
         self.prev_cost = 2054
 
-        self.cost = None
-        self.cnt = None
+        self.cost = 0
+        self.cnt = 0
 
 
         # Plot
