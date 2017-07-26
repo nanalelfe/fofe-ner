@@ -177,7 +177,7 @@ if __name__ == '__main__':
     parser.add_argument('--kernel_height', type=str, default='2,3,4,5,6,7,8,9')
 
     # - Kernel depth
-    parser.add_argument('--kernel_depth', type=str, default=','.join(['16'] * 8))
+    parser.add_argument('--kernel_depth', type=str, default=','.join(['32'] * 8))
 
     # - Initialize method: uniform or gaussian
     parser.add_argument('--initialize_method', type=str, default='uniform',
@@ -718,9 +718,7 @@ if __name__ == '__main__':
                     enumerate( 
                         imap( 
                             lambda x: x[:4], 
-                            LoadED( os.path.join(
-                                config.data_path, '%s-eval-parsed' % config.language
-                            ) )
+                            LoadED( args.kbp_valid_datapath )
                         ) 
                     ) 
                 ) 
@@ -735,7 +733,7 @@ if __name__ == '__main__':
                             enumerate( 
                                 imap( 
                                     lambda x: x[:4], 
-                                    LoadED( 'iflytek-clean-%s' % config.language ) 
+                                    LoadED( args.iflytek_checked_eng ) 
                                 ) 
                             ) 
                         ) 
