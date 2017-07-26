@@ -337,8 +337,7 @@ if __name__ == '__main__':
                     ) 
                 ) 
             )
-        ), imap( lambda x: x[:4], LoadED(args.kbp_valid_datapath) )) 
-    ) 
+        , imap( lambda x: x[:4], LoadED(args.kbp_valid_datapath) ))) 
 
     # load 90% iflytek data
     if args.iflytek:
