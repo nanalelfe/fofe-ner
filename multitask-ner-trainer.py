@@ -753,7 +753,7 @@ if __name__ == '__main__':
                 for threshold in product( [ 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ], repeat = 2 ):
                     threshold = list( threshold )
                     precision, recall, f1, _ = evaluation( pp, threshold, algorithm, True,
-                                                           n_label_type = config.n_label_type )
+                                                           n_label_type = KBP_N_LABELS )
                     logger.debug( ('cut-off: %s, algorithm: %-20s' % (str(threshold), name)) + 
                                   (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)) )
                     if f1 > best_dev_fb1:
