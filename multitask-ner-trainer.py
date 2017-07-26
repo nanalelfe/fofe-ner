@@ -306,8 +306,6 @@ if __name__ == '__main__':
 
     kbp_gazetteer = gazetteer( args.kbp_gazetteer, mode = 'KBP' )
 
-    
-
     # ==================================================================================
     # Official OntoNotes split
     # ==================================================================================
@@ -346,7 +344,7 @@ if __name__ == '__main__':
 
     train_kbp = batch_constructor( 
                     # KBP(args.kbp_train_datapath, args.iflytek_checked_eng),
-                    KBP(args.kbp_train_datapath),
+                    KBP(args.kbp_train_datapath, args.kbp_valid_datapath),
                     numericizer1, 
                     numericizer2, 
                     gazetteer = kbp_gazetteer, 
@@ -381,17 +379,19 @@ if __name__ == '__main__':
                               n_label_type = ONTONOTES_N_LABELS,
                               is2ndPass=args.is_2nd_pass)
 
-    valid_kbp = batch_constructor( 
-                    KBP(args.kbp_valid_datapath), 
-                    numericizer1, 
-                    numericizer2, 
-                    gazetteer = kbp_gazetteer, 
-                    alpha = config.word_alpha, 
-                    window = config.n_window, 
-                    n_label_type = KBP_N_LABELS,
-                    language = config.language,
-                    is2ndPass = args.is_2nd_pass 
-                )
+    # valid_kbp = batch_constructor( 
+    #                 KBP(args.kbp_valid_datapath), 
+    #                 numericizer1, 
+    #                 numericizer2, 
+    #                 gazetteer = kbp_gazetteer, 
+    #                 alpha = config.word_alpha, 
+    #                 window = config.n_window, 
+    #                 n_label_type = KBP_N_LABELS,
+    #                 language = config.language,
+    #                 is2ndPass = args.is_2nd_pass 
+    #             )
+
+    valid_kbp = None
 
     logger.info('valid conll: ' + str(valid_conll))
     logger.info('valid ontonotes: ' + str(valid_ontonotes))
@@ -532,7 +532,8 @@ if __name__ == '__main__':
         else:
             # example is batch of fragments from a sentence
             for example in ifilter(lambda x: x[-1].shape[0] == config.n_batch_size,
-                                   curr_task.batch_constructors[0].mini_batch_multi_thread(config.n_batch_size,
+                                   curr_task.batch_constructors[0].mini_batch_multi_thread(
+                                                                 config.n_batch_size,
                                                                  True,
                                                                  config.overlap_rate,
                                                                  config.disjoint_rate,
@@ -591,28 +592,29 @@ if __name__ == '__main__':
         # else:
         #     validation_file = os.path.join(args.buffer_dir, 'multitask-valid.predicted')
 
-        valid_predicted = open(curr_task.predicted_files[1], 'wb')
-        cost, cnt = 0, 0
-        to_print = []
+        if curr_task.batch_num != 2:
+            valid_predicted = open(curr_task.predicted_files[1], 'wb')
+            cost, cnt = 0, 0
+            to_print = []
 
-        for example in curr_task.batch_constructors[1].mini_batch_multi_thread(
-                f_num if config.feature_choice & (1 << 9) > 0 else 1024,
-                False, 1, 1, config.feature_choice):
+            for example in curr_task.batch_constructors[1].mini_batch_multi_thread(
+                    f_num if config.feature_choice & (1 << 9) > 0 else 1024,
+                    False, 1, 1, config.feature_choice):
 
-            c, pi, pv = mention_net.eval(example, curr_task)
+                c, pi, pv = mention_net.eval(example, curr_task)
 
-            cost += c * example[-1].shape[0]
-            cnt += example[-1].shape[0]
+                cost += c * example[-1].shape[0]
+                cnt += example[-1].shape[0]
 
-            for exp, est, prob in zip(example[-1], pi, pv):
-                to_print.append('%d  %d  %s' % \
-                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
+                for exp, est, prob in zip(example[-1], pi, pv):
+                    to_print.append('%d  %d  %s' % \
+                                    (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
 
-        print >> valid_predicted, '\n'.join(to_print)
-        valid_predicted.close()
-        valid_cost = cost / cnt
-        curr_task.valid_cost = valid_cost
-        logger.info('validation set passed for batch_num ' + str(curr_task.batch_num))
+            print >> valid_predicted, '\n'.join(to_print)
+            valid_predicted.close()
+            valid_cost = cost / cnt
+            curr_task.valid_cost = valid_cost
+            logger.info('validation set passed for batch_num ' + str(curr_task.batch_num))
 
         #########################################
         ########## go through test set ##########
@@ -724,15 +726,24 @@ if __name__ == '__main__':
         ###################################################################################
         ########## exhaustively iterate 3 decodding algrithms with 0.x cut-off ############
         ###################################################################################
-        logger.info('cost: %f (train), %f (valid)', train_cost, valid_cost)
-        # logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
+        if curr_task.batch_num == 2:
+            logger.info('cost: %f (train), %f (test)', train_cost, test_cost)
+        else:
+            logger.info( 'cost: %f (train), %f (valid), %f (test)', train_cost, valid_cost, test_cost )
 
         algo_list = ['highest-first', 'longest-first', 'subsumption-removal']
 
         best_dev_fb1, best_threshold, best_algorithm = 0, 0.5, 1
 
-        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
-                                                curr_task.predicted_files[1], 
+        if curr_task.batch_num == 2:
+            data_location = curr_task.data_loc[2]
+            predicted_files = curr_task.predicted_files[2]
+        else:
+            data_location = curr_task.data_loc[1]
+            predicted_files = curr_task.predicted_files[1]
+
+        pp = [ p for p in PredictionParser(curr_task.generator( data_location ), 
+                                                predicted_files, 
                                                 config.n_window, n_label_type = curr_task.n_label ) ]
 
         for algorithm, name in zip([1, 2, 3], algo_list):
@@ -763,21 +774,21 @@ if __name__ == '__main__':
         logger.info("train scores array: %s" % str(curr_task.train_scores))
 
         # validation evaluation
+        if curr_task.batch_num != 2:
 
-        pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
-                                                curr_task.predicted_files[1], 
-                                                config.n_window, n_label_type = curr_task.n_label ) ]
+            pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[1] ), 
+                                                    curr_task.predicted_files[1], 
+                                                    config.n_window, n_label_type = curr_task.n_label ) ]
 
-        _, _, test_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
-        logger.info('batch_num ' + str(curr_task.batch_num) + ', validation:\n' + info)
-        curr_task.test_fb1 = test_fb1
-        # fb1 score for validation
-        curr_task.valid_scores.append(test_fb1)
+            _, _, test_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+            logger.info('batch_num ' + str(curr_task.batch_num) + ', validation:\n' + info)
+            curr_task.test_fb1 = test_fb1
+            # fb1 score for validation
+            curr_task.valid_scores.append(test_fb1)
 
-        logger.info("valid scores array: %s" % str(curr_task.valid_scores))
+            logger.info("valid scores array: %s" % str(curr_task.valid_scores))
 
         # test evaluation
-            
         pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[2] ), 
                                                 curr_task.predicted_files[2], 
                                                 config.n_window, n_label_type = curr_task.n_label ) ]
@@ -785,6 +796,7 @@ if __name__ == '__main__':
         _, _, fb1, out = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
         logger.info('batch_num ' + str(curr_task.batch_num) + ', evaluation:\n' + out)
         curr_task.test_scores.append(fb1)
+        curr_task.test_fb1 = fb1
         curr_task.out = out
 
         curr_task.fb1 = fb1

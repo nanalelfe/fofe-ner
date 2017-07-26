@@ -124,6 +124,21 @@ do
 		--model "kbp-result/kbp-split-${i}"
 done
 
+kbp-ed-trainer.py \
+/eecs/research/asr/mingbin/ner-advance/word2vec/gw128 \
+/local/scratch/nana/EDL-DATA/KBP-EDL-2015 \
+--layer_size 512,512,512 \
+--n_batch_size 512 \
+--learning_rate 0.128 \
+--momentum 0.9 \
+--max_iter 256 \
+--feature_choice 639 \
+--overlap_rate 0.36 \
+--disjoint_rate 0.09 \
+--dropout \
+--char_alpha 0.8 \
+--word_alpha 0.5 
+
 INFO "evaluating ... "
 
 ${this_dir}/kbp-nfold-eval.py \
