@@ -326,18 +326,27 @@ if __name__ == '__main__':
     # (case insensitive) and sentence2 (case sensitive)
 
     # load all KBP training data and 90% KBP test data
+
+    # load all KBP training data and 90% KBP test data
     source = chain( 
         imap( 
             lambda x: x[1],
             ifilter( 
                 lambda x : x[0] % 10 < 9,
-                enumerate(imap(
+                enumerate( 
+                    imap(
                         lambda x: x[:4], 
-                        LoadED( args.kbp_train_datapath))
+                        LoadED( args.kbp_train_datapath )
                     ) 
                 ) 
             )
-        , imap( lambda x: x[:4], LoadED(args.kbp_valid_datapath) ))) 
+        ),
+        imap( 
+            lambda x: x[:4],
+            LoadED(args.kbp_valid_datapath)
+        ) 
+    ) 
+
 
     # load 90% iflytek data
     if args.iflytek:
