@@ -347,7 +347,6 @@ if __name__ == '__main__':
         ) 
     ) 
 
-
     # load 90% iflytek data
     if args.iflytek:
         source = chain( source, 

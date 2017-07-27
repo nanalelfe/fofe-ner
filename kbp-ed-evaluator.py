@@ -68,7 +68,7 @@ if __name__ == '__main__':
         source = imap( lambda x: x[1],
                        ifilter( lambda x : x[0] % 10 >= 9,
                        enumerate( imap( lambda x: x[:4], 
-                                        LoadED( "/local/scratch/nana/EDL-DATA/KBP-EDL-2015/eng-eval-parsed" ) ) ) ) )
+                                        LoadED( "/local/scratch/nana/EDL-DATA/KBP-EDL-2016/eng-eval-parsed" ) ) ) ) )
         # load 5% iflytek data
         if config.language != 'spa':
             source = chain( source, 
