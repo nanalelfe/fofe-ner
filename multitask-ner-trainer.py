@@ -900,14 +900,9 @@ if __name__ == '__main__':
             mention_net.tofile('./multitask-model/' + args.model)
 
 
-        if curr_task.batch_num == 2:
+        if curr_task.batch_num != 2:
             logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f\n%s' % \
                         (mention_net.config.threshold,
-                         curr_task.best_test_info))
-        else:
-            logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
-                        (mention_net.config.threshold,
-                         algo_list[mention_net.config.algorithm - 1],
                          curr_task.best_test_info))
 
         ##########################################
