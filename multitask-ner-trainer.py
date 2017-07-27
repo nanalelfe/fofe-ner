@@ -901,9 +901,8 @@ if __name__ == '__main__':
 
 
         if curr_task.batch_num == 2:
-            logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
+            logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f' % \
                         (mention_net.config.threshold,
-                         idx2algo[mention_net.config.algorithm],
                          curr_task.best_test_info))
         else:
             logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
