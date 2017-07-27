@@ -170,7 +170,6 @@ if __name__ == '__main__':
                     span += u'\n' + u' '.join( estimate )
                 labeled_text.append( span ) 
 
-
         full_name = os.path.join( args.out_dir, filename )
         labeled_text = u'\n\n'.join( labeled_text )
 

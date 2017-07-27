@@ -1972,9 +1972,9 @@ class TaskHolder:
             self.batch_num = 2
 
         self.best_test_fb1 = 0
+        self.best_dev_fb1 = 0
         self.valid_cost = None
         self.test_cost = None
-        self.best_dev_fb1 = None
         self.best_threshold = None
         self.best_algorithm = None
         self.test_fb1 = None

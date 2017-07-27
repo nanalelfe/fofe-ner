@@ -543,8 +543,17 @@ if __name__ == '__main__':
 
         pick = random.choice([0, 1, 2])
 
+        if n_epoch + 1 == config.max_iter:
+            pick = 2
+
 
         mention_net.config.learning_rate = curr_task.lr
+
+        if curr_task.best_algorithm is not None:
+            mention_net.config.algorithm = best_algorithm
+            mention_net.config.threshold = best_threshold
+            mention_net.tofile('./multitask-model/' + args.model )
+
 
         # phar is used to observe training progress
         logger.info('epoch %2d, learning-rate: %f' % \
@@ -745,8 +754,7 @@ if __name__ == '__main__':
                 source,
                 curr_task.predicted_files[1], 
                 config.n_window,
-                n_label_type = curr_task.n_label
-            ) )
+                n_label_type = curr_task.n_label) )
 
             for algorithm in product( [1, 2], repeat = 2 ):
                 algorithm = list( algorithm )
@@ -757,6 +765,7 @@ if __name__ == '__main__':
                                                            n_label_type = KBP_N_LABELS )
                     logger.debug( ('cut-off: %s, algorithm: %-20s' % (str(threshold), name)) + 
                                   (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)) )
+
                     if f1 > best_dev_fb1:
                         best_dev_fb1, best_threshold, best_algorithm = f1, threshold, algorithm
                         best_precision, best_recall = precision, recall
@@ -791,13 +800,11 @@ if __name__ == '__main__':
                         mention_net.config.threshold = best_threshold
                         mention_net.config.algorithm = best_algorithm
 
-            curr_task.best_dev_fb1 = best_dev_fb1
             curr_task.best_threshold = best_threshold
             curr_task.best_algorithm = best_algorithm
 
         ###################################################################################
         # training evaluation
-
         source = chain( 
             imap( 
                 lambda x: x[1],
@@ -893,7 +900,7 @@ if __name__ == '__main__':
         logger.info("test scores array: %s" % str(curr_task.test_scores))
 
         # Best so far 
-        if curr_task.test_fb1 > best_test_fb1:
+        if curr_task.test_fb1 > curr_task.best_test_fb1:
             if decode_test:
                 curr_task.best_test_info = curr_task.out
             curr_task.best_test_fb1 = curr_task.test_fb1
@@ -901,9 +908,11 @@ if __name__ == '__main__':
 
 
         if curr_task.batch_num != 2:
-            logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f\n%s' % \
+            logger.info('BEST SO FAR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f\n%s' % \
                         (mention_net.config.threshold,
                          curr_task.best_test_info))
+        else:
+            logger.info('BEST SO FAR BATCH NUM ' + str(curr_task.batch_num) + '\n' + str(curr_task.best_test_info))
 
         ##########################################
         ########## adjust learning rate ##########
