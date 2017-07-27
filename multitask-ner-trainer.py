@@ -545,8 +545,6 @@ if __name__ == '__main__':
 
 
         mention_net.config.learning_rate = curr_task.lr
-        mention_net.config.algorithm = curr_task.best_algorithm
-        mention_net.config.threshold = curr_task.best_threshold
 
         # phar is used to observe training progress
         logger.info('epoch %2d, learning-rate: %f' % \
@@ -764,8 +762,8 @@ if __name__ == '__main__':
                         best_precision, best_recall = precision, recall
                         curr_task.best_algorithm = algorithm 
                         curr_task.best_threshold = best_threshold
-                        # mention_net.config.algorithm = best_algorithm
-                        # mention_net.config.threshold = best_threshold
+                        mention_net.config.algorithm = best_algorithm
+                        mention_net.config.threshold = best_threshold
                         mention_net.tofile('./multitask-model/' + args.model )
 
             logger.info( 'cut-off: %s, algorithm: %-20s' % \
@@ -829,11 +827,11 @@ if __name__ == '__main__':
                                                       LoadED( args.iflytek_checked_eng ) ) ) ) ) )
 
         if curr_task.batch_num == 2:
-            pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
+            pp = [ p for p in PredictionParser(source , 
                                                     curr_task.predicted_files[0], 
                                                     config.n_window, n_label_type = curr_task.n_label ) ]
         else:
-            pp = [ p for p in PredictionParser(source, 
+            pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
                                                 curr_task.predicted_files[0], 
                                                 config.n_window, n_label_type = curr_task.n_label ) ]
         
@@ -900,11 +898,18 @@ if __name__ == '__main__':
                 curr_task.best_test_info = curr_task.out
             curr_task.best_test_fb1 = curr_task.test_fb1
             mention_net.tofile('./multitask-model/' + args.model)
-            
-        logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
-                    (mention_net.config.threshold,
-                     algo_list[mention_net.config.algorithm - 1],
-                     curr_task.best_test_info))
+
+
+        if curr_task.batch_num == 2:
+            logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
+                        (mention_net.config.threshold,
+                         idx2algo[mention_net.config.algorithm],
+                         curr_task.best_test_info))
+        else:
+            logger.info('BEST SO FOR BATCH NUM ' + str(curr_task.batch_num) + ': threshold %f, algorithm %s\n%s' % \
+                        (mention_net.config.threshold,
+                         algo_list[mention_net.config.algorithm - 1],
+                         curr_task.best_test_info))
 
         ##########################################
         ########## adjust learning rate ##########
