@@ -12,6 +12,7 @@ ${THIS_DIR}/multitask-ner-trainer.py \
     "/local/scratch/nana/EDL-DATA/KBP-EDL-2016/eng-eval-parsed" \
     "/local/scratch/nana/EDL-DATA/KBP-EDL-2015/kbp-gazetteer" \
     "/local/scratch/nana/iflytek-clean-eng/checked" \
+    "/local/scratch/nana/wikidata/data-chunk" \
     --layer_size "512,512,512" \
     --n_batch_size 512 \
     --learning_rate 0.128 \
@@ -23,4 +24,4 @@ ${THIS_DIR}/multitask-ner-trainer.py \
     --dropout \
     --char_alpha 0.8 \
     --word_alpha 0.5 \
-    --iflytek \
+    --wiki \
