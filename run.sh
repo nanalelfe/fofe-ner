@@ -10,8 +10,8 @@ ${THIS_DIR}/multitask-ner-trainer.py \
     "/local/scratch/nana/EDL-DATA/KBP-EDL-2015/eng-train-parsed" \
     "/local/scratch/nana/EDL-DATA/KBP-EDL-2015/eng-eval-parsed" \
     "/local/scratch/nana/EDL-DATA/KBP-EDL-2016/eng-eval-parsed" \
-    "/local/scratch/nana/EDL-DATA/KBP-EDL-2015/kbp-gazetteer" \
-    "/local/scratch/nana/iflytek-clean-eng/checked" \
+    "/local/scratch/nana/EDL-DATA/kbp-gaz.pkl" \
+    "/local/scratch/nana/iflytek-clean-eng" \
     --layer_size "512,512,512" \
     --n_batch_size 512 \
     --learning_rate 0.128 \
