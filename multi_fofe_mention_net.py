@@ -36,7 +36,6 @@ def load_word_embedding( filename ):
 
 ########################################################################
 
-
 class mention_config( object ):
     def __init__( self, args = None ):
         # default config
@@ -93,9 +92,7 @@ class mention_config( object ):
         self.customized_threshold = None    # not used any more
         assert len( self.kernel_height ) == len( self.kernel_depth )
 
-
 ########################################################################
-
 
 class multi_fofe_mention_net( object ):
 
