@@ -667,8 +667,8 @@ if __name__ == '__main__':
         logger.info('training set iterated, %f' % train_cost)
 
         # just training from 1st to 9th iterations
-        # if 0 < n_epoch < 10:
-        #     continue
+        if 0 < n_epoch < 10:
+            continue
 
         ###############################################
         ########## go through training set ############
@@ -816,6 +816,7 @@ if __name__ == '__main__':
                 name = [ idx2algo[i] for i in algorithm  ]
                 for threshold in product( [ 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ], repeat = 2 ):
                     threshold = list( threshold )
+                    logger.debug("Before evaluation")
                     precision, recall, f1, _ = evaluation( pp, threshold, algorithm, True,
                                                            n_label_type = KBP_N_LABELS )
                     logger.debug( ('cut-off: %s, algorithm: %-20s' % (str(threshold), name)) + 
