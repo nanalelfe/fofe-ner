@@ -1,4 +1,6 @@
-#!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
+#!/home/chwang/anaconda2/envs/tensorflow/bin/python
+
+#/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -177,7 +179,7 @@ if __name__ == '__main__':
     parser.add_argument('--kernel_height', type=str, default='2,3,4,5,6,7,8,9')
 
     # - Kernel depth
-    parser.add_argument('--kernel_depth', type=str, default=','.join(['16'] * 8))
+    parser.add_argument('--kernel_depth', type=str, default=','.join(['32'] * 8))
 
     # - Initialize method: uniform or gaussian
     parser.add_argument('--initialize_method', type=str, default='uniform',
