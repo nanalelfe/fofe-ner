@@ -306,7 +306,7 @@ if __name__ == '__main__':
         conll2003_gazetteer = [set() for _ in xrange( CONLL_N_LABELS )]
         ontonotes_gazetteer = [set() for _ in xrange( ONTONOTES_N_LABELS )]
 
-    with open( 'args.kbp_gazetteer', 'rb' ) as fp:
+    with open( args.kbp_gazetteer, 'rb' ) as fp:
         kbp_gazetteer = cPickle.load( fp )
 
 
