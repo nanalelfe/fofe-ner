@@ -76,6 +76,8 @@ if __name__ == '__main__':
 
     parser.add_argument('iflytek_checked_eng', type=str, help='path to the preparsed iFLYTEK checked dataset')
 
+    parser.add_argument('wikidata', type=str, help='path to the wiki data')
+
     # - Character embedding dimension
     parser.add_argument('--n_char_embedding', type=int, default=32,
                         help='char embedding dimension')
@@ -212,6 +214,8 @@ if __name__ == '__main__':
     parser.add_argument('--language', type=str, default='eng', choices=['eng'])
     parser.add_argument('--average', action='store_true', default=False)
     parser.add_argument('--iflytek', action='store_true', default=False)
+    parser.add_argument('--wiki', action='store_true', default=False)
+
 
     # set a logging file at DEBUG level, TODO: windows doesn't allow ":" appear in a file name
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
@@ -354,7 +358,6 @@ if __name__ == '__main__':
                               ifilter( lambda x : x[0] % 10 < 9,
                                        enumerate( imap( lambda x: x[:4], 
                                                   LoadED( args.iflytek_checked_eng ) ) ) ) ) )
-
 
     train_conll = batch_constructor(CoNLL2003( args.conll_datapath + '/eng.train' ), 
                                numericizer1, numericizer2, 
@@ -510,7 +513,7 @@ if __name__ == '__main__':
                                 (ontonotes_training_path, ontonotes_valid_path, ontonotes_test_path),
                                  ONTONOTES_N_LABELS)
 
-    kbp_task = TaskHolder(KBP, args.learning_rate, (train_kbp, valid_kbp, test_kbp), 
+    kbp_task = TaskHolder(KBP, args.learning_rate, [train_kbp, valid_kbp, test_kbp], 
                                 ('multitask-result/multitask-train-kbp.predicted',
                                  'multitask-result/multitask-valid-kbp.predicted',
                                  'multitask-result/multitask-test-kbp.predicted'),
@@ -543,6 +546,58 @@ if __name__ == '__main__':
 
         if n_epoch + 1 == config.max_iter:
             pick = 2
+
+        if (curr_task.batch_num == 2) and (args.wiki):
+            # load all KBP training data and 90% KBP test data
+            source = chain( 
+                imap( 
+                    lambda x: x[1],
+                    ifilter( 
+                        lambda x : x[0] % 10 < 9,
+                        enumerate( 
+                            imap(
+                                lambda x: x[:4], 
+                                LoadED( args.kbp_train_datapath )
+                            ) 
+                        ) 
+                    )
+                ),
+                imap( 
+                    lambda x: x[:4],
+                    LoadED(args.kbp_valid_datapath)
+                ) 
+            ) 
+
+            # load 90% iflytek data
+            if args.iflytek:
+                source = chain( source, 
+                                imap( lambda x: x[1],
+                                      ifilter( lambda x : x[0] % 10 < 9,
+                                               enumerate( imap( lambda x: x[:4], 
+                                                          LoadED( args.iflytek_checked_eng ) ) ) ) ) )
+            # Load wiki data
+            X, Y = n_epoch / 16, n_epoch % (16 if not args.iflytek else 4)
+            dsp = distant_supervision_parser( 
+                    os.path.join(args.wikidata, 'sentence-%02d' % X),
+                    os.path.join(args.wikidata, 'labels-%02d' % X),
+                    Y, None, 64 if not args.iflytek else 16  )
+            source = chain( source, dsp)
+
+            train_kbp = batch_constructor( 
+                    # KBP(args.kbp_train_datapath, args.iflytek_checked_eng),
+                    # KBP(args.kbp_train_datapath, args.kbp_valid_datapath),
+                    source, 
+                    numericizer1, 
+                    numericizer2, 
+                    gazetteer = kbp_gazetteer, 
+                    alpha = config.word_alpha, 
+                    window = config.n_window, 
+                    n_label_type = KBP_N_LABELS,
+                    language = config.language,
+                    is2ndPass = args.is_2nd_pass 
+                )
+
+            kbp_task.batch_constructors[0] = train_kbp
 
 
         mention_net.config.learning_rate = curr_task.lr
