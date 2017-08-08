@@ -1008,8 +1008,7 @@ if __name__ == '__main__':
 
         # Best so far 
         if curr_task.test_fb1 > curr_task.best_test_fb1:
-            if decode_test:
-                curr_task.best_test_info = curr_task.out
+            curr_task.best_test_info = curr_task.out
             curr_task.best_test_fb1 = curr_task.test_fb1
             mention_net.tofile('./multitask-model/' + args.model)
 
