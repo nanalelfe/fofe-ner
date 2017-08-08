@@ -672,12 +672,51 @@ if __name__ == '__main__':
         to_print = []
         cost, cnt = 0, 0
 
+        if args.iflytek:
+            # load 100% KBP 2015 data
+            source = chain( 
+                imap(lambda x: x[:4], 
+                      LoadED( args.kbp_train_datapath )),
+                imap( 
+                    lambda x: x[:4],
+                    LoadED(args.kbp_valid_datapath)
+                ) 
+            )
+
+            # load 90% iflytek data
+            source = chain( source, 
+                            imap( lambda x: x[1],
+                              ifilter( lambda x : (x[0]%100 < 90) or (x[0]%100 >= 95) ,
+                                       enumerate( imap( lambda x: x[:4], 
+                                        LoadED( args.iflytek_checked_eng ) ) ) ) ))
+
+        else:
+            # load all KBP training data and 90% KBP test data
+            source = chain( 
+                imap( 
+                    lambda x: x[1],
+                    ifilter( 
+                        lambda x : x[0] % 10 < 9,
+                        enumerate( 
+                            imap(
+                                lambda x: x[:4], 
+                                LoadED( args.kbp_train_datapath )
+                            ) 
+                        ) 
+                    )
+                ),
+                imap( 
+                    lambda x: x[:4],
+                    LoadED(args.kbp_valid_datapath)
+                ) 
+            ) 
+
         train_gen = imap( 
                         lambda x: x[1],
                         ifilter( 
                             lambda x : x[0] % 100 < 1,
                             enumerate( 
-                                curr_task.batch_constructors[0] 
+                                source 
                             ) 
                         )
                     )
