@@ -19,6 +19,12 @@ def LoadED( rspecifier, language = 'eng' ):
                     'FAC_NAM' : 4, 
                     'TTL_NAM' : 5,
 
+                    # KBP2016 label
+                    'ORG_NOM' : 6,
+                    'GPE_NOM' : 7,
+                    'LOC_NOM' : 8,
+                    'FAC_NOM' : 9,
+
                     # iflytek label
                     'PER_NAME' : 0,  
                     'ORG_NAME' : 1, 
@@ -30,14 +36,9 @@ def LoadED( rspecifier, language = 'eng' ):
                     'GPE_NOMINAL' : 7,
                     'LOC_NOMINAL' : 8,
                     'FAC_NOMINAL' : 9,
-                    'PER_NOM' : 5,
-                    'ORG_NOM' : 6,
-                    'GPE_NOM' : 7,
-                    'LOC_NOM' : 8,
-                    'FAC_NOM' : 9,
                     'TITLE_NAME' : 5,
                     'TITLE_NOMINAL' : 5
-                } 
+                }
 
     if os.path.isfile( rspecifier ):
         with codecs.open( rspecifier, 'rb', 'utf8' ) as fp:
@@ -70,9 +71,12 @@ def LoadED( rspecifier, language = 'eng' ):
                             spelling.append( original[ offsets[boe[-1]][0] : offsets[eoe[-1] - 1][1] ] )
                         except ValueError as ex1:
                             logger.exception( rspecifier )
+                            logger.exception(rspecifier)
+                            logger.info("I AM in LinkingUtil.py!!!")
                             logger.exception( ans )
                         except KeyError as ex2:
                             logger.exception( rspecifier )
+                            logger.info("I AM in LinkingUtil.py!!!")
                             logger.exception( ans )
 
                         try:
@@ -82,6 +86,7 @@ def LoadED( rspecifier, language = 'eng' ):
                         except IndexError as ex:
                             logger.exception( rspecifier )
                             logger.exception( str(boe) + '   ' + str(eoe) )
+                            logger.info("I AM in LinkingUtil.py!!!")
                             continue
                     assert( len(boe) == len(eoe) == len(target) == len(mids) )
 

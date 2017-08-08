@@ -602,9 +602,7 @@ cdef class vocabulary( object ):
             rfofe += fofe[i][1]
         return lfofe, rfofe
 
-
 ################################################################################
-
 
 class chinese_word_vocab( vocabulary ):
     """
@@ -852,6 +850,7 @@ cdef class example:
 cdef void bigram_char_fofe( string phrase, 
                             vector[float]& values, vector[int]& indices,
                             float alpha, int row_id = 0 ) nogil:
+
     # printable characters range from 32 (inclusive) to 127 (exclusive), totalling 127 - 32 = 95
     # anything out of this range is considered OOV
     cdef int i, c
@@ -1162,12 +1161,47 @@ class batch_constructor:
 
         # downsampling
         #--------------
-        if len( self.disjoint ) > 0: 
+        if disjoint_rate == 1:
+            num = len(self.disjoint) * disjoint_rate * n_copy
+            logger.info("num: " + str(num))
+            logger.info("self.disjoint") 
+            logger.info(numpy.int32(len(self.disjoint)))
+            logger.info("n_copy:" + str(n_copy))
+            logger.info("disjoint rate: " + str(disjoint_rate))
+            logger.info(numpy.int32( len(self.disjoint) * disjoint_rate * n_copy ))
+            logger.info("self.disjoint")
+            logger.info(str(len(self.disjoint)))
+            logger.info("n_copy:" + str(n_copy))
+            logger.info("disjoint rate: " + str(disjoint_rate))
+            num = len(self.disjoint) * disjoint_rate * n_copy
+            logger.info("num: " + str(num))
             disjoint = numpy.random.choice( self.disjoint,
-                                            size = numpy.int32( len(self.disjoint) * disjoint_rate * n_copy ),
+                                            size = numpy.int32(len(self.disjoint)),
+                                            replace = replace )
+        elif len( self.disjoint ) > 0: 
+            num = len(self.disjoint) * disjoint_rate * n_copy
+            logger.info("num: " + str(num))
+            logger.info("self.disjoint") 
+            logger.info(str(len(self.disjoint)))
+            logger.info("n_copy:" + str(n_copy))
+            logger.info("disjoint rate: " + str(disjoint_rate))
+            logger.info(numpy.int32( len(self.disjoint) * disjoint_rate * n_copy ))
+            logger.info("self.disjoint")
+            logger.info(str(len(self.disjoint)))
+            logger.info("n_copy:" + str(n_copy))
+            logger.info("disjoint rate: " + str(disjoint_rate))
+            num = len(self.disjoint) * disjoint_rate * n_copy
+            logger.info("num: " + str(num))
+            disjoint = numpy.random.choice( self.disjoint,
+                                            size = numpy.int32( num ),
                                             replace = replace )
         else:
             disjoint = numpy.asarray([]).astype( numpy.int32 )
+
+        if overlap_rate == 1:
+            overlap = numpy.random.choice( self.overlap,
+                                           size = numpy.int32( len(self.overlap) * overlap_rate * n_copy ),
+                                           replace = replace )
 
         if len( self.overlap ) > 0:
             overlap = numpy.random.choice( self.overlap,

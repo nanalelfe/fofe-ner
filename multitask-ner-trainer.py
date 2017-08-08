@@ -1,6 +1,5 @@
-#!/home/chwang/anaconda2/envs/tensorflow/bin/python
+#!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 
-#/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -179,7 +178,7 @@ if __name__ == '__main__':
     parser.add_argument('--kernel_height', type=str, default='2,3,4,5,6,7,8,9')
 
     # - Kernel depth
-    parser.add_argument('--kernel_depth', type=str, default=','.join(['32'] * 8))
+    parser.add_argument('--kernel_depth', type=str, default=','.join(['16'] * 8))
 
     # - Initialize method: uniform or gaussian
     parser.add_argument('--initialize_method', type=str, default='uniform',
@@ -238,13 +237,6 @@ if __name__ == '__main__':
 
     ################################################################################
 
-    if args.is_2nd_pass:
-        logger.info('user-input feature-choice was %d' % args.feature_choice)
-        args.feature_choice &= 2038
-        logger.info('feature-choice now is %d' % args.feature_choice)
-
-    ################################################################################
-
     from multi_fofe_mention_net import *
     config = mention_config(args)
     from pprint import pprint
@@ -252,17 +244,8 @@ if __name__ == '__main__':
     pprint (vars(config))
 
     ################################################################################
-
     # TODO, try wikiNER
     if config.enable_distant_supervision:
-        # folder = 'gigaword'
-        # filelist =  [ f for f in os.listdir( folder ) \
-        #                 if f.endswith('.txt') and \
-        #                     os.path.getsize('gigaword/%s' % f) < 16 * 1024 * 1024 ]
-        # random.shuffle( filelist )
-        # logger.info( filelist )
-        # logger.info( 'the smallest %d files are used' % len(filelist) )
-        # config.max_iter = len(filelist)
         folder = '/eecs/research/asr/Shared/Reuters-RCV1/second-half/senna-labeled'
         filelist = os.listdir(folder)
         random.shuffle(filelist)
@@ -270,6 +253,7 @@ if __name__ == '__main__':
         config.max_iter = min(len(filelist), config.max_iter)
         logger.info('There are %d machine-labeled files. %d will be used.' % \
                     (len(filelist), config.max_iter))
+
 
     ################################################################################
 
@@ -283,12 +267,10 @@ if __name__ == '__main__':
     KBP_N_LABELS = 10
 
     # there are 2 sets of vocabulary, case-insensitive and case sensitive
-    nt = config.n_label_type if config.is_2nd_pass else 0
+    nt = 0
 
     # Vocabulary is an object that creates dicts of word to indices and fofe codes
 
-    # QUESTION: Do they have to share the same vocabulary ? Yes, because they have
-    # to share the same word embedding
     numericizer1 = vocabulary(config.word_embedding + '-case-insensitive.wordlist',
                               config.char_alpha, False,
                               n_label_type=nt)
@@ -308,9 +290,9 @@ if __name__ == '__main__':
         conll2003_gazetteer = [set() for _ in xrange( CONLL_N_LABELS )]
         ontonotes_gazetteer = [set() for _ in xrange( ONTONOTES_N_LABELS )]
 
+    # KBP always gets to have a gazetteer
     with open( args.kbp_gazetteer, 'rb' ) as fp:
         kbp_gazetteer = cPickle.load( fp )
-
 
     # ==================================================================================
     # Official OntoNotes split
@@ -331,35 +313,44 @@ if __name__ == '__main__':
     # Batch constructor initializes sets of processed_sentence objects, sentence1
     # (case insensitive) and sentence2 (case sensitive)
 
-    # load all KBP training data and 90% KBP test data
-
-    # load all KBP training data and 90% KBP test data
-    source = chain( 
-        imap( 
-            lambda x: x[1],
-            ifilter( 
-                lambda x : x[0] % 10 < 9,
-                enumerate( 
-                    imap(
-                        lambda x: x[:4], 
-                        LoadED( args.kbp_train_datapath )
-                    ) 
-                ) 
-            )
-        ),
-        imap( 
-            lambda x: x[:4],
-            LoadED(args.kbp_valid_datapath)
-        ) 
-    ) 
-
-    # load 90% iflytek data
     if args.iflytek:
+        # load 100% KBP 2015 data
+        source = chain( 
+            imap(lambda x: x[:4], 
+                  LoadED( args.kbp_train_datapath )),
+            imap( 
+                lambda x: x[:4],
+                LoadED(args.kbp_valid_datapath)
+            ) 
+        )
+
+        # load 90% iflytek data
         source = chain( source, 
                         imap( lambda x: x[1],
-                              ifilter( lambda x : x[0] % 10 < 9,
-                                       enumerate( imap( lambda x: x[:4], 
-                                                  LoadED( args.iflytek_checked_eng ) ) ) ) ) )
+                          ifilter( lambda x : (x[0]%100 < 90) or (x[0]%100 >= 95) ,
+                                   enumerate( imap( lambda x: x[:4], 
+                                    LoadED( args.iflytek_checked_eng ) ) ) ) ))
+
+    else:
+        # load all KBP training data and 90% KBP test data
+        source = chain( 
+            imap( 
+                lambda x: x[1],
+                ifilter( 
+                    lambda x : x[0] % 10 < 9,
+                    enumerate( 
+                        imap(
+                            lambda x: x[:4], 
+                            LoadED( args.kbp_train_datapath )
+                        ) 
+                    ) 
+                )
+            ),
+            imap( 
+                lambda x: x[:4],
+                LoadED(args.kbp_valid_datapath)
+            ) 
+        ) 
 
     train_conll = batch_constructor(CoNLL2003( args.conll_datapath + '/eng.train' ), 
                                numericizer1, numericizer2, 
@@ -378,7 +369,6 @@ if __name__ == '__main__':
                               is2ndPass=args.is_2nd_pass)
 
     train_kbp = batch_constructor( 
-                    # KBP(args.kbp_train_datapath, args.iflytek_checked_eng),
                     source, 
                     numericizer1, 
                     numericizer2, 
@@ -398,19 +388,19 @@ if __name__ == '__main__':
     # Validation set
     # ----------------------------------------------------------------------------------
 
-    # load 10% KBP test data
-    source = imap( lambda x: x[1],
+    #load 5% iflytek data
+    if args.iflytek:
+        source = imap( lambda x: x[1],
+                          ifilter( lambda x : 90 <= x[0] % 100 < 95,
+                                   enumerate( imap( lambda x: x[:4], 
+                            LoadED( args.iflytek_checked_eng ) ) ) ) )
+    else:
+        source = imap( lambda x: x[1],
                    ifilter( lambda x : x[0] % 10 >= 9,
                    enumerate( imap( lambda x: x[:4], 
                                     LoadED( args.kbp_valid_datapath ) ) ) ) )
 
-    # load 10% iflytek data
-    if args.iflytek:
-        source = chain( source, 
-                        imap( lambda x: x[1],
-                              ifilter( lambda x : 90 <= x[0] % 100 < 95,
-                                       enumerate( imap( lambda x: x[:4], 
-                                                  LoadED( args.iflytek_checked_eng ) ) ) ) ) )
+    # ----------------------------------------------------------------------------------
 
     valid_conll = batch_constructor(CoNLL2003( args.conll_datapath + '/eng.testa' ), 
                                numericizer1, numericizer2, 
@@ -477,6 +467,8 @@ if __name__ == '__main__':
                     is2ndPass = args.is_2nd_pass 
                 )
 
+    # ----------------------------------------------------------------------------------
+
     logger.info('test conll: ' + str(test_conll))
     logger.info('test ontonotes: ' + str(test_ontonotes))
     logger.info('test kbp: ' + str(test_kbp))
@@ -485,17 +477,9 @@ if __name__ == '__main__':
 
     # ==================================================================================
 
-    ################### let's compute ####################
+    prev_cost, best_test_fb1 = 2054, 0
 
-    prev_cost, decay_started = 2054, True if config.enable_distant_supervision else False
-    best_test_fb1 = 0
-
-    if config.enable_distant_supervision:
-        machine = train
-        infinite = machine.infinite_mini_batch_multi_thread(
-            config.n_batch_size, True,
-            config.overlap_rate, config.disjoint_rate,
-            config.feature_choice, True)
+    #-----------------------------------------------------------------------------------
 
     conll_task = TaskHolder(CoNLL2003, args.learning_rate,
                                          (train_conll, valid_conll, test_conll), 
@@ -522,9 +506,11 @@ if __name__ == '__main__':
                                 (args.kbp_train_datapath, args.kbp_valid_datapath, args.kbp_test_datapath),
                                  KBP_N_LABELS)
 
+    #---------------------------------------------------------------------------------
+    # train with KBP in first and last epoch
     pick = 2
-
     for n_epoch in xrange(config.max_iter):
+
         if not os.path.exists('multitask-result'):
             os.makedirs('multitask-result')
 
@@ -533,11 +519,13 @@ if __name__ == '__main__':
             curr_task = conll_task
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
             f_num = 512
+
         elif pick == 1:
             # OntoNotes
             curr_task = ontonotes_task
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
             f_num = 512
+
         else:
             # KBP
             curr_task = kbp_task
@@ -549,34 +537,48 @@ if __name__ == '__main__':
         if n_epoch + 1 == config.max_iter:
             pick = 2
 
+        # include a chunk of Wikidata for training
         if (curr_task.batch_num == 2) and (args.wiki):
-            # load all KBP training data and 90% KBP test data
-            source = chain( 
-                imap( 
-                    lambda x: x[1],
-                    ifilter( 
-                        lambda x : x[0] % 10 < 9,
-                        enumerate( 
-                            imap(
-                                lambda x: x[:4], 
-                                LoadED( args.kbp_train_datapath )
-                            ) 
-                        ) 
-                    )
-                ),
-                imap( 
-                    lambda x: x[:4],
-                    LoadED(args.kbp_valid_datapath)
-                ) 
-            ) 
-
             # load 90% iflytek data
             if args.iflytek:
+                # load 100% KBP 2015 data
+                source = chain( 
+                    imap(lambda x: x[:4], 
+                          LoadED( args.kbp_train_datapath )),
+                    imap( 
+                        lambda x: x[:4],
+                        LoadED(args.kbp_valid_datapath)
+                    ) 
+                )
+
+                # load 90% iflytek data
                 source = chain( source, 
                                 imap( lambda x: x[1],
-                                      ifilter( lambda x : x[0] % 10 < 9,
-                                               enumerate( imap( lambda x: x[:4], 
-                                                          LoadED( args.iflytek_checked_eng ) ) ) ) ) )
+                                  ifilter( lambda x : (x[0]%100 < 90) or (x[0]%100 >= 95) ,
+                                           enumerate( imap( lambda x: x[:4], 
+                                            LoadED( args.iflytek_checked_eng ) ) ) ) ) )
+
+            else:
+                # load all KBP training data and 90% KBP test data
+                source = chain( 
+                    imap( 
+                        lambda x: x[1],
+                        ifilter( 
+                            lambda x : x[0] % 10 < 9,
+                            enumerate( 
+                                imap(
+                                    lambda x: x[:4], 
+                                    LoadED( args.kbp_train_datapath )
+                                ) 
+                            ) 
+                        )
+                    ),
+                    imap( 
+                        lambda x: x[:4],
+                        LoadED(args.kbp_valid_datapath)
+                    ) 
+                )
+
             # Load wiki data
             X, Y = n_epoch / 16, n_epoch % (16 if not args.iflytek else 4)
             dsp = distant_supervision_parser( 
@@ -586,8 +588,6 @@ if __name__ == '__main__':
             source = chain( source, dsp)
 
             train_kbp = batch_constructor( 
-                    # KBP(args.kbp_train_datapath, args.iflytek_checked_eng),
-                    # KBP(args.kbp_train_datapath, args.kbp_valid_datapath),
                     source, 
                     numericizer1, 
                     numericizer2, 
@@ -600,15 +600,10 @@ if __name__ == '__main__':
                 )
 
             kbp_task.batch_constructors[0] = train_kbp
+            logger.info('train kbp: ' + str(train_kbp))
+            curr_task = kbp_task
 
-
-        mention_net.config.learning_rate = curr_task.lr
-
-        if curr_task.best_algorithm is not None:
-            mention_net.config.algorithm = best_algorithm
-            mention_net.config.threshold = best_threshold
-            mention_net.tofile('./multitask-model/' + args.model )
-
+        mention_net.config.learning_rate = curr_task.lr 
 
         # phar is used to observe training progress
         logger.info('epoch %2d, learning-rate: %f' % \
@@ -656,7 +651,6 @@ if __name__ == '__main__':
                 cnt += example[-1].shape[0]
                 pbar.update(example[-1].shape[0])
 
-
         pbar.close()
         train_cost = cost / cnt
 
@@ -678,7 +672,29 @@ if __name__ == '__main__':
         to_print = []
         cost, cnt = 0, 0
 
-        for example in curr_task.batch_constructors[0].mini_batch_multi_thread(
+        train_gen = imap( 
+                        lambda x: x[1],
+                        ifilter( 
+                            lambda x : x[0] % 100 < 1,
+                            enumerate( 
+                                curr_task.batch_constructors[0] 
+                            ) 
+                        )
+                    )
+
+        if curr_task.batch_num == 0:
+            gazetteer = conll2003_gazetteer
+        elif curr_task.batch_num == 1:
+            gazetteer = ontonotes_gazetteer
+        else:
+            gazetteer = kbp_gazetteer
+
+        train_eval_batch = batch_constructor(train_gen, numericizer1, numericizer2,
+                                            gazetteer = gazetteer, n_label_type = curr_task.n_label)
+
+        logger.info('train batch: ' + str(train_eval_batch))
+
+        for example in train_eval_batch.mini_batch_multi_thread(
                 f_num if config.feature_choice & (1 << 9) > 0 else 1024,
                 False, 1, 1, config.feature_choice):
 
@@ -698,11 +714,6 @@ if __name__ == '__main__':
         ###############################################
         ########## go through validation set ##########
         ###############################################
-
-        # if args.buffer_dir is None:
-        #     validation_file = 'multitask-result/multitask-valid.predicted'
-        # else:
-        #     validation_file = os.path.join(args.buffer_dir, 'multitask-valid.predicted')
 
         valid_predicted = open(curr_task.predicted_files[1], 'wb')
         cost, cnt = 0, 0
@@ -730,14 +741,6 @@ if __name__ == '__main__':
         #########################################
         ########## go through test set ##########
         #########################################
-
-        # decode_test = (n_epoch >= config.max_iter / 2 or n_epoch == 0)
-        decode_test = True
-
-        # if args.buffer_dir is None:
-        #     testing_file = 'multitask-result/multitask-test.predicted'
-        # else:
-        #     testing_file = os.path.join(args.buffer_dir, 'multitask-test.PredictionParsercted')
 
         test_predicted = open(curr_task.predicted_files[2], 'wb')
         cost, cnt = 0, 0
@@ -776,40 +779,24 @@ if __name__ == '__main__':
 
             best_dev_fb1, best_threshold, best_algorithm = 0, [0.5, 0.5], [1, 1]
 
-            source = imap( 
-                lambda x: x[1],
-                ifilter( 
-                    lambda x : x[0] % 10 >= 9,
-                    enumerate( 
-                        imap( 
-                            lambda x: x[:4], 
-                            LoadED( args.kbp_valid_datapath )
-                        ) 
-                    ) 
-                ) 
-            )
+            #load 5% iflytek data
             if args.iflytek:
-                source = chain( 
-                    source, 
-                    imap( 
-                        lambda x: x[1],
-                        ifilter( 
-                            lambda x : 90 <= x[0] % 100 < 95,
-                            enumerate( 
-                                imap( 
-                                    lambda x: x[:4], 
-                                    LoadED( args.iflytek_checked_eng ) 
-                                ) 
-                            ) 
-                        ) 
-                    ) 
-                )
+                source = imap( lambda x: x[1],
+                                  ifilter( lambda x : 90 <= x[0] % 100 < 95,
+                                           enumerate( imap( lambda x: x[:4], 
+                                    LoadED( args.iflytek_checked_eng ) ) ) ) )
+            else:
+                source = imap( lambda x: x[1],
+                           ifilter( lambda x : x[0] % 10 >= 9,
+                           enumerate( imap( lambda x: x[:4], 
+                                            LoadED( args.kbp_valid_datapath ) ) ) ) )
 
-            pp = list( PredictionParser( 
-                source,
-                curr_task.predicted_files[1], 
-                config.n_window,
-                n_label_type = curr_task.n_label) )
+            pp = [ p for p in PredictionParser( # KBP2015(  data_path + '/ed-eng-eval' ), 
+                    source,
+                    curr_task.predicted_files[1], 
+                    config.n_window,
+                    n_label_type = curr_task.n_label 
+                ) ]
 
             for algorithm in product( [1, 2], repeat = 2 ):
                 algorithm = list( algorithm )
@@ -861,42 +848,30 @@ if __name__ == '__main__':
 
         ###################################################################################
         # training evaluation
-        source = chain( 
-            imap( 
-                lambda x: x[1],
-                ifilter( 
-                    lambda x : x[0] % 10 < 9,
-                    enumerate( 
-                        imap(
-                            lambda x: x[:4], 
-                            LoadED( args.kbp_train_datapath )
-                        ) 
-                    ) 
-                )
-            ),
-            imap( 
-                lambda x: x[:4],
-                LoadED(args.kbp_valid_datapath)
-            ) 
-        ) 
 
+        train_gen = imap( 
+                        lambda x: x[1],
+                        ifilter( 
+                            lambda x : x[0] % 100 < 1,
+                            enumerate( 
+                                curr_task.batch_constructors[0] 
+                            ) 
+                        )
+                    )
 
-        # load 90% iflytek data
-        if args.iflytek:
-            source = chain( source, 
-                            imap( lambda x: x[1],
-                                  ifilter( lambda x : x[0] % 10 < 9,
-                                           enumerate( imap( lambda x: x[:4], 
-                                                      LoadED( args.iflytek_checked_eng ) ) ) ) ) )
-
-        if curr_task.batch_num == 2:
-            pp = [ p for p in PredictionParser(source , 
-                                                    curr_task.predicted_files[0], 
-                                                    config.n_window, n_label_type = curr_task.n_label ) ]
+        if curr_task.batch_num == 0:
+            gazetteer = conll2003_gazetteer
+        elif curr_task.batch_num == 1:
+            gazetteer = ontonotes_gazetteer
         else:
-            pp = [ p for p in PredictionParser(curr_task.generator( curr_task.data_loc[0] ), 
-                                                curr_task.predicted_files[0], 
-                                                config.n_window, n_label_type = curr_task.n_label ) ]
+            gazetteer = kbp_gazetteer
+
+        train_eval_batch = batch_constructor(train_gen, numericizer1, numericizer2,
+                                            gazetteer = gazetteer, n_label_type = curr_task.n_label)
+
+        pp = [ p for p in PredictionParser(train_gen , 
+                                            curr_task.predicted_files[0], 
+                                            config.n_window, n_label_type = curr_task.n_label ) ]
         
         _, _, train_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
         logger.info('batch_num ' + str(curr_task.batch_num) + ' training:\n' + info)
@@ -908,20 +883,19 @@ if __name__ == '__main__':
         ###################################################################################
         # validation evaluation
 
-        source = imap( lambda x: x[1],
-                   ifilter( lambda x : x[0] % 10 >= 9,
-                   enumerate( imap( lambda x: x[:4], 
-                                    LoadED( args.kbp_valid_datapath ) ) ) ) )
-
-        # load 10% iflytek data
-        if args.iflytek:
-            source = chain( source, 
-                            imap( lambda x: x[1],
+        if curr_task.batch_num == 2:
+            #load 5% iflytek data
+            if args.iflytek:
+                source = imap( lambda x: x[1],
                                   ifilter( lambda x : 90 <= x[0] % 100 < 95,
                                            enumerate( imap( lambda x: x[:4], 
-                                                      LoadED( args.iflytek_checked_eng ) ) ) ) ) )
+                                    LoadED( args.iflytek_checked_eng ) ) ) ) )
+            else:
+                source = imap( lambda x: x[1],
+                           ifilter( lambda x : x[0] % 10 >= 9,
+                           enumerate( imap( lambda x: x[:4], 
+                                            LoadED( args.kbp_valid_datapath ) ) ) ) )
 
-        if curr_task.batch_num == 2:
             pp = [ p for p in PredictionParser(source, 
                                                 curr_task.predicted_files[1], 
                                                 config.n_window, n_label_type = curr_task.n_label ) ]
@@ -974,15 +948,16 @@ if __name__ == '__main__':
         ########## adjust learning rate ##########
         ##########################################
 
-        # if curr_task.batch_num == 2:
-        #     curr_task.lr *= \
-        #             0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
-
-        if curr_task.valid_cost > curr_task.prev_cost or decay_started:
+        if curr_task.batch_num == 2:
             curr_task.lr *= \
-                0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
+                    0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
+
         else:
-            curr_task.prev_cost = curr_task.valid_cost
+            if curr_task.valid_cost > curr_task.prev_cost or decay_started:
+                curr_task.lr *= \
+                    0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
+            else:
+                curr_task.prev_cost = curr_task.valid_cost
 
         if config.drop_rate > 0:
             mention_net.config.drop_rate *= 0.5 ** (2. / config.max_iter)
