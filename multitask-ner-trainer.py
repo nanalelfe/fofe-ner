@@ -1029,7 +1029,7 @@ if __name__ == '__main__':
                     0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
 
         else:
-            if curr_task.valid_cost > curr_task.prev_cost or decay_started:
+            if curr_task.valid_cost > curr_task.prev_cost:
                 curr_task.lr *= \
                     0.5 ** ((4. / config.max_iter) if config.drop_rate > 0 else (1. / 2))
             else:
