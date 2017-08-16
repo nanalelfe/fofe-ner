@@ -147,7 +147,7 @@ if __name__ == '__main__':
                         help='word-level forgetting factor')
 
     # - Whether or not bow and context share a same word embedding
-    parser.add_argument('--share_word_embedding', type=bool, default=True,
+    parser.add_argument('--share_word_embedding', type=bool, default=False,
                         help='whether or not bow and context share a same word embedding')
 
     # - Decoding algorithm, i.e. {1: highest-score-first, 2: longest-coverage-first, 3: subsumption-removal}
@@ -479,6 +479,17 @@ if __name__ == '__main__':
 
     prev_cost, best_test_fb1 = 2054, 0
 
+    infinite_human = train_kbp.infinite_mini_batch_multi_thread( 
+        config.n_batch_size, 
+        True, 
+        config.overlap_rate, 
+        config.disjoint_rate, 
+        config.feature_choice, 
+        True 
+    )
+
+    target = lambda x : x[-1]
+
     #-----------------------------------------------------------------------------------
 
     conll_task = TaskHolder(CoNLL2003, args.learning_rate,
@@ -537,58 +548,15 @@ if __name__ == '__main__':
         if n_epoch + 1 == config.max_iter:
             pick = 2
 
-        # include a chunk of Wikidata for training
         if (curr_task.batch_num == 2) and (args.wiki):
-            # load 90% iflytek data
-            if args.iflytek:
-                # load 100% KBP 2015 data
-                source = chain( 
-                    imap(lambda x: x[:4], 
-                          LoadED( args.kbp_train_datapath )),
-                    imap( 
-                        lambda x: x[:4],
-                        LoadED(args.kbp_valid_datapath)
-                    ) 
-                )
-
-                # load 90% iflytek data
-                source = chain( source, 
-                                imap( lambda x: x[1],
-                                  ifilter( lambda x : (x[0]%100 < 90) or (x[0]%100 >= 95) ,
-                                           enumerate( imap( lambda x: x[:4], 
-                                            LoadED( args.iflytek_checked_eng ) ) ) ) ) )
-
-            else:
-                # load all KBP training data and 90% KBP test data
-                source = chain( 
-                    imap( 
-                        lambda x: x[1],
-                        ifilter( 
-                            lambda x : x[0] % 10 < 9,
-                            enumerate( 
-                                imap(
-                                    lambda x: x[:4], 
-                                    LoadED( args.kbp_train_datapath )
-                                ) 
-                            ) 
-                        )
-                    ),
-                    imap( 
-                        lambda x: x[:4],
-                        LoadED(args.kbp_valid_datapath)
-                    ) 
-                )
-
-            # Load wiki data
             X, Y = n_epoch / 16, n_epoch % (16 if not args.iflytek else 4)
             dsp = distant_supervision_parser( 
                     os.path.join(args.wikidata, 'sentence-%02d' % X),
                     os.path.join(args.wikidata, 'labels-%02d' % X),
                     Y, None, 64 if not args.iflytek else 16  )
-            source = chain( source, dsp)
 
             train_kbp = batch_constructor( 
-                    source, 
+                    dsp, 
                     numericizer1, 
                     numericizer2, 
                     gazetteer = kbp_gazetteer, 
@@ -602,6 +570,72 @@ if __name__ == '__main__':
             kbp_task.batch_constructors[0] = train_kbp
             logger.info('train kbp: ' + str(train_kbp))
             curr_task = kbp_task
+
+        # # include a chunk of Wikidata for training
+        # if (curr_task.batch_num == 2) and (args.wiki):
+        #     # load 90% iflytek data
+        #     if args.iflytek:
+        #         # load 100% KBP 2015 data
+        #         source = chain( 
+        #             imap(lambda x: x[:4], 
+        #                   LoadED( args.kbp_train_datapath )),
+        #             imap( 
+        #                 lambda x: x[:4],
+        #                 LoadED(args.kbp_valid_datapath)
+        #             ) 
+        #         )
+
+        #         # load 90% iflytek data
+        #         source = chain( source, 
+        #                         imap( lambda x: x[1],
+        #                           ifilter( lambda x : (x[0]%100 < 90) or (x[0]%100 >= 95) ,
+        #                                    enumerate( imap( lambda x: x[:4], 
+        #                                     LoadED( args.iflytek_checked_eng ) ) ) ) ) )
+
+        #     else:
+        #         # load all KBP training data and 90% KBP test data
+        #         source = chain( 
+        #             imap( 
+        #                 lambda x: x[1],
+        #                 ifilter( 
+        #                     lambda x : x[0] % 10 < 9,
+        #                     enumerate( 
+        #                         imap(
+        #                             lambda x: x[:4], 
+        #                             LoadED( args.kbp_train_datapath )
+        #                         ) 
+        #                     ) 
+        #                 )
+        #             ),
+        #             imap( 
+        #                 lambda x: x[:4],
+        #                 LoadED(args.kbp_valid_datapath)
+        #             ) 
+        #         )
+
+        #     # Load wiki data
+        #     X, Y = n_epoch / 16, n_epoch % (16 if not args.iflytek else 4)
+        #     dsp = distant_supervision_parser( 
+        #             os.path.join(args.wikidata, 'sentence-%02d' % X),
+        #             os.path.join(args.wikidata, 'labels-%02d' % X),
+        #             Y, None, 64 if not args.iflytek else 16  )
+        #     source = chain( source, dsp)
+
+        #     train_kbp = batch_constructor( 
+        #             source, 
+        #             numericizer1, 
+        #             numericizer2, 
+        #             gazetteer = kbp_gazetteer, 
+        #             alpha = config.word_alpha, 
+        #             window = config.n_window, 
+        #             n_label_type = KBP_N_LABELS,
+        #             language = config.language,
+        #             is2ndPass = args.is_2nd_pass 
+        #         )
+
+        #     kbp_task.batch_constructors[0] = train_kbp
+        #     logger.info('train kbp: ' + str(train_kbp))
+        #     curr_task = kbp_task
 
         mention_net.config.learning_rate = curr_task.lr 
 
@@ -617,7 +651,7 @@ if __name__ == '__main__':
 
         if curr_task.batch_num == 2:
             for x in ifilter(
-                                lambda x : x[-1].shape[0] == config.n_batch_size,
+                                lambda x : len(target(x)) == config.n_batch_size,
                                 curr_task.batch_constructors[0].mini_batch_multi_thread(
                                     config.n_batch_size,
                                     True,
@@ -627,14 +661,19 @@ if __name__ == '__main__':
                                 )
                             ):
                 
-                x = [ x ]
+                if args.wiki:
+                    x = [ x, infinite_human.next() ]
+                    if choice( [ True, False ] ):
+                        x.append( infinite_human.next() )
+                else:
+                    x = [ x ]
 
                 for example in x:
                     c = mention_net.train( example, curr_task )
 
-                    cost += c * example[-1].shape[0]
-                    cnt += example[-1].shape[0]
-                pbar.update( example[-1].shape[0] )
+                    cost += c * len(target(example))
+                    cnt += len(target(example))
+                pbar.update( len(target(example)) )
 
         else:
             # example is batch of fragments from a sentence
@@ -764,14 +803,13 @@ if __name__ == '__main__':
 
             c, pi, pv = mention_net.eval(example, curr_task)
 
-            cost += c * example[-1].shape[0]
-            cnt += example[-1].shape[0]
+            cost += c * len(target(example))
+            cnt += len(target(example))
 
-            for exp, est, prob in zip(example[-1], pi, pv):
-                to_print.append('%d  %d  %s' % \
-                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
+            for expected, estimate, probability in zip( target(example), pi, pv ):
+                    print >> valid_predicted, '%d  %d  %s' % \
+                            (expected, estimate, '  '.join( [('%f' % x) for x in probability.tolist()] ))
 
-        print >> valid_predicted, '\n'.join(to_print)
         valid_predicted.close()
         valid_cost = cost / cnt
         curr_task.valid_cost = valid_cost
@@ -789,16 +827,15 @@ if __name__ == '__main__':
                 f_num if config.feature_choice & (1 << 9) > 0 else 1024,
                 False, 1, 1, config.feature_choice):
 
-            c, pi, pv = mention_net.eval(example, curr_task)
+            c, pi, pv = mention_net.eval( example )
 
-            cost += c * example[-1].shape[0]
-            cnt += example[-1].shape[0]
+            cost += c * len(target(example))
+            cnt += len(target(example))
 
-            for exp, est, prob in zip(example[-1], pi, pv):
-                to_print.append('%d  %d  %s' % \
-                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
+            for expected, estimate, probability in zip( target(example), pi, pv ):
+                        print >> test_predicted, '%d  %d  %s' % \
+                                (expected, estimate, '  '.join( [('%f' % x) for x in probability.tolist()] ))
 
-        print >> test_predicted, '\n'.join(to_print)
         test_predicted.close()
         test_cost = cost / cnt
 
@@ -829,36 +866,35 @@ if __name__ == '__main__':
                            ifilter( lambda x : x[0] % 10 >= 9,
                            enumerate( imap( lambda x: x[:4], 
                                             LoadED( args.kbp_valid_datapath ) ) ) ) )
+            if n_epoch >= config.max_iter / 2:
+                pp = [ p for p in PredictionParser( # KBP2015(  data_path + '/ed-eng-eval' ), 
+                        source,
+                        curr_task.predicted_files[1], 
+                        config.n_window,
+                        n_label_type = curr_task.n_label 
+                    ) ]
 
-            pp = [ p for p in PredictionParser( # KBP2015(  data_path + '/ed-eng-eval' ), 
-                    source,
-                    curr_task.predicted_files[1], 
-                    config.n_window,
-                    n_label_type = curr_task.n_label 
-                ) ]
+                for algorithm in product( [1, 2], repeat = 2 ):
+                    algorithm = list( algorithm )
+                    name = [ idx2algo[i] for i in algorithm  ]
+                    for threshold in product( [ 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ], repeat = 2 ):
+                        threshold = list( threshold )
+                        precision, recall, f1, _ = evaluation( pp, threshold, algorithm, True,
+                                                               n_label_type = KBP_N_LABELS )
+                        logger.debug( ('cut-off: %s, algorithm: %-20s' % (str(threshold), name)) + 
+                                      (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)) )
 
-            for algorithm in product( [1, 2], repeat = 2 ):
-                algorithm = list( algorithm )
-                name = [ idx2algo[i] for i in algorithm  ]
-                for threshold in product( [ 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ], repeat = 2 ):
-                    threshold = list( threshold )
-                    logger.debug("Before evaluation")
-                    precision, recall, f1, _ = evaluation( pp, threshold, algorithm, True,
-                                                           n_label_type = KBP_N_LABELS )
-                    logger.debug( ('cut-off: %s, algorithm: %-20s' % (str(threshold), name)) + 
-                                  (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)) )
+                        if f1 > best_dev_fb1:
+                            best_dev_fb1, best_threshold, best_algorithm = f1, threshold, algorithm
+                            best_precision, best_recall = precision, recall
+                            curr_task.best_algorithm = algorithm 
+                            curr_task.best_threshold = best_threshold
+                            mention_net.config.algorithm = best_algorithm
+                            mention_net.config.threshold = best_threshold
+                            mention_net.tofile('./multitask-model/' + args.model )
 
-                    if f1 > best_dev_fb1:
-                        best_dev_fb1, best_threshold, best_algorithm = f1, threshold, algorithm
-                        best_precision, best_recall = precision, recall
-                        curr_task.best_algorithm = algorithm 
-                        curr_task.best_threshold = best_threshold
-                        mention_net.config.algorithm = best_algorithm
-                        mention_net.config.threshold = best_threshold
-                        mention_net.tofile('./multitask-model/' + args.model )
-
-            logger.info( 'cut-off: %s, algorithm: %-20s' % \
-                         (str(best_threshold), str([ idx2algo[i] for i in best_algorithm ])) )
+                logger.info( 'cut-off: %s, algorithm: %-20s' % \
+                             (str(best_threshold), str([ idx2algo[i] for i in best_algorithm ])) )
 
         else:
 
@@ -887,75 +923,75 @@ if __name__ == '__main__':
 
         ###################################################################################
         # training evaluation
-        if args.iflytek:
-            # load 100% KBP 2015 data
-            source = chain( 
-                imap(lambda x: x[:4], 
-                      LoadED( args.kbp_train_datapath )),
-                imap( 
-                    lambda x: x[:4],
-                    LoadED(args.kbp_valid_datapath)
-                ) 
-            )
+        # if args.iflytek:
+        #     # load 100% KBP 2015 data
+        #     source = chain( 
+        #         imap(lambda x: x[:4], 
+        #               LoadED( args.kbp_train_datapath )),
+        #         imap( 
+        #             lambda x: x[:4],
+        #             LoadED(args.kbp_valid_datapath)
+        #         ) 
+        #     )
 
-            # load 90% iflytek data
-            source = chain( source, 
-                            imap( lambda x: x[1],
-                              ifilter( lambda x : (x[0]%100 < 90) or (x[0]%100 >= 95) ,
-                                       enumerate( imap( lambda x: x[:4], 
-                                        LoadED( args.iflytek_checked_eng ) ) ) ) ))
+        #     # load 90% iflytek data
+        #     source = chain( source, 
+        #                     imap( lambda x: x[1],
+        #                       ifilter( lambda x : (x[0]%100 < 90) or (x[0]%100 >= 95) ,
+        #                                enumerate( imap( lambda x: x[:4], 
+        #                                 LoadED( args.iflytek_checked_eng ) ) ) ) ))
 
-        else:
-            # load all KBP training data and 90% KBP test data
-            source = chain( 
-                imap( 
-                    lambda x: x[1],
-                    ifilter( 
-                        lambda x : x[0] % 10 < 9,
-                        enumerate( 
-                            imap(
-                                lambda x: x[:4], 
-                                LoadED( args.kbp_train_datapath )
-                            ) 
-                        ) 
-                    )
-                ),
-                imap( 
-                    lambda x: x[:4],
-                    LoadED(args.kbp_valid_datapath)
-                ) 
-            ) 
+        # else:
+        #     # load all KBP training data and 90% KBP test data
+        #     source = chain( 
+        #         imap( 
+        #             lambda x: x[1],
+        #             ifilter( 
+        #                 lambda x : x[0] % 10 < 9,
+        #                 enumerate( 
+        #                     imap(
+        #                         lambda x: x[:4], 
+        #                         LoadED( args.kbp_train_datapath )
+        #                     ) 
+        #                 ) 
+        #             )
+        #         ),
+        #         imap( 
+        #             lambda x: x[:4],
+        #             LoadED(args.kbp_valid_datapath)
+        #         ) 
+        #     ) 
 
-        train_gen = imap( 
-                        lambda x: x[1],
-                        ifilter( 
-                            lambda x : x[0] % 100 < 1,
-                            enumerate( 
-                                source 
-                            ) 
-                        )
-                    )
+        # train_gen = imap( 
+        #                 lambda x: x[1],
+        #                 ifilter( 
+        #                     lambda x : x[0] % 100 < 1,
+        #                     enumerate( 
+        #                         source 
+        #                     ) 
+        #                 )
+        #             )
 
-        if curr_task.batch_num == 0:
-            gazetteer = conll2003_gazetteer
-        elif curr_task.batch_num == 1:
-            gazetteer = ontonotes_gazetteer
-        else:
-            gazetteer = kbp_gazetteer
+        # if curr_task.batch_num == 0:
+        #     gazetteer = conll2003_gazetteer
+        # elif curr_task.batch_num == 1:
+        #     gazetteer = ontonotes_gazetteer
+        # else:
+        #     gazetteer = kbp_gazetteer
 
-        train_eval_batch = batch_constructor(train_gen, numericizer1, numericizer2,
-                                            gazetteer = gazetteer, n_label_type = curr_task.n_label)
+        # train_eval_batch = batch_constructor(train_gen, numericizer1, numericizer2,
+        #                                     gazetteer = gazetteer, n_label_type = curr_task.n_label)
 
-        pp = [ p for p in PredictionParser(train_gen , 
-                                            curr_task.predicted_files[0], 
-                                            config.n_window, n_label_type = curr_task.n_label ) ]
+        # pp = [ p for p in PredictionParser(train_eval_batch , 
+        #                                     curr_task.predicted_files[0], 
+        #                                     config.n_window, n_label_type = curr_task.n_label ) ]
         
-        _, _, train_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
-        logger.info('batch_num ' + str(curr_task.batch_num) + ' training:\n' + info)
-        # fb1 score for validation
-        curr_task.train_scores.append(train_fb1)
+        # _, _, train_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        # logger.info('batch_num ' + str(curr_task.batch_num) + ' training:\n' + info)
+        # # fb1 score for validation
+        # curr_task.train_scores.append(train_fb1)
 
-        logger.info("train scores array: %s" % str(curr_task.train_scores))
+        # logger.info("train scores array: %s" % str(curr_task.train_scores))
 
         ###################################################################################
         # validation evaluation
