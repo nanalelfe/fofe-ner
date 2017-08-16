@@ -313,44 +313,57 @@ if __name__ == '__main__':
     # Batch constructor initializes sets of processed_sentence objects, sentence1
     # (case insensitive) and sentence2 (case sensitive)
 
+    source = imap( 
+        lambda x: x[:4],
+        LoadED( args.kbp_train_datapath ) 
+    ) 
+
     if args.iflytek:
-        # load 100% KBP 2015 data
         source = chain( 
-            imap(lambda x: x[:4], 
-                  LoadED( args.kbp_train_datapath )),
-            imap( 
-                lambda x: x[:4],
-                LoadED(args.kbp_valid_datapath)
+            source,
+            imap( lambda x: x[:4], 
+                  LoadED( args.iflytek_checked_eng ) 
             ) 
         )
 
-        # load 90% iflytek data
-        source = chain( source, 
-                        imap( lambda x: x[1],
-                          ifilter( lambda x : (x[0]%100 < 90) or (x[0]%100 >= 95) ,
-                                   enumerate( imap( lambda x: x[:4], 
-                                    LoadED( args.iflytek_checked_eng ) ) ) ) ))
+    # if args.iflytek:
+    #     # load 100% KBP 2015 data
+    #     source = chain( 
+    #         imap(lambda x: x[:4], 
+    #               LoadED( args.kbp_train_datapath )),
+    #         imap( 
+    #             lambda x: x[:4],
+    #             LoadED(args.kbp_valid_datapath)
+    #         ) 
+    #     )
 
-    else:
-        # load all KBP training data and 90% KBP test data
-        source = chain( 
-            imap( 
-                lambda x: x[1],
-                ifilter( 
-                    lambda x : x[0] % 10 < 9,
-                    enumerate( 
-                        imap(
-                            lambda x: x[:4], 
-                            LoadED( args.kbp_train_datapath )
-                        ) 
-                    ) 
-                )
-            ),
-            imap( 
-                lambda x: x[:4],
-                LoadED(args.kbp_valid_datapath)
-            ) 
-        ) 
+    #     # load 90% iflytek data
+    #     source = chain( source, 
+    #                     imap( lambda x: x[1],
+    #                       ifilter( lambda x : (x[0]%100 < 90) or (x[0]%100 >= 95) ,
+    #                                enumerate( imap( lambda x: x[:4], 
+    #                                 LoadED( args.iflytek_checked_eng ) ) ) ) ))
+
+    # else:
+    #     # load all KBP training data and 90% KBP test data
+    #     source = chain( 
+    #         imap( 
+    #             lambda x: x[1],
+    #             ifilter( 
+    #                 lambda x : x[0] % 10 < 9,
+    #                 enumerate( 
+    #                     imap(
+    #                         lambda x: x[:4], 
+    #                         LoadED( args.kbp_train_datapath )
+    #                     ) 
+    #                 ) 
+    #             )
+    #         ),
+    #         imap( 
+    #             lambda x: x[:4],
+    #             LoadED(args.kbp_valid_datapath)
+    #         ) 
+    #     ) 
 
     train_conll = batch_constructor(CoNLL2003( args.conll_datapath + '/eng.train' ), 
                                numericizer1, numericizer2, 
@@ -388,19 +401,23 @@ if __name__ == '__main__':
     # Validation set
     # ----------------------------------------------------------------------------------
 
-    #load 5% iflytek data
-    if args.iflytek:
-        source = imap( lambda x: x[1],
-                          ifilter( lambda x : 90 <= x[0] % 100 < 95,
-                                   enumerate( imap( lambda x: x[:4], 
-                            LoadED( args.iflytek_checked_eng ) ) ) ) )
-    else:
-        source = imap( lambda x: x[1],
-                   ifilter( lambda x : x[0] % 10 >= 9,
-                   enumerate( imap( lambda x: x[:4], 
-                                    LoadED( args.kbp_valid_datapath ) ) ) ) )
+    # #load 5% iflytek data
+    # if args.iflytek:
+    #     source = imap( lambda x: x[1],
+    #                       ifilter( lambda x : 90 <= x[0] % 100 < 95,
+    #                                enumerate( imap( lambda x: x[:4], 
+    #                         LoadED( args.iflytek_checked_eng ) ) ) ) )
+    # else:
+    #     source = imap( lambda x: x[1],
+    #                ifilter( lambda x : x[0] % 10 >= 9,
+    #                enumerate( imap( lambda x: x[:4], 
+    #                                 LoadED( args.kbp_valid_datapath ) ) ) ) )
 
     # ----------------------------------------------------------------------------------
+
+    source = imap( lambda x: x[:4], 
+                  LoadED( args.kbp_valid_datapath ) 
+            )
 
     valid_conll = batch_constructor(CoNLL2003( args.conll_datapath + '/eng.testa' ), 
                                numericizer1, numericizer2, 
