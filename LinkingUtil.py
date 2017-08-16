@@ -7,6 +7,80 @@ from sklearn import preprocessing
 
 logger = logging.getLogger( __name__ )
 
+def LoadEDRich( rspecifier, language = 'spa' ):
+
+    entity2cls = {  # KBP2015 label
+                    'PER_NAM' : 0, 
+                    'PER_NOM' : 5, 
+                    'ORG_NAM' : 1, 
+                    'GPE_NAM' : 2, 
+                    'LOC_NAM' : 3, 
+                    'FAC_NAM' : 4, 
+                    # KBP2016 label
+                    'ORG_NOM' : 6,
+                    'GPE_NOM' : 7,
+                    'LOC_NOM' : 8,
+                    'FAC_NOM' : 9,
+                }
+
+    if os.path.isfile( rspecifier ):
+        with codecs.open( rspecifier, 'rb', 'utf8' ) as fp:
+            processed, original = fp.read().split( u'=' * 128, 1 )
+            original = original.strip()
+
+            # texts, tags, failures = processed.split( u'\n\n\n', 2 )
+            texts = processed.split( u'\n\n\n' )[0]
+            for text in texts.split( u'\n\n' ):
+                parts = text.split( u'\n' )
+                # assert len(parts) in [2, 3], 'sentence, offsets, labels(optional)'
+                if len( parts ) not in [2, 3]:
+                    logger.exception( text )
+                    continue
+
+                sent, boe, eoe, target, spelling = parts[0].split(u' '), [], [], [], []
+                offsets = map( lambda x : (int(x[0]), int(x[1])),
+                               [ offsets[1:-1].split(u',') for offsets in parts[1].split() ] )
+                assert len(offsets) == len(sent), rspecifier + '\n' + \
+                        str( offsets ) + '\n' + str( sent ) + '\n%d vs %d' % (len(offsets), len(sent))
+
+                if len(parts) == 3:
+                    for ans in parts[-1].split():
+                        try:
+                            begin_idx, end_idx, mention1, mention2, num = ans[1:-1].split(u',')
+                            target.append( entity2cls[str(mention1 + u'_' + mention2)] )
+                            boe.append( int(begin_idx) )
+                            eoe.append( int(end_idx) )
+                            spelling.append( original[ offsets[boe[-1]][0] : offsets[eoe[-1] - 1][1] ] )
+                        except ValueError as ex1:
+                            logger.exception( rspecifier )
+                            logger.exception(rspecifier)
+                            logger.exception( ans )
+                        except KeyError as ex2:
+                            logger.exception( rspecifier )
+                            logger.exception( ans )
+
+                        try:
+                            assert 0 <= boe[-1] < eoe[-1] <= len(sent), \
+                                    '%s  %d  ' % (rspecifier.split('/')[-1], len(sent)) + \
+                                    '  '.join( str(x) for x in [sent, boe, eoe, target] )
+                        except IndexError as ex:
+                            logger.exception( rspecifier )
+                            logger.exception( str(boe) + '   ' + str(eoe) )
+                            continue
+                    assert( len(boe) == len(eoe) == len(target))
+
+                # move this part to processed_sentence
+                # if language == 'eng':
+                #     for i,w in enumerate( sent ):
+                #         sent[i] = u''.join( c if 0 <= ord(c) < 128 else chr(0) for c in list(w) )
+                yield sent, boe, eoe, target, spelling
+
+
+    else:
+        for filename in os.listdir( rspecifier ):
+            for X in LoadED( os.path.join( rspecifier, filename ), language ):
+                yield X
+
 
 def LoadED( rspecifier, language = 'eng' ):
 
@@ -72,11 +146,9 @@ def LoadED( rspecifier, language = 'eng' ):
                         except ValueError as ex1:
                             logger.exception( rspecifier )
                             logger.exception(rspecifier)
-                            logger.info("I AM in LinkingUtil.py!!!")
                             logger.exception( ans )
                         except KeyError as ex2:
                             logger.exception( rspecifier )
-                            logger.info("I AM in LinkingUtil.py!!!")
                             logger.exception( ans )
 
                         try:
@@ -86,7 +158,6 @@ def LoadED( rspecifier, language = 'eng' ):
                         except IndexError as ex:
                             logger.exception( rspecifier )
                             logger.exception( str(boe) + '   ' + str(eoe) )
-                            logger.info("I AM in LinkingUtil.py!!!")
                             continue
                     assert( len(boe) == len(eoe) == len(target) == len(mids) )
 

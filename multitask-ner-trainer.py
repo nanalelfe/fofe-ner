@@ -707,87 +707,87 @@ if __name__ == '__main__':
         ########## go through training set ############
         ###############################################
 
-        train_predicted = open(curr_task.predicted_files[0], 'wb')
-        to_print = []
-        cost, cnt = 0, 0
+        # train_predicted = open(curr_task.predicted_files[0], 'wb')
+        # to_print = []
+        # cost, cnt = 0, 0
 
-        if args.iflytek:
-            # load 100% KBP 2015 data
-            source = chain( 
-                imap(lambda x: x[:4], 
-                      LoadED( args.kbp_train_datapath )),
-                imap( 
-                    lambda x: x[:4],
-                    LoadED(args.kbp_valid_datapath)
-                ) 
-            )
+        # if args.iflytek:
+        #     # load 100% KBP 2015 data
+        #     source = chain( 
+        #         imap(lambda x: x[:4], 
+        #               LoadED( args.kbp_train_datapath )),
+        #         imap( 
+        #             lambda x: x[:4],
+        #             LoadED(args.kbp_valid_datapath)
+        #         ) 
+        #     )
 
-            # load 90% iflytek data
-            source = chain( source, 
-                            imap( lambda x: x[1],
-                              ifilter( lambda x : (x[0]%100 < 90) or (x[0]%100 >= 95) ,
-                                       enumerate( imap( lambda x: x[:4], 
-                                        LoadED( args.iflytek_checked_eng ) ) ) ) ))
+        #     # load 90% iflytek data
+        #     source = chain( source, 
+        #                     imap( lambda x: x[1],
+        #                       ifilter( lambda x : (x[0]%100 < 90) or (x[0]%100 >= 95) ,
+        #                                enumerate( imap( lambda x: x[:4], 
+        #                                 LoadED( args.iflytek_checked_eng ) ) ) ) ))
 
-        else:
-            # load all KBP training data and 90% KBP test data
-            source = chain( 
-                imap( 
-                    lambda x: x[1],
-                    ifilter( 
-                        lambda x : x[0] % 10 < 9,
-                        enumerate( 
-                            imap(
-                                lambda x: x[:4], 
-                                LoadED( args.kbp_train_datapath )
-                            ) 
-                        ) 
-                    )
-                ),
-                imap( 
-                    lambda x: x[:4],
-                    LoadED(args.kbp_valid_datapath)
-                ) 
-            ) 
+        # else:
+        #     # load all KBP training data and 90% KBP test data
+        #     source = chain( 
+        #         imap( 
+        #             lambda x: x[1],
+        #             ifilter( 
+        #                 lambda x : x[0] % 10 < 9,
+        #                 enumerate( 
+        #                     imap(
+        #                         lambda x: x[:4], 
+        #                         LoadED( args.kbp_train_datapath )
+        #                     ) 
+        #                 ) 
+        #             )
+        #         ),
+        #         imap( 
+        #             lambda x: x[:4],
+        #             LoadED(args.kbp_valid_datapath)
+        #         ) 
+        #     ) 
 
-        train_gen = imap( 
-                        lambda x: x[1],
-                        ifilter( 
-                            lambda x : x[0] % 100 < 1,
-                            enumerate( 
-                                source 
-                            ) 
-                        )
-                    )
+        # train_gen = imap( 
+        #                 lambda x: x[1],
+        #                 ifilter( 
+        #                     lambda x : x[0] % 100 < 1,
+        #                     enumerate( 
+        #                         source 
+        #                     ) 
+        #                 )
+        #             )
 
-        if curr_task.batch_num == 0:
-            gazetteer = conll2003_gazetteer
-        elif curr_task.batch_num == 1:
-            gazetteer = ontonotes_gazetteer
-        else:
-            gazetteer = kbp_gazetteer
+        # if curr_task.batch_num == 0:
+        #     gazetteer = conll2003_gazetteer
+        # elif curr_task.batch_num == 1:
+        #     gazetteer = ontonotes_gazetteer
+        # else:
+        #     gazetteer = kbp_gazetteer
 
-        train_eval_batch = batch_constructor(train_gen, numericizer1, numericizer2,
-                                            gazetteer = gazetteer, n_label_type = curr_task.n_label)
+        # train_eval_batch = batch_constructor(train_gen, numericizer1, numericizer2,
+        #                                     gazetteer = gazetteer, n_label_type = curr_task.n_label)
 
-        logger.info('train batch: ' + str(train_eval_batch))
+        # logger.info('train batch: ' + str(train_eval_batch))
 
-        for example in train_eval_batch.mini_batch_multi_thread(
-                f_num if config.feature_choice & (1 << 9) > 0 else 1024,
-                False, 1, 1, config.feature_choice):
+        # for example in train_eval_batch.mini_batch_multi_thread(
+        #         f_num if config.feature_choice & (1 << 9) > 0 else 1024,
+        #         False, 1, 1, config.feature_choice):
 
-            c, pi, pv = mention_net.eval(example, curr_task)
+        #     c, pi, pv = mention_net.eval(example, curr_task)
 
-            cost += c * example[-1].shape[0]
-            cnt += example[-1].shape[0]
+        #     cost += c * example[-1].shape[0]
+        #     cnt += example[-1].shape[0]
 
-            for exp, est, prob in zip(example[-1], pi, pv):
-                to_print.append('%d  %d  %s' % \
-                                (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
+        #     for exp, est, prob in zip(example[-1], pi, pv):
+        #         to_print.append('%d  %d  %s' % \
+        #                         (exp, est, '  '.join([('%f' % x) for x in prob.tolist()])))
 
-        print >> train_predicted, '\n'.join(to_print)
-        train_predicted.close()
-        logger.info('training set passed for batch_num ' + str(curr_task.batch_num))
+        # print >> train_predicted, '\n'.join(to_print)
+        # train_predicted.close()
+        # logger.info('training set passed for batch_num ' + str(curr_task.batch_num))
 
         ###############################################
         ########## go through validation set ##########
