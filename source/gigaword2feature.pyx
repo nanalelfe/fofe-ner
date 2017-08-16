@@ -2010,7 +2010,7 @@ class TaskHolder:
         self.valid_cost = None
         self.test_cost = None
         self.best_threshold = None
-        self.best_algorithm = None
+        self.best_algorithm = 1
         self.test_fb1 = None
         self.fb1 = None
         self.out = None
