@@ -827,7 +827,7 @@ if __name__ == '__main__':
                 f_num if config.feature_choice & (1 << 9) > 0 else 1024,
                 False, 1, 1, config.feature_choice):
 
-            c, pi, pv = mention_net.eval( example )
+            c, pi, pv = mention_net.eval( example, curr_task )
 
             cost += c * len(target(example))
             cnt += len(target(example))
