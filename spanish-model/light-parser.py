@@ -318,7 +318,7 @@ if __name__ == '__main__':
 			ent_type = entity.attrib['type']
 			for entity_mention in entity:
 				if entity_mention.attrib['noun_type'] != 'PRO':
-					mention_text = entity_mention[0].text
+					mention_text = entity_mention.text
 					nom_nam = entity_mention.attrib['noun_type']
 					begin_offset = int(entity_mention.attrib['offset'])
 					end_offset = begin_offset + int(entity_mention.attrib['length'])
