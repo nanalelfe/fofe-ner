@@ -25,7 +25,7 @@ def process_one_file( input_dir, output_dir, filename, solution, language='spa',
 	with codecs.open(os.path.join(input_dir, filename), 'rb', 'utf-8') as fp:
 		data = fp.read()
 
-	if filename[-4:] == '.xml':
+	if filename[-4:] == '.txt':
 		filename = filename[:-4]
 	logger.info(filename)
 
@@ -308,10 +308,10 @@ if __name__ == '__main__':
 
 	solution, correct, incorrect = {}, 0, 0
 	logger.info("================================================================")
-	for filename in glob.glob(os.path.join(annotation_dir, "*.rich_ere.xml")):
+	for filename in glob.glob(os.path.join(annotation_dir, "*.ere.xml")):
 		tree = ET.parse(filename)
 		root = tree.getroot()
-		file_name = os.path.basename(filename)[:32]
+		file_name = os.path.basename(filename)[:-8]
 		entities = root.findall('entities')[0]
 		logger.info(file_name)
 		for entity in entities:
