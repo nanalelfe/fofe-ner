@@ -231,7 +231,7 @@ if __name__ == '__main__':
 
     ################################################################################
 
-    from multi_fofe_mention_net import *
+    from spa_multi_fofe_mention_net import *
     config = mention_config(args)
     from pprint import pprint
     logger.info("Here is config: ")
