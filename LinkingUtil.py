@@ -78,7 +78,7 @@ def LoadEDRich( rspecifier, language = 'spa' ):
 
     else:
         for filename in os.listdir( rspecifier ):
-            for X in LoadED( os.path.join( rspecifier, filename ), language ):
+            for X in LoadEDRich( os.path.join( rspecifier, filename ), language ):
                 yield X
 
 
