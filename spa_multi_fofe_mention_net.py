@@ -445,10 +445,10 @@ class multi_fofe_mention_net( object ):
 
                 # random initialization of word embeddings
                 self.ner_embedding_rich = tf.Variable( tf.random_uniform( 
-                                        [RICH_N_LABELS + 1 , n_ner_embedding], minval = -val_rng_conll, maxval = val_rng_conll ) )
+                                        [RICH_N_LABELS + 1 , n_ner_embedding], minval = -val_rng_rich, maxval = val_rng_rich ) )
 
                 self.ner_embedding_light = tf.Variable( tf.random_uniform( 
-                                        [LIGHT_N_LABELS + 1 ,n_ner_embedding], minval = -val_rng_ontonotes, maxval = val_rng_ontonotes ) )
+                                        [LIGHT_N_LABELS + 1 ,n_ner_embedding], minval = -val_rng_light, maxval = val_rng_light ) )
 
                 self.ner_embedding_kbp = tf.Variable( tf.random_uniform( 
                                         [KBP_N_LABELS + 1 ,n_ner_embedding], minval = -var_rng_kbp, maxval = var_rng_kbp ) )
@@ -847,10 +847,10 @@ class multi_fofe_mention_net( object ):
             if feature_choice & (1 << 8) > 0:
                 rich_ner_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr, 
                                                                               use_locking = True ) \
-                                          .minimize( self.rich_xent, var_list = [ self.ner_embedding_conll ] )
+                                          .minimize( self.rich_xent, var_list = [ self.ner_embedding_rich ] )
                 light_ner_embedding_train_step = tf.train.GradientDescentOptimizer( self.lr, 
                                                                               use_locking = True ) \
-                                          .minimize( self.light_xent, var_list = [ self.ner_embedding_ontonotes ] )
+                                          .minimize( self.light_xent, var_list = [ self.ner_embedding_light ] )
                 kbp_ner_embedding_train_step = tf.train.GradientDescentOptimizer(self.lr,
                                                                                 use_locking = True) \
                                             .minimize(self.kbp_xent, var_list = [self.ner_embedding_kbp])
