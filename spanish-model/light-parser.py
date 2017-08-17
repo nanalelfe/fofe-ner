@@ -299,9 +299,9 @@ if __name__ == '__main__':
 	for handler in logging.root.handlers:
 		handler.addFilter( logging.Filter(__name__) )
 
-	input_dir = '/local/scratch/nana/KBP2017/LDC2016E34_DEFT_Rich_ERE_Spanish_Annotation_R2/data/source'
-	output_dir = './rich-parsed'
-	annotation_dir = '/local/scratch/nana/KBP2017/LDC2016E34_DEFT_Rich_ERE_Spanish_Annotation_R2/data/ere'
+	input_dir = '/local/scratch/nana/KBP2017/LDC2015E71_DEFT_Spanish_Light_ERE_Training_Data_V1/data/source/newswire'
+	output_dir = './light-parsed'
+	annotation_dir = '/local/scratch/nana/KBP2017/LDC2015E71_DEFT_Spanish_Light_ERE_Training_Data_V1/data/ere/newswire'
 
 	#==============================================================================================================
 	# load the solutions
