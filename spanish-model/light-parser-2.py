@@ -31,13 +31,13 @@ def process_one_file( input_dir, output_dir, filename, solution, language='spa',
 
 	out_file = codecs.open(os.path.join(output_dir, filename), 'wb', 'utf-8')
 
-	lsb = data.find( u'<DOC' )
-	if lsb == -1:
-		lsb = data.find( u'<doc' )
-	assert lsb >= 0, 'kbp files should start with <DOC> tag'
+	# lsb = data.find( u'<DOC' )
+	# if lsb == -1:
+	# 	lsb = data.find( u'<doc' )
+	# assert lsb >= 0, 'kbp files should start with <DOC> tag'
 
-	data = data[lsb:]
-	logger.debug( '<DOC> or <doc> starts at index %d' % lsb )
+	# data = data[lsb:]
+	# logger.debug( '<DOC> or <doc> starts at index %d' % lsb )
 
 	assert data.find( u'<' ) == 0, 'Begin of document is incorrect'
 	lsb = 0
