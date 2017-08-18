@@ -22,6 +22,7 @@ def LoadEDRich( rspecifier, batch_num, language = 'spa' ):
                         'GPE_NOM' : 7,
                         'LOC_NOM' : 8,
                         'TITLE_NOM' : 9,
+                        'TITLE_NAM'  : 10
                     }
     else:
         entity2cls = {  # KBP2015 label
