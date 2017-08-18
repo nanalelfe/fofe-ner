@@ -2190,7 +2190,7 @@ class TaskHolder:
     Object contains information needed to train with a certain task
     '''
 
-    def __init__(self, generator, lr, batch_constrs, predicted_files, data_loc, n_label):
+    def __init__(self, generator, lr, batch_constrs, predicted_files, data_loc, n_label, batch_num=0):
         '''
         generator: CoNLL2003 or OntoNotes
         batch_constrs: (train, valid, test) - tuple
@@ -2204,12 +2204,19 @@ class TaskHolder:
         self.n_label = n_label
         self.lr = lr
 
-        if n_label == 4:
-            self.batch_num = 0
-        elif n_label == 18:
-            self.batch_num = 1
-        else:
-            self.batch_num = 2
+        self.batch_num = batch_num
+
+        # if n_label == 4:
+        #     self.batch_num = 0
+        # elif n_label == 18:
+        #     self.batch_num = 1
+        # else:
+        #     self.batch_num = 2
+
+        # if self.batch_num is None:
+        #     self.batch_num = batch_num
+
+
 
         self.best_test_fb1 = 0
         self.best_dev_fb1 = 0

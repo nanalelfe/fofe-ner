@@ -468,7 +468,7 @@ if __name__ == '__main__':
                                         'multitask-result/multitask-valid-rich.predicted',
                                         'multitask-result/multitask-test-rich.predicted'),
                                         None,
-                                        RICH_N_LABELS)
+                                        RICH_N_LABELS, 0)
 
     light_task = TaskHolder(None, args.learning_rate,
                                  (train_light, valid_light, test_light),
@@ -476,14 +476,14 @@ if __name__ == '__main__':
                                  'multitask-result/multitask-valid-light.predicted',
                                   'multitask-result/multitask-test-light.predicted'),
                                 None,
-                                 LIGHT_N_LABELS)
+                                 LIGHT_N_LABELS, 1)
 
     kbp_task = TaskHolder(KBP, args.learning_rate, [train_kbp, valid_kbp, test_kbp], 
                                 ('multitask-result/multitask-train-kbp.predicted',
                                  'multitask-result/multitask-valid-kbp.predicted',
                                  'multitask-result/multitask-test-kbp.predicted'),
                                 (args.kbp_train_datapath, args.kbp_valid_datapath, args.kbp_test_datapath),
-                                 KBP_N_LABELS)
+                                 KBP_N_LABELS, 2)
 
     #---------------------------------------------------------------------------------
     # train with KBP in first and last epoch
