@@ -536,31 +536,16 @@ if __name__ == '__main__':
                                     config.disjoint_rate,
                                     config.feature_choice
                                 )
-            logger.info("MINI BATCH 1")
-            logger.info(mini_batch_1)
-            for item in mini_batch_1:
-                l1_values, r1_values, l1_indices, r1_indices, \
-                l2_values, r2_values, l2_indices, r2_indices, \
-                bow1i, \
-                l3_values, r3_values, l3_indices, r3_indices, \
-                l4_values, r4_values, l4_indices, r4_indices, \
-                bow2i, \
-                dense_feature,\
-                conv_idx,\
-                l5_values, l5_indices, r5_values, r5_indices, \
-                target = item 
-
-                logger.info(len(item))
-            for x in ifilter(
+            for example in ifilter(
                                 lambda x : len(target(x)) == config.n_batch_size,
                                 mini_batch_1
                             ):
                 
-                for example in x:
-                    c = mention_net.train( example, curr_task )
+               
+                c = mention_net.train( example, curr_task )
 
-                    cost += c * len(target(example))
-                    cnt += len(target(example))
+                cost += c * len(target(example))
+                cnt += len(target(example))
                 pbar.update( len(target(example)) )
 
         else:
