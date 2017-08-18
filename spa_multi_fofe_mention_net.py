@@ -1025,7 +1025,7 @@ class multi_fofe_mention_net( object ):
             train = [self.rich_xent, self.rich_predicted_indices, self.rich_predicted_values]
             ner_cls_match_rich = dense_feature[:,512:]
             ner_cls_match_light = numpy.zeros((512, LIGHT_N_LABELS + 1))
-            ner_cls_match_kbp = numpy.zeros((512, 11))
+            ner_cls_match_kbp = numpy.zeros((512, KBP_N_LABELS + 1))
         elif curr_task.batch_num == 1:
             train = [self.light_xent, self.light_predicted_indices, self.light_predicted_values]
             ner_cls_match_rich = numpy.zeros((512, RICH_N_LABELS + 1))
