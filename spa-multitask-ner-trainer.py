@@ -488,7 +488,7 @@ if __name__ == '__main__':
 
     #---------------------------------------------------------------------------------
     # train with KBP in first and last epoch
-    pick = 1
+    pick = 2
     for n_epoch in xrange(config.max_iter):
 
         if not os.path.exists('multitask-result'):
