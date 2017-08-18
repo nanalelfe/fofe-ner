@@ -888,7 +888,7 @@ class batch_constructor:
     def __init__( self, parser, 
                   numericizer1, numericizer2,
                   gazetteer = None, window = 7, alpha = 0.7, 
-                  n_label_type = 4, language = 'eng',
+                  n_label_type = 4, language = 'spa',
                   is2ndPass = False ):
         """
         Parameters
@@ -959,7 +959,7 @@ class batch_constructor:
 
         # parser is a generator such as OntoNotes()
         for sentence, ner_begin, ner_end, ner_label in parser:
-
+            logger.info(sentence, ner_begin, ner_end, ner_label)
             ner_begin = numpy.asarray(ner_begin, dtype = numpy.int32)
             ner_end = numpy.asarray(ner_end, dtype = numpy.int32)
             ner_label = numpy.asarray(ner_label, dtype = numpy.int32)
