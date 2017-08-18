@@ -287,12 +287,12 @@ if __name__ == '__main__':
                     ifilter(lambda x: x[0]%100 < 90,
                      enumerate (
                         imap(lambda x: x[:4],
-                         LoadEDRich(args.rich_datapath)))))
+                         LoadEDRich(args.rich_datapath, 0)))))
     light_source = imap(lambda x: x[1], 
                     ifilter(lambda x: x[0]%100 < 90,
                      enumerate (
                         imap(lambda x: x[:4],
-                         LoadEDRich(args.light_datapath)))))
+                         LoadEDRich(args.light_datapath, 1)))))
 
     # load all KBP training data and 90% KBP test data
     kbp_source = chain( 
@@ -356,12 +356,12 @@ if __name__ == '__main__':
                     ifilter(lambda x: 90 <= x[0]%100 < 95,
                      enumerate (
                         imap(lambda x: x[:4],
-                         LoadEDRich(args.rich_datapath)))))
+                         LoadEDRich(args.rich_datapath, 0)))))
     light_source = imap(lambda x: x[1], 
                     ifilter(lambda x: 90 <= x[0]%100 < 95,
                      enumerate (
                         imap(lambda x: x[:4],
-                         LoadEDRich(args.light_datapath)))))
+                         LoadEDRich(args.light_datapath, 1)))))
 
     kbp_source = imap( lambda x: x[1],
                ifilter( lambda x : x[0] % 10 >= 9,
@@ -410,12 +410,12 @@ if __name__ == '__main__':
                     ifilter(lambda x: 95 <= x[0]%100 <= 100,
                      enumerate (
                         imap(lambda x: x[:4],
-                         LoadEDRich(args.rich_datapath)))))
+                         LoadEDRich(args.rich_datapath, 0)))))
     light_source = imap(lambda x: x[1], 
                     ifilter(lambda x: 95 <= x[0]%100 <= 100,
                      enumerate (
                         imap(lambda x: x[:4],
-                         LoadEDRich(args.light_datapath)))))
+                         LoadEDRich(args.light_datapath, 1)))))
 
     # ----------------------------------------------------------------------------------
 
@@ -683,13 +683,13 @@ if __name__ == '__main__':
                     ifilter(lambda x: 90 <= x[0]%100 < 95,
                      enumerate (
                         imap(lambda x: x[:4],
-                         LoadEDRich(args.rich_datapath)))))
+                         LoadEDRich(args.rich_datapath, 0)))))
             else:
                 source = imap(lambda x: x[1], 
                     ifilter(lambda x: 90 <= x[0]%100 < 95,
                      enumerate (
                         imap(lambda x: x[:4],
-                         LoadEDRich(args.light_datapath)))))
+                         LoadEDRich(args.light_datapath, 1)))))
 
             algo_list = ['highest-first', 'longest-first', 'subsumption-removal']
 
@@ -737,13 +737,13 @@ if __name__ == '__main__':
                     ifilter(lambda x: 90 <= x[0]%100 < 95,
                      enumerate (
                         imap(lambda x: x[:4],
-                         LoadEDRich(args.rich_datapath)))))
+                         LoadEDRich(args.rich_datapath, 0)))))
             else:
                 source = imap(lambda x: x[1], 
                     ifilter(lambda x: 90 <= x[0]%100 < 95,
                      enumerate (
                         imap(lambda x: x[:4],
-                         LoadEDRich(args.light_datapath)))))
+                         LoadEDRich(args.light_datapath, 1)))))
 
 
             pp = [ p for p in PredictionParser(source, 
@@ -766,13 +766,13 @@ if __name__ == '__main__':
                 ifilter(lambda x: 95 <= x[0]%100 <= 100,
                  enumerate (
                     imap(lambda x: x[:4],
-                     LoadEDRich(args.rich_datapath)))))
+                     LoadEDRich(args.rich_datapath, 0)))))
         elif curr_task.batch_num == 1:
             source = imap(lambda x: x[1], 
                 ifilter(lambda x: 95 <= x[0]%100 <= 100,
                  enumerate (
                     imap(lambda x: x[:4],
-                     LoadEDRich(args.light_datapath)))))
+                     LoadEDRich(args.light_datapath, 1)))))
 
         else: 
             source = curr_task.generator( curr_task.data_loc[2] )

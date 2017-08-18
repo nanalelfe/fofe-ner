@@ -7,21 +7,36 @@ from sklearn import preprocessing
 
 logger = logging.getLogger( __name__ )
 
-def LoadEDRich( rspecifier, language = 'spa' ):
+def LoadEDRich( rspecifier, batch_num, language = 'spa' ):
 
-    entity2cls = {  # KBP2015 label
-                    'PER_NAM' : 0, 
-                    'PER_NOM' : 5, 
-                    'ORG_NAM' : 1, 
-                    'GPE_NAM' : 2, 
-                    'LOC_NAM' : 3, 
-                    'FAC_NAM' : 4, 
-                    # KBP2016 label
-                    'ORG_NOM' : 6,
-                    'GPE_NOM' : 7,
-                    'LOC_NOM' : 8,
-                    'FAC_NOM' : 9,
-                }
+    if batch_num == 1:
+        entity2cls = {  # KBP2015 label
+                        'PER_NAM' : 0, 
+                        'PER_NOM' : 5, 
+                        'ORG_NAM' : 1, 
+                        'GPE_NAM' : 2, 
+                        'LOC_NAM' : 3, 
+                        'TITLE_NA' : 4, 
+                        # KBP2016 label
+                        'ORG_NOM' : 6,
+                        'GPE_NOM' : 7,
+                        'LOC_NOM' : 8,
+                        'TITLE_NOM' : 9,
+                    }
+    else:
+        entity2cls = {  # KBP2015 label
+                        'PER_NAM' : 0, 
+                        'PER_NOM' : 5, 
+                        'ORG_NAM' : 1, 
+                        'GPE_NAM' : 2, 
+                        'LOC_NAM' : 3, 
+                        'FAC_NAM' : 4, 
+                        # KBP2016 label
+                        'ORG_NOM' : 6,
+                        'GPE_NOM' : 7,
+                        'LOC_NOM' : 8,
+                        'FAC_NOM' : 9,
+                    } 
 
     if os.path.isfile( rspecifier ):
         with codecs.open( rspecifier, 'rb', 'utf8' ) as fp:
@@ -78,7 +93,7 @@ def LoadEDRich( rspecifier, language = 'spa' ):
 
     else:
         for filename in os.listdir( rspecifier ):
-            for X in LoadEDRich( os.path.join( rspecifier, filename ), language ):
+            for X in LoadEDRich( os.path.join( rspecifier, filename ), batch_num, language ):
                 yield X
 
 
