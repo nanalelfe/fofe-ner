@@ -917,8 +917,6 @@ class multi_fofe_mention_net( object ):
         l5_values, l5_indices, r5_values, r5_indices, \
         target = mini_batch
 
-        logger.info(mini_batch)
-
         if not self.config.strictly_one_hot:
             dense_feature[:,-1] = 0
 
