@@ -1624,12 +1624,12 @@ def PredictionParser1( sample_generator, result, ner_max_length,
             (begin,end,class) triples
     """
     if batch_num == 0:
-        idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'TITLE_NA', 'PER_NOM',
-         'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'TITLE_NOM', 'TITLE_NAM', 'O' ]
+         idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'PER_NOM',
+         'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM', 'O' ]
 
     elif batch_num == 1:
-        idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'PER_NOM',
-         'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM', 'O' ]
+        idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'TITLE_NA', 'PER_NOM',
+         'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'TITLE_NOM', 'TITLE_NAM', 'O' ]
     else:
         # idx2ner = [ 'PER_NAM', 'PER_NOM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'TTL_NAM', 'O'  ]
         idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
@@ -2019,12 +2019,13 @@ def evaluation1( prediction_parser, threshold, algorithm,
     info = ''
 
     if batch_num == 0:
-        idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'TITLE_NA', 'PER_NOM',
-         'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'TITLE_NOM', 'TITLE_NAM', 'O' ]
-
-    elif batch_num == 1:
         idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'PER_NOM',
          'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM', 'O' ]
+
+    elif batch_num == 1:
+
+        idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'TITLE_NA', 'PER_NOM',
+         'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'TITLE_NOM', 'TITLE_NAM', 'O' ]
     else:
         # idx2ner = [ 'PER_NAM', 'PER_NOM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'TTL_NAM', 'O'  ]
         idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
