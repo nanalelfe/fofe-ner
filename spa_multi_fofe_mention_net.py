@@ -255,8 +255,9 @@ class multi_fofe_mention_net( object ):
 
         middle = [ int(s) for s in layer_size.split(',') ]
 
-        n_in_shared = [ hope_out if hope_out > 0 else hope_in ] + middle[0:1]
-        n_out_shared = n_in_shared[1:] + [n_in_shared[-1]]
+        n_in_shared = [ hope_out if hope_out > 0 else hope_in ]
+        # n_out_shared = n_in_shared[1:] + [n_in_shared[-1]]
+        n_out_shared = middle[-1:]
 
         n_in_rich = n_out_shared[-1:]
         n_out_rich = [ RICH_N_LABELS + 1 ]
