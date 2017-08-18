@@ -648,7 +648,7 @@ if __name__ == '__main__':
                                             LoadED( args.kbp_valid_datapath ) ) ) ) )
 
             if n_epoch >= config.max_iter / 2:
-                pp = [ p for p in PredictionParser( # KBP2015(  data_path + '/ed-eng-eval' ), 
+                pp = [ p for p in PredictionParser1( # KBP2015(  data_path + '/ed-eng-eval' ), 
                         source,
                         curr_task.predicted_files[1], 
                         config.n_window,
@@ -660,7 +660,7 @@ if __name__ == '__main__':
                     name = [ idx2algo[i] for i in algorithm  ]
                     for threshold in product( [ 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ], repeat = 2 ):
                         threshold = list( threshold )
-                        precision, recall, f1, _ = evaluation( pp, threshold, algorithm, True,
+                        precision, recall, f1, _ = evaluation1( pp, threshold, algorithm, True,
                                                                n_label_type = KBP_N_LABELS )
                         logger.debug( ('cut-off: %s, algorithm: %-20s' % (str(threshold), name)) + 
                                       (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)) )
@@ -696,14 +696,14 @@ if __name__ == '__main__':
 
             best_dev_fb1, best_threshold, best_algorithm = 0, 0.5, 1
 
-            pp = [ p for p in PredictionParser(source, 
+            pp = [ p for p in PredictionParser1(source, 
                                                     curr_task.predicted_files[1], 
                                                     config.n_window, n_label_type = curr_task.n_label ) ]
 
 
             for algorithm, name in zip([1, 2, 3], algo_list):
                 for threshold in numpy.arange(0.3, 1, 0.1).tolist():
-                    precision, recall, f1, _ = evaluation(pp, threshold, algorithm, True, n_label_type = curr_task.n_label)
+                    precision, recall, f1, _ = evaluation1(pp, threshold, algorithm, True, n_label_type = curr_task.n_label)
                     logger.debug(('batch_num: %d, cut-off: %f, algorithm: %-20s' %
                                   (curr_task.batch_num, threshold, name)) +
                                  (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)))
@@ -727,7 +727,7 @@ if __name__ == '__main__':
                                             LoadED( args.kbp_valid_datapath ) ) ) ) )
                 
 
-            pp = [ p for p in PredictionParser(source, 
+            pp = [ p for p in PredictionParser1(source, 
                                                 curr_task.predicted_files[1], 
                                                 config.n_window, n_label_type = curr_task.n_label ) ]
 
@@ -747,11 +747,11 @@ if __name__ == '__main__':
                          LoadEDRich(args.light_datapath, 1)))))
 
 
-            pp = [ p for p in PredictionParser(source, 
+            pp = [ p for p in PredictionParser1(source, 
                                                     curr_task.predicted_files[1], 
                                                     config.n_window, n_label_type = curr_task.n_label ) ]
 
-        _, _, test_fb1, info = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        _, _, test_fb1, info = evaluation1(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
         logger.info('batch_num ' + str(curr_task.batch_num) + ', validation:\n' + info)
         curr_task.test_fb1 = test_fb1
         # fb1 score for validation
@@ -778,11 +778,11 @@ if __name__ == '__main__':
         else: 
             source = curr_task.generator( curr_task.data_loc[2] )
 
-        pp = [ p for p in PredictionParser(source, 
+        pp = [ p for p in PredictionParser1(source, 
                                             curr_task.predicted_files[2], 
                                             config.n_window, n_label_type = curr_task.n_label ) ]
 
-        _, _, fb1, out = evaluation(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        _, _, fb1, out = evaluation1(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
         logger.info('batch_num ' + str(curr_task.batch_num) + ', evaluation:\n' + out)
         curr_task.test_scores.append(fb1)
         curr_task.test_fb1 = fb1
