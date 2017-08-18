@@ -652,7 +652,7 @@ if __name__ == '__main__':
                         source,
                         curr_task.predicted_files[1], 
                         config.n_window,
-                        n_label_type = curr_task.n_label 
+                        batch_num = curr_task.batch_num 
                     ) ]
 
                 for algorithm in product( [1, 2], repeat = 2 ):
@@ -661,7 +661,7 @@ if __name__ == '__main__':
                     for threshold in product( [ 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ], repeat = 2 ):
                         threshold = list( threshold )
                         precision, recall, f1, _ = evaluation1( pp, threshold, algorithm, True,
-                                                               n_label_type = KBP_N_LABELS )
+                                                               batch_num = curr_task.batch_num )
                         logger.debug( ('cut-off: %s, algorithm: %-20s' % (str(threshold), name)) + 
                                       (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)) )
 
@@ -698,12 +698,12 @@ if __name__ == '__main__':
 
             pp = [ p for p in PredictionParser1(source, 
                                                     curr_task.predicted_files[1], 
-                                                    config.n_window, n_label_type = curr_task.n_label ) ]
+                                                    config.n_window, batch_num = curr_task.batch_num ) ]
 
 
             for algorithm, name in zip([1, 2, 3], algo_list):
                 for threshold in numpy.arange(0.3, 1, 0.1).tolist():
-                    precision, recall, f1, _ = evaluation1(pp, threshold, algorithm, True, n_label_type = curr_task.n_label)
+                    precision, recall, f1, _ = evaluation1(pp, threshold, algorithm, True, batch_num = curr_task.batch_num)
                     logger.debug(('batch_num: %d, cut-off: %f, algorithm: %-20s' %
                                   (curr_task.batch_num, threshold, name)) +
                                  (', validation -- precision: %f,  recall: %f,  fb1: %f' % (precision, recall, f1)))
@@ -729,7 +729,7 @@ if __name__ == '__main__':
 
             pp = [ p for p in PredictionParser1(source, 
                                                 curr_task.predicted_files[1], 
-                                                config.n_window, n_label_type = curr_task.n_label ) ]
+                                                config.n_window, batch_num = curr_task.batch_num ) ]
 
         else:
 
@@ -749,9 +749,9 @@ if __name__ == '__main__':
 
             pp = [ p for p in PredictionParser1(source, 
                                                     curr_task.predicted_files[1], 
-                                                    config.n_window, n_label_type = curr_task.n_label ) ]
+                                                    config.n_window, batch_num = curr_task.batch_num ) ]
 
-        _, _, test_fb1, info = evaluation1(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        _, _, test_fb1, info = evaluation1(pp, curr_task.best_threshold, curr_task.best_algorithm, True, batch_num = curr_task.batch_num)
         logger.info('batch_num ' + str(curr_task.batch_num) + ', validation:\n' + info)
         curr_task.test_fb1 = test_fb1
         # fb1 score for validation
@@ -780,9 +780,9 @@ if __name__ == '__main__':
 
         pp = [ p for p in PredictionParser1(source, 
                                             curr_task.predicted_files[2], 
-                                            config.n_window, n_label_type = curr_task.n_label ) ]
+                                            config.n_window, batch_num = curr_task.batch_num ) ]
 
-        _, _, fb1, out = evaluation1(pp, curr_task.best_threshold, curr_task.best_algorithm, True, n_label_type = curr_task.n_label)
+        _, _, fb1, out = evaluation1(pp, curr_task.best_threshold, curr_task.best_algorithm, True, batch_num = curr_task.batch_num)
         logger.info('batch_num ' + str(curr_task.batch_num) + ', evaluation:\n' + out)
         curr_task.test_scores.append(fb1)
         curr_task.test_fb1 = fb1

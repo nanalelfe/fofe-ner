@@ -1636,6 +1636,8 @@ def PredictionParser1( sample_generator, result, ner_max_length,
                     'PER_NOM', 'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM',
                     'O' ]  
 
+    n_label_type = len(idx2ner)
+
     # sg = SampleGenerator( dataset )
     if isinstance(result, str):
         fp = open( result, 'rb' )
@@ -2028,6 +2030,8 @@ def evaluation1( prediction_parser, threshold, algorithm,
         idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
                     'PER_NOM', 'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM',
                     'O' ]
+
+    n_label_type = len(idx2ner)
 
     # each type maintains its own 'true-positive', 'false-positive' and 'false-negative' counts 
     true_positive, false_positive, false_negative = \
