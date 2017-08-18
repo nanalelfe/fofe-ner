@@ -550,7 +550,7 @@ if __name__ == '__main__':
                 l5_values, l5_indices, r5_values, r5_indices, \
                 target = item 
 
-                len(item)
+                logger.info(len(item))
             for x in ifilter(
                                 lambda x : len(target(x)) == config.n_batch_size,
                                 mini_batch_1
