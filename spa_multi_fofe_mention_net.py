@@ -932,17 +932,17 @@ class multi_fofe_mention_net( object ):
         if curr_task.batch_num == 0:
             train = self.rich_train_step + [self.rich_xent]
             ner_cls_match_rich = dense_feature[:,512:]
-            ner_cls_match_light = numpy.zeros((512, 19))
-            ner_cls_match_kbp = numpy.zeros((512, 11))
+            ner_cls_match_light = numpy.zeros((512, LIGHT_N_LABELS + 1))
+            ner_cls_match_kbp = numpy.zeros((512, KBP_N_LABELS + 1))
         elif curr_task.batch_num == 1:
             train = self.light_train_step + [self.light_xent]
-            ner_cls_match_rich = numpy.zeros((512, 5))
+            ner_cls_match_rich = numpy.zeros((512, RICH_N_LABELS + 1))
             ner_cls_match_light = dense_feature[:,512:]
-            ner_cls_match_kbp = numpy.zeros((512, 11))
+            ner_cls_match_kbp = numpy.zeros((512, KBP_N_LABELS + 1))
         else: 
             train = self.kbp_train_step + [self.kbp_xent]
-            ner_cls_match_rich = numpy.zeros((512, 5))
-            ner_cls_match_light = numpy.zeros((512, 19))
+            ner_cls_match_rich = numpy.zeros((512, RICH_N_LABELS + 1))
+            ner_cls_match_light = numpy.zeros((512, LIGHT_N_LABELS + 1))
             ner_cls_match_kbp = dense_feature[:,512:]
 
         c = self.session.run(  

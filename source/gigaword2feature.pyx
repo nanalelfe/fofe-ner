@@ -1628,12 +1628,8 @@ def PredictionParser1( sample_generator, result, ner_max_length,
          'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'TITLE_NOM', 'TITLE_NAM', 'O' ]
 
     elif batch_num == 1:
-        idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'TITLE_NA', 'PER_NOM',
-         'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'TITLE_NOM', 'TITLE_NAM', 'O' ]
-
-        idx2ner = ['PERSON', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'DATE', 'TIME', 'PERCENT',
-                    'MONEY', 'QUANTITY', 'ORDINAL', 'CARDINAL', 'EVENT', 'WORK_OF_ART', 'LAW',
-                    'LANGUAGE', 'NORP', 'O']
+        idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'PER_NOM',
+         'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM', 'O' ]
     else:
         # idx2ner = [ 'PER_NAM', 'PER_NOM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'TTL_NAM', 'O'  ]
         idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
