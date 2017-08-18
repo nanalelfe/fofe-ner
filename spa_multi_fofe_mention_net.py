@@ -249,7 +249,7 @@ class multi_fofe_mention_net( object ):
 
         
         RICH_N_LABELS = 10
-        LIGHT_N_LABELS = 10
+        LIGHT_N_LABELS = 11
         KBP_N_LABELS = 10
 
         # add a U matrix between projected feature and fully-connected layers
