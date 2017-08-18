@@ -907,6 +907,8 @@ class multi_fofe_mention_net( object ):
         -------
             c : float
         """ 
+        logger.info("MINI BATCH")
+        logger.info(mini_batch)
         l1_values, r1_values, l1_indices, r1_indices, \
         l2_values, r2_values, l2_indices, r2_indices, \
         bow1i, \
