@@ -529,15 +529,19 @@ if __name__ == '__main__':
         cost, cnt = 0, 0
 
         if curr_task.batch_num == 2:
-            for x in ifilter(
-                                lambda x : len(target(x)) == config.n_batch_size,
-                                curr_task.batch_constructors[0].mini_batch_multi_thread(
+            mini_batch_1 = curr_task.batch_constructors[0].mini_batch_multi_thread(
                                     config.n_batch_size,
                                     True,
                                     config.overlap_rate,
                                     config.disjoint_rate,
                                     config.feature_choice
                                 )
+            logger.info("MINI BATCH 1")
+            logger.info(mini_batch_1)
+            logger.info(len(mini_batch_1))
+            for x in ifilter(
+                                lambda x : len(target(x)) == config.n_batch_size,
+                                mini_batch_1
                             ):
                 
                 for example in x:
