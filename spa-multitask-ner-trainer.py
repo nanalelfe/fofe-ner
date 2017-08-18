@@ -83,7 +83,7 @@ if __name__ == '__main__':
                         help='ner embedding dimension')
 
     # - Character set size
-    parser.add_argument('--n_char', type=int, default=256,
+    parser.add_argument('--n_char', type=int, default=128,
                         help='character set size. since ascii is used; 128 is assumed')
 
     # - Size of fully connected layers after projection
