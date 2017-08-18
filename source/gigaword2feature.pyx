@@ -2006,6 +2006,107 @@ def evaluation( prediction_parser, threshold, algorithm,
 
     return precision, recall, f_beta, info
 
+
+def evaluation1( prediction_parser, threshold, algorithm, 
+                conll2003out = None, analysis = None, sentence_iterator = None,
+                batch_num=0, decoder_callback = None ):
+    # analysis = open( trainer_output.split('.')[0] + '.error', 'wb' )
+
+    si = sentence_iterator
+    pp = prediction_parser
+    info = ''
+
+    if batch_num == 0:
+        idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'TITLE_NA', 'PER_NOM',
+         'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'TITLE_NOM', 'TITLE_NAM', 'O' ]
+
+    elif batch_num == 1:
+        idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'PER_NOM',
+         'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM', 'O' ]
+    else:
+        # idx2ner = [ 'PER_NAM', 'PER_NOM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM', 'TTL_NAM', 'O'  ]
+        idx2ner = [ 'PER_NAM', 'ORG_NAM', 'GPE_NAM', 'LOC_NAM', 'FAC_NAM',
+                    'PER_NOM', 'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM',
+                    'O' ]
+
+    # each type maintains its own 'true-positive', 'false-positive' and 'false-negative' counts 
+    true_positive, false_positive, false_negative = \
+        [ 0 ] * n_label_type, [ 0 ] * n_label_type, [ 0 ] * n_label_type
+
+    for sentence, table, estimate, actual in pp:
+        # 'sorted_est' also serves as a copy of 'estimate' before anything is applied
+        sorted_est = [ (b, e, idx2ner[c], table[b][e - 1][1]) for (b, e, c) in estimate ]
+
+        estimate = decode( sentence, estimate, table, 
+                           threshold, algorithm, decoder_callback )
+
+        if analysis is not None and set(estimate) != set(actual):
+            # print >> analysis, zip( range(len(sentence)), sentence )
+            sorted_est.sort( key = lambda x : x[3], reverse = True )
+            print >> analysis, '  '.join( [ w for w in sentence ] )
+            print >> analysis, ''.join( [ ('%%-%dd' % (len(w) + 2)) % l for (l, w) in enumerate(sentence) ] )
+            print >> analysis, '%10s' % 'raw-out: ', sorted_est
+            print >> analysis, '%10s' % 'estimate: ', [ (b, e, idx2ner[c]) for (b, e, c) in estimate ]
+            print >> analysis, '%10s' % 'actual: ', [ (b, e, idx2ner[c]) for (b, e, c) in actual ]
+
+        estimate = set(estimate)
+
+        for x in xrange( len(true_positive) ):
+            # true_positive += len( estimate & actual )
+            # false_positive += len( estimate - actual )
+            # false_negative += len( actual - estimate )
+            true_positive[x] += len( [ (b,e,c) for (b,e,c) in estimate & actual if c == x ] )
+            false_positive[x] += len( [ (b,e,c) for (b,e,c) in estimate - actual if c == x ] )
+            false_negative[x] += len( [ (b,e,c) for (b,e,c) in actual - estimate if c == x ] )
+
+        if analysis is not None and set(estimate) != set(actual):
+            print >> analysis, 'false-positive: ', [ (b, e, idx2ner[c]) for (b, e, c) in (estimate - actual)]
+            print >> analysis, 'false-negative: ', [ (b, e, idx2ner[c]) for (b, e, c) in (actual - estimate)]
+            print >> analysis
+
+        # for CoNLL2003 output
+        if si is not None:
+            original = si.next()
+            assert( len(original) == len(sentence) )
+            tag = [ 'O' ] * len(sentence)
+            for b, e, c in estimate:
+                x = 'I-' + idx2ner[c]
+                for i in xrange(b, e):
+                    tag[i] = x
+            for o, t in zip( original, tag ):
+                if conll2003out:
+                    print >> conll2003out, o, t
+            if conll2003out:
+                print >> conll2003out
+
+    for x in xrange( len(true_positive) ):
+        if true_positive[x] != 0:
+            precision = float(true_positive[x]) / float(true_positive[x] + false_positive[x])
+            recall = float(true_positive[x]) / float(true_positive[x] + false_negative[x])
+            f_beta = 2.0 * precision * recall / (precision + recall)
+        else:
+            precision, recall, f_beta = 0.0, 0.0, 0.0
+        info += '%12s  precision: %.2f%%, recall: %.2f%%, FB1: %.2f\n' % \
+                            (idx2ner[x], precision * 100, recall * 100, f_beta * 100)
+
+    true_positive, false_positive, false_negative = \
+            sum(true_positive), sum(false_positive), sum(false_negative)
+    if true_positive != 0:
+        precision = float(true_positive) / float(true_positive + false_positive)
+        recall = float(true_positive) / float(true_positive + false_negative)
+        f_beta = 2.0 * precision * recall / (precision + recall)
+    else:
+        precision, recall, f_beta = 0.0, 0.0, 0.0
+    info = '%-12s  precision: %.2f%%, recall: %.2f%%, FB1: %.2f\n' % \
+                        ('OVERALL', precision * 100, recall * 100, f_beta * 100) + info
+
+    if analysis is not None:
+        # print >> analysis, 'precision: %f, recall: %f, F-beta: %f' % ( precision, recall, f_beta )
+        print >> analysis, info
+        analysis.close()
+
+    return precision, recall, f_beta, info
+
 ################################################################################
 
 def distant_supervision_parser( sentence_file, tag_file, 

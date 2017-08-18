@@ -15,6 +15,10 @@ from random import choice
 
 logger = logging.getLogger( __name__ )
 
+RICH_N_LABELS = 10
+LIGHT_N_LABELS = 11
+KBP_N_LABELS = 10
+
 ########################################################################
 
 def load_word_embedding( filename ):
@@ -246,11 +250,6 @@ class multi_fofe_mention_net( object ):
                     hope_in += sum( kernel_depth )
                 elif ith == 10:
                     hope_in += n_char_embedding * 2
-
-        
-        RICH_N_LABELS = 10
-        LIGHT_N_LABELS = 11
-        KBP_N_LABELS = 10
 
         # add a U matrix between projected feature and fully-connected layers
 
