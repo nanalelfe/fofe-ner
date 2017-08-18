@@ -538,7 +538,7 @@ if __name__ == '__main__':
                                 )
             logger.info("MINI BATCH 1")
             logger.info(mini_batch_1)
-            logger.info(len(mini_batch_1))
+            logger.info(mini_batch_1.next())
             for x in ifilter(
                                 lambda x : len(target(x)) == config.n_batch_size,
                                 mini_batch_1
