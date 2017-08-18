@@ -83,7 +83,7 @@ if __name__ == '__main__':
                         help='ner embedding dimension')
 
     # - Character set size
-    parser.add_argument('--n_char', type=int, default=128,
+    parser.add_argument('--n_char', type=int, default=256,
                         help='character set size. since ascii is used; 128 is assumed')
 
     # - Size of fully connected layers after projection
@@ -107,7 +107,7 @@ if __name__ == '__main__':
                         help='maximum number of iterations')
 
     # - Feature choice (bitmask)
-    parser.add_argument('--feature_choice', type=int, default=63,
+    parser.add_argument('--feature_choice', type=int, default=767,
                         help='the features used are picked with a bitmask. They are ' +
                              '1) case-insensitive bfofe with candidate word(s), ' +
                              '2) case-insensitive bfofe without candidate word(s), ' +
@@ -207,7 +207,7 @@ if __name__ == '__main__':
     # TODO
     # these hyper parameters are from kbp-ed-trainer
     # I add them here to make the interpreter happy at this point
-    parser.add_argument('--language', type=str, default='spa', choices=['eng'])
+    parser.add_argument('--language', type=str, default='spa', choices=['spa'])
     parser.add_argument('--average', action='store_true', default=False)
     parser.add_argument('--wiki', action='store_true', default=False)
 
@@ -482,7 +482,8 @@ if __name__ == '__main__':
                                 ('multitask-result/multitask-train-kbp.predicted',
                                  'multitask-result/multitask-valid-kbp.predicted',
                                  'multitask-result/multitask-test-kbp.predicted'),
-                                (args.kbp_train_datapath, args.kbp_valid_datapath, args.kbp_test_datapath),
+                                (args.kbp_train_datapath, args.kbp_valid_datapath,
+                                 args.kbp_test_datapath),
                                  KBP_N_LABELS, 2)
 
     #---------------------------------------------------------------------------------
