@@ -596,7 +596,6 @@ cdef class vocabulary( object ):
         cdef int i, n = len(phrase)
         fofe = []
         for w in phrase:
-            logger.info("word: " + str(w))
             fofe.append(self.char_fofe_of_word(w))
         fofe = [ self.char_fofe_of_word(w) for w in phrase ]
         lfofe = fofe[0][0].copy()
@@ -967,6 +966,7 @@ class batch_constructor:
 
         # parser is a generator such as OntoNotes()
         for sentence, ner_begin, ner_end, ner_label in parser:
+            logger.info(sentence)
             ner_begin = numpy.asarray(ner_begin, dtype = numpy.int32)
             ner_end = numpy.asarray(ner_end, dtype = numpy.int32)
             ner_label = numpy.asarray(ner_label, dtype = numpy.int32)
