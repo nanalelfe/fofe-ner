@@ -166,7 +166,7 @@ if __name__ == '__main__':
                         help='dimension of z in the HOPE paper; 0 means not used')
 
     # - Number of label types
-    parser.add_argument('--n_label_type', type=int, default=4,
+    parser.add_argument('--n_label_type', type=int, default=10,
                         help='By default, PER, LOC, ORG and MISC are assumed')
 
     # - Kernel height
