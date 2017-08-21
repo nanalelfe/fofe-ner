@@ -596,7 +596,7 @@ cdef class vocabulary( object ):
         cdef int i, n = len(phrase)
         fofe = []
         for w in phrase:
-            logger.info("word: " + str(type(w)))
+            logger.info("word: " + str(w))
             fofe.append(self.char_fofe_of_word(w))
         fofe = [ self.char_fofe_of_word(w) for w in phrase ]
         lfofe = fofe[0][0].copy()
