@@ -1266,6 +1266,7 @@ class batch_constructor:
 
             # character-level fofe of focus word(s)
             if feature_choice & 64 > 0:
+                logger.info("I AM HERE")
                 left_c, right_c = self.numericizer1 \
                                       .char_fofe_of_phrase( sentence.sentence[begin_idx:end_idx] )
                 
