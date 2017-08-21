@@ -231,7 +231,8 @@ if __name__ == '__main__':
 
     ################################################################################
 
-    from spa_multi_fofe_mention_net import *
+    # from spa_multi_fofe_mention_net import *
+    from fofe_mention_net import *
     config = mention_config(args)
     from pprint import pprint
     logger.info("Here is config: ")
@@ -250,7 +251,8 @@ if __name__ == '__main__':
 
     ################################################################################
 
-    mention_net = multi_fofe_mention_net(config, args.gpu_fraction)
+    # mention_net = multi_fofe_mention_net(config, args.gpu_fraction)
+    mention_net = fofe_mention_net(config, args.gpu_fraction)
     mention_net.tofile('./multitask-model/' + args.model)
 
     ################################################################################
