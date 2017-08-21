@@ -570,12 +570,9 @@ cdef class vocabulary( object ):
     def char_fofe_of_word( self, word ):
         if word == u'próximo' or word == u'proximo':
             logger.info("============================ CHAR FOFE OF WORD ===================================")
-            logger.info(word)
         if len( self.word2fofe ) > 2 * len(self.word2idx):
             self.word2fofe = {}
         if word in self.word2fofe:
-            if word == u'próximo' or word == u'proximo':
-                logger.info(self.word2fofe[word])
             return self.word2fofe[word]
         else:
             lfofe, coeff = numpy.zeros((128,), numpy.float32), 1
@@ -589,8 +586,6 @@ cdef class vocabulary( object ):
                 rfofe[i] += numpy.float32(coeff)
                 coeff *= self.alpha
             self.word2fofe[word] = [lfofe, rfofe]
-            if word == u'próximo' or word == u'proximo':
-                logger.info(self.word2fofe[word])
             return [lfofe, rfofe]
 
 
