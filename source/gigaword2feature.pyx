@@ -574,7 +574,8 @@ cdef class vocabulary( object ):
         if len( self.word2fofe ) > 2 * len(self.word2idx):
             self.word2fofe = {}
         if word in self.word2fofe:
-            logger.info(self.word2fofe[word])
+            if word == u'próximo' or word == u'proximo':
+                logger.info(self.word2fofe[word])
             return self.word2fofe[word]
         else:
             lfofe, coeff = numpy.zeros((128,), numpy.float32), 1
@@ -588,7 +589,8 @@ cdef class vocabulary( object ):
                 rfofe[i] += numpy.float32(coeff)
                 coeff *= self.alpha
             self.word2fofe[word] = [lfofe, rfofe]
-            logger.info(self.word2fofe[word])
+            if word == u'próximo' or word == u'proximo':
+                logger.info(self.word2fofe[word])
             return [lfofe, rfofe]
 
 
@@ -1266,7 +1268,6 @@ class batch_constructor:
 
             # character-level fofe of focus word(s)
             if feature_choice & 64 > 0:
-                logger.info("I AM HERE")
                 left_c, right_c = self.numericizer1 \
                                       .char_fofe_of_phrase( sentence.sentence[begin_idx:end_idx] )
                 
