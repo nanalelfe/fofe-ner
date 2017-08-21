@@ -18,7 +18,7 @@ ${THIS_DIR}/multitask-ner-trainer.py \
     --learning_rate 0.128 \
     --momentum 0.9 \
     --max_iter 128 \
-    --feature_choice 639 \
+    --feature_choice 767 \
     --overlap_rate 0.36 \
     --disjoint_rate 0.09 \
     --dropout \
