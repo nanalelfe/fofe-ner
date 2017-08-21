@@ -590,6 +590,9 @@ cdef class vocabulary( object ):
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def char_fofe_of_phrase( self, phrase ):
+
+        logger.info("============================ CHAR FOFE OF PHRASE ===================================")
+        logger.info(phrase)
         cdef int i, n = len(phrase)
         fofe = [ self.char_fofe_of_word(w) for w in phrase ]
         lfofe = fofe[0][0].copy()
@@ -600,6 +603,9 @@ cdef class vocabulary( object ):
         for i in reversed(range(n - 1)):
             rfofe *= self.alpha ** len(phrase[i + 1])
             rfofe += fofe[i][1]
+
+        logger.info(lfofe)
+        logger.info(rfofe)
         return lfofe, rfofe
 
 ################################################################################
