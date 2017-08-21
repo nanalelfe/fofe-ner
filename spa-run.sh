@@ -11,14 +11,16 @@ ${THIS_DIR}/spa-multitask-ner-trainer.py \
     "/local/scratch/nana/EDL-DATA/KBP-EDL-2015/spa-eval-parsed" \
     "/local/scratch/nana/EDL-DATA/KBP-EDL-2016/spa-eval-parsed" \
     "/local/scratch/nana/wikidata/data-chunk" \
+    --n_char_embedding 32 \
+    --n_ner_embedding 32 \
     --layer_size "512,512,512" \
     --n_batch_size 512 \
-    --learning_rate 0.128 \
+    --learning_rate 0.064 \
     --momentum 0.9 \
     --max_iter 128 \
     --feature_choice 639 \
-    --overlap_rate 0.36 \
-    --disjoint_rate 0.09 \
+    --overlap_rate 0.08 \
+    --disjoint_rate 0.016 \
     --dropout \
     --char_alpha 0.8 \
     --word_alpha 0.5 \
