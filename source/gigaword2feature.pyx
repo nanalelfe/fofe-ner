@@ -569,7 +569,7 @@ cdef class vocabulary( object ):
     @cython.wraparound(False)
     def char_fofe_of_word( self, word ):
         if word == u'próximo' or word == u'proximo':
-            logger.info("============================ CHAR FOFE OF WORD ===================================")
+            logger.info("")
         if len( self.word2fofe ) > 2 * len(self.word2idx):
             self.word2fofe = {}
         if word in self.word2fofe:
@@ -1165,35 +1165,11 @@ class batch_constructor:
         #--------------
         if disjoint_rate == 1:
             num = len(self.disjoint) * disjoint_rate * n_copy
-            logger.info("num: " + str(num))
-            logger.info("self.disjoint") 
-            logger.info(numpy.int32(len(self.disjoint)))
-            logger.info("n_copy:" + str(n_copy))
-            logger.info("disjoint rate: " + str(disjoint_rate))
-            logger.info(numpy.int32( len(self.disjoint) * disjoint_rate * n_copy ))
-            logger.info("self.disjoint")
-            logger.info(str(len(self.disjoint)))
-            logger.info("n_copy:" + str(n_copy))
-            logger.info("disjoint rate: " + str(disjoint_rate))
-            num = len(self.disjoint) * disjoint_rate * n_copy
-            logger.info("num: " + str(num))
             disjoint = numpy.random.choice( self.disjoint,
                                             size = numpy.int32(len(self.disjoint)),
                                             replace = replace )
         elif len( self.disjoint ) > 0: 
             num = len(self.disjoint) * disjoint_rate * n_copy
-            logger.info("num: " + str(num))
-            logger.info("self.disjoint") 
-            logger.info(str(len(self.disjoint)))
-            logger.info("n_copy:" + str(n_copy))
-            logger.info("disjoint rate: " + str(disjoint_rate))
-            logger.info(numpy.int32( len(self.disjoint) * disjoint_rate * n_copy ))
-            logger.info("self.disjoint")
-            logger.info(str(len(self.disjoint)))
-            logger.info("n_copy:" + str(n_copy))
-            logger.info("disjoint rate: " + str(disjoint_rate))
-            num = len(self.disjoint) * disjoint_rate * n_copy
-            logger.info("num: " + str(num))
             disjoint = numpy.random.choice( self.disjoint,
                                             size = numpy.int32( num ),
                                             replace = replace )
