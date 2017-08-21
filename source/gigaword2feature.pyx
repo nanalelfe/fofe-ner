@@ -578,7 +578,7 @@ cdef class vocabulary( object ):
         else:
             lfofe, coeff = numpy.zeros((128,), numpy.float32), 1
             for c in reversed(word):
-                logger.info(c.encode('utf-8'))
+                logger.info(c.decode('utf-8'))
                 i = ord(c) if 0 < ord(c) < 128 else 0
                 lfofe[i] += numpy.float32(coeff)
                 coeff *= self.alpha
