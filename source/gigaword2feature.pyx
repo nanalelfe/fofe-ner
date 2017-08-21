@@ -568,9 +568,12 @@ cdef class vocabulary( object ):
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def char_fofe_of_word( self, word ):
+        print("============================ CHAR FOFE OF WORD ===================================")
+        print(word)
         if len( self.word2fofe ) > 2 * len(self.word2idx):
             self.word2fofe = {}
         if word in self.word2fofe:
+            logger.info(self.word2fofe[word])
             return self.word2fofe[word]
         else:
             lfofe, coeff = numpy.zeros((128,), numpy.float32), 1
@@ -584,15 +587,13 @@ cdef class vocabulary( object ):
                 rfofe[i] += numpy.float32(coeff)
                 coeff *= self.alpha
             self.word2fofe[word] = [lfofe, rfofe]
+            logger.info(self.word2fofe[word])
             return [lfofe, rfofe]
 
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def char_fofe_of_phrase( self, phrase ):
-
-        print("============================ CHAR FOFE OF PHRASE ===================================")
-        print(phrase)
         cdef int i, n = len(phrase)
         fofe = [ self.char_fofe_of_word(w) for w in phrase ]
         lfofe = fofe[0][0].copy()
@@ -604,8 +605,6 @@ cdef class vocabulary( object ):
             rfofe *= self.alpha ** len(phrase[i + 1])
             rfofe += fofe[i][1]
 
-        print(lfofe)
-        print(rfofe)
         return lfofe, rfofe
 
 ################################################################################
