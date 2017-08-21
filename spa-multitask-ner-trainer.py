@@ -512,7 +512,7 @@ if __name__ == '__main__':
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
             f_num = 256
 
-        pick = random.choice([0, 1, 2])
+        # pick = random.choice([0, 1, 2])
 
         if n_epoch + 1 == config.max_iter:
             pick = 2
