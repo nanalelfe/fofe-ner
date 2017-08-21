@@ -545,7 +545,7 @@ if __name__ == '__main__':
                             ):
                 
                
-                c = mention_net.train( example, curr_task )
+                c = mention_net.train( example)
 
                 cost += c * len(target(example))
                 cnt += len(target(example))
