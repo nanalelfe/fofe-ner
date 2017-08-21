@@ -1,4 +1,5 @@
 #!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
+# -*- coding: utf-8 -*- 
 
 """
 Author      : Mingbin Xu (mingbin.xu@gmail.com)
