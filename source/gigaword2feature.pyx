@@ -689,6 +689,7 @@ cdef class processed_sentence:
 
         if language != 'cmn':
             for w in sentence:
+                logger.info(sentence)
                 # push_back() is equivalent of append()
                 # convert the non-ascii characters to something (hexadecimal?)
                 self.sentence.push_back( u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) )
@@ -967,8 +968,6 @@ class batch_constructor:
 
         # parser is a generator such as OntoNotes()
         for sentence, ner_begin, ner_end, ner_label in parser:
-            for w in sentence:
-                logger.info(w)
             ner_begin = numpy.asarray(ner_begin, dtype = numpy.int32)
             ner_end = numpy.asarray(ner_end, dtype = numpy.int32)
             ner_label = numpy.asarray(ner_label, dtype = numpy.int32)
