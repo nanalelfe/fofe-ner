@@ -133,17 +133,32 @@ def LoadED( rspecifier, language = 'eng' ):
     elif language == 'spa':
         entity2cls = {  # KBP2015 label
                         'PER_NAM' : 0, 
+                        'PER_NOM' : 5, 
                         'ORG_NAM' : 1, 
                         'GPE_NAM' : 2, 
                         'LOC_NAM' : 3, 
                         'FAC_NAM' : 4, 
+                        'TTL_NAM' : 5,
+
+                        # KBP2016 label
+                        'ORG_NOM' : 5,
+                        'GPE_NOM' : 5,
+                        'LOC_NOM' : 5,
+                        'FAC_NOM' : 5,
+
                         # iflytek label
                         'PER_NAME' : 0,  
                         'ORG_NAME' : 1, 
                         'GPE_NAME' : 2, 
                         'LOC_NAME' : 3, 
-                        'FAC_NAME' : 4
-                    }
+                        'FAC_NAME' : 4, 
+                        'PER_NOMINAL' : 5,
+                        'ORG_NOMINAL' : 5,
+                        'GPE_NOMINAL' : 5,
+                        'LOC_NOMINAL' : 5,
+                        'FAC_NOMINAL' : 5,
+                        'TITLE_NAME' : 5,
+                        'TITLE_NOMINAL' : 5
 
     if os.path.isfile( rspecifier ):
         with codecs.open( rspecifier, 'rb', 'utf8' ) as fp:
