@@ -695,9 +695,6 @@ cdef class processed_sentence:
             vocab = numericizer
             # populate the self.numeric vector 
             vocab.sentence2indices( self.sentence, self.numeric )
-
-            for w in self.sentence:
-                logger.info(w)
         else:
             self.numeric = numericizer.sentence2indices( sentence )
 
@@ -1247,7 +1244,6 @@ class batch_constructor:
 
             # character-level fofe of focus word(s)
             if feature_choice & 64 > 0:
-                x = 'Méjico'
                 # for w in sentence.sentence[begin_idx:end_idx]:
                 #     logger.info(w)
                 #     logger.info(x)
