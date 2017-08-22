@@ -779,7 +779,7 @@ if __name__ == '__main__':
                      LoadEDRich(args.light_datapath, 1)))))
 
         else: 
-            source = curr_task.generator( curr_task.data_loc[2], language='spa' )
+            source = imap( lambda x: x[:4], LoadED( args.kbp_test_datapath, language='spa' ) )
 
         pp = [ p for p in PredictionParser1(source, 
                                             curr_task.predicted_files[2], 
