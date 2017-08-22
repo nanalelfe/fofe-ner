@@ -1572,7 +1572,7 @@ def PredictionParser( sample_generator, result, ner_max_length,
 
 
 def PredictionParser1( sample_generator, result, ner_max_length, 
-                      reinterpret_threshold = 0, n_label_type = 4, batch_num=0 ):
+                      reinterpret_threshold = 0, batch_num=0 ):
     """
     This function is modified from some legancy code. 'table' was designed for 
     visualization. 
