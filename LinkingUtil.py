@@ -145,7 +145,7 @@ def LoadED( rspecifier, language = 'eng' ):
                     continue
                 logger.info("before: " + parts[0])
                 sent, boe, eoe, target, mids, spelling = parts[0].split(u' '), [], [], [], [], []
-                logger.info("after: " + sent)
+                logger.info("after: " + sent[0])
                 offsets = map( lambda x : (int(x[0]), int(x[1])),
                                [ offsets[1:-1].split(u',') for offsets in parts[1].split() ] )
                 assert len(offsets) == len(sent), rspecifier + '\n' + \
