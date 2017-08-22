@@ -138,6 +138,7 @@ def LoadED( rspecifier, language = 'eng' ):
             # texts, tags, failures = processed.split( u'\n\n\n', 2 )
             texts = processed.split( u'\n\n\n' )[0]
             for text in texts.split( u'\n\n' ):
+                logger.info(text)
                 parts = text.split( u'\n' )
                 # assert len(parts) in [2, 3], 'sentence, offsets, labels(optional)'
                 if len( parts ) not in [2, 3]:

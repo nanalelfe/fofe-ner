@@ -489,9 +489,7 @@ cdef class vocabulary( object ):
         # iterate through the wordlist (each line contains only 1 word)
         with codecs.open( filename ) as word_file:
             for line in word_file:
-                logger.info(line)
                 word = line.strip().split()[0]
-                logger.info(word)
 
                 # assign an index to the word, based on its position in the file list
                 idx = len(self.word2idx)
