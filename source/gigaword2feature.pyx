@@ -1623,7 +1623,7 @@ def PredictionParser1( sample_generator, result, ner_max_length,
                     'PER_NOM', 'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM',
                     'O' ]  
 
-    n_label_type = len(idx2ner)
+    n_label_type = len(idx2ner) - 1
 
     # sg = SampleGenerator( dataset )
     if isinstance(result, str):
