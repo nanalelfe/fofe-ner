@@ -419,6 +419,8 @@ if __name__ == '__main__':
                         imap(lambda x: x[:4],
                          LoadEDRich(args.light_datapath, 1)))))
 
+    kbp_source = imap( lambda x: x[:4], LoadED( args.kbp_test_datapath, language='spa' ) )
+
     # ----------------------------------------------------------------------------------
 
     test_rich  = batch_constructor( rich_source, 
@@ -438,7 +440,7 @@ if __name__ == '__main__':
                              is2ndPass=args.is_2nd_pass)
 
     test_kbp = batch_constructor( 
-                    KBP(args.kbp_test_datapath),
+                    kbp_source,
                     numericizer1, 
                     numericizer2, 
                     gazetteer = kbp_gazetteer, 
@@ -617,7 +619,7 @@ if __name__ == '__main__':
                 f_num if config.feature_choice & (1 << 9) > 0 else 1024,
                 False, 1, 1, config.feature_choice):
 
-            c, pi, pv = mention_net.eval( example, curr_task)
+            c, pi, pv = mention_net.eval(example, curr_task)
 
             cost += c * len(target(example))
             cnt += len(target(example))
