@@ -1245,7 +1245,6 @@ class batch_constructor:
             # character-level fofe of focus word(s)
             if feature_choice & 64 > 0:
                 x = 'Méjico'
-                logger.info(sentence.sentence[begin_idx:end_idx])
                 # for w in sentence.sentence[begin_idx:end_idx]:
                 #     logger.info(w)
                 #     logger.info(x)
