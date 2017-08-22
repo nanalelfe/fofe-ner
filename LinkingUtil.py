@@ -143,8 +143,9 @@ def LoadED( rspecifier, language = 'eng' ):
                 if len( parts ) not in [2, 3]:
                     logger.exception( text )
                     continue
-
+                logger.info("before: " + parts[0])
                 sent, boe, eoe, target, mids, spelling = parts[0].split(u' '), [], [], [], [], []
+                logger.info("after: " + sent)
                 offsets = map( lambda x : (int(x[0]), int(x[1])),
                                [ offsets[1:-1].split(u',') for offsets in parts[1].split() ] )
                 assert len(offsets) == len(sent), rspecifier + '\n' + \
@@ -181,7 +182,6 @@ def LoadED( rspecifier, language = 'eng' ):
                 # if language == 'eng':
                 #     for i,w in enumerate( sent ):
                 #         sent[i] = u''.join( c if 0 <= ord(c) < 128 else chr(0) for c in list(w) )
-                logger.info(sent)
                 yield sent, boe, eoe, target, mids, spelling
 
 
