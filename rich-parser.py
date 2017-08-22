@@ -78,9 +78,9 @@ def process_one_file( input_dir, output_dir, filename, solution, language='spa',
 						  begin_offset + lsb + \
 							len(tag[begin_offset: end_offset].rstrip()) )         
 
-			logger.info("candidate")
-			logger.info( data[candidate[0]:candidate[1]] )
-			logger.info(candidate)
+			# logger.info("candidate")
+			# logger.info( data[candidate[0]:candidate[1]] )
+			# logger.info(candidate)
 
 			if filename in solution:
 				if candidate in solution[filename]:
@@ -139,6 +139,8 @@ def process_one_file( input_dir, output_dir, filename, solution, language='spa',
 				time.sleep( 0.0128 )
 				if language == 'cmn':
 					text = HanziConv.toSimplified( text ) 
+				if filename == "SPA_DF_000386_20150402_F000000AF":
+					logger.info(text)
 				parsed = nlp.annotate(  text, properties = properties )
 
 				assert isinstance( parsed, dict ), 'CoreNLP does not return well-formed json'

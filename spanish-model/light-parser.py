@@ -8,6 +8,8 @@ from copy import deepcopy
 from hanziconv import HanziConv
 import xml.etree.ElementTree as ET
 import glob
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 
 logger = logging.getLogger(__name__)
@@ -111,20 +113,20 @@ def process_one_file( input_dir, output_dir, filename, solution, language='spa',
 
 		# escape %, CoreNLP might complain
 		text = text.replace( u'%', u'%25' )
-		# text = urllib.quote( text )
+		# text = urllib.quote( text ))
 
 		if len( text.strip() ) > 0:
 			# check whether the text under consideration is in quote region
-			is_in_quote = False
-			if filename in quote:
-				for begin, end in quote[filename]:
-					if begin <= position < next_lsb <= end:
-						is_in_quote = True
-						break
+			# is_in_quote = False
+			# if filename in quote:
+			# 	for begin, end in quote[filename]:
+			# 		if begin <= position < next_lsb <= end:
+			# 			is_in_quote = True
+			# 			break
 					
-			if is_in_quote or in_quote:
-				lsb, rsb = next_lsb, next_rsb
-				continue
+			# if is_in_quote or in_quote:
+			# 	lsb, rsb = next_lsb, next_rsb
+			# 	continue
 
 			n_leading_whitespace = len(text) - len(text.lstrip())
 			text = text[n_leading_whitespace:]
@@ -139,8 +141,11 @@ def process_one_file( input_dir, output_dir, filename, solution, language='spa',
 				parsed = nlp.annotate(  text, properties = properties )
 
 				assert isinstance( parsed, dict ), 'CoreNLP does not return well-formed json'
-
+				unparsable = 0
+				total = 0
 				for sentence in parsed[u'sentences']:
+
+
 					# words = [ tokens[u'word'] for tokens in sentence[u'tokens'] ]
 					# offsets = [ ( tokens[u'characterOffsetBegin'] + position, \
 					#             tokens[u'characterOffsetEnd'] + position ) \
@@ -148,8 +153,11 @@ def process_one_file( input_dir, output_dir, filename, solution, language='spa',
 					extra = u''
 					words, offsets = [], []
 					for tokens in sentence[u'tokens']:
+
 						if language != 'cmn':
 							word = tokens[u'word']
+							if filename == 'APW_SPA_19980914.0097':
+								pp.pprint(tokens)
 							begin_offset = tokens[u'characterOffsetBegin']
 							# print tokens[u'word'], tokens[u'characterOffsetBegin'], tokens[u'characterOffsetEnd']
 							while True:
@@ -283,6 +291,8 @@ def process_all_files( input_dir, output_dir, solution, language='spa', sentence
 	n_fail = 0
 	files = os.listdir( input_dir )
 	for filename in files:
+		if 'APW_SPA_19980914.0097' not in filename:
+			continue
 		full_name = os.path.join( input_dir, filename )
 		if os.path.isdir( full_name ):
 			n_fail += process_all_files( full_name, output_dir, solution, language, sentence_only )
@@ -313,6 +323,9 @@ if __name__ == '__main__':
 		root = tree.getroot()
 		file_name = os.path.basename(filename)[:-8]
 		entities = root.findall('entities')[0]
+		
+		if file_name != 'APW_SPA_19980914.0097':
+			continue
 		logger.info(file_name)
 		for entity in entities:
 			ent_type = entity.attrib['type']

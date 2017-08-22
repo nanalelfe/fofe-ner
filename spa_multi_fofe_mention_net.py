@@ -17,7 +17,7 @@ logger = logging.getLogger( __name__ )
 
 RICH_N_LABELS = 10
 LIGHT_N_LABELS = 11
-KBP_N_LABELS = 10
+KBP_N_LABELS = 5
 
 ########################################################################
 

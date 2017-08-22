@@ -259,7 +259,7 @@ if __name__ == '__main__':
 
     RICH_N_LABELS = 10
     LIGHT_N_LABELS = 11
-    KBP_N_LABELS = 10
+    KBP_N_LABELS = 5
 
     # there are 2 sets of vocabulary, case-insensitive and case sensitive
     nt = 0
@@ -305,14 +305,14 @@ if __name__ == '__main__':
                 enumerate( 
                     imap(
                         lambda x: x[:4], 
-                        LoadED( args.kbp_train_datapath )
+                        LoadED( args.kbp_train_datapath, language='spa' )
                     ) 
                 ) 
             )
         ),
         imap( 
             lambda x: x[:4],
-            LoadED(args.kbp_valid_datapath)
+            LoadED(args.kbp_valid_datapath, language='spa')
         ) 
     ) 
 
@@ -368,7 +368,7 @@ if __name__ == '__main__':
     kbp_source = imap( lambda x: x[1],
                ifilter( lambda x : x[0] % 10 >= 9,
                enumerate( imap( lambda x: x[:4], 
-                                LoadED( args.kbp_valid_datapath ) ) ) ) )
+                                LoadED( args.kbp_valid_datapath, language='spa' ) ) ) ) )
 
     # ----------------------------------------------------------------------------------
 
@@ -648,7 +648,7 @@ if __name__ == '__main__':
             source = imap( lambda x: x[1],
                            ifilter( lambda x : x[0] % 10 >= 9,
                            enumerate( imap( lambda x: x[:4], 
-                                            LoadED( args.kbp_valid_datapath ) ) ) ) )
+                                            LoadED( args.kbp_valid_datapath , language='spa' ) ) ) ) )
 
             if n_epoch >= config.max_iter / 2:
                 pp = [ p for p in PredictionParser1( # KBP2015(  data_path + '/ed-eng-eval' ), 
@@ -727,7 +727,7 @@ if __name__ == '__main__':
             source = imap( lambda x: x[1],
                            ifilter( lambda x : x[0] % 10 >= 9,
                            enumerate( imap( lambda x: x[:4], 
-                                            LoadED( args.kbp_valid_datapath ) ) ) ) )
+                                            LoadED( args.kbp_valid_datapath, language='spa' ) ) ) ) )
                 
 
             pp = [ p for p in PredictionParser1(source, 
