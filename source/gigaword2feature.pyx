@@ -593,7 +593,6 @@ cdef class vocabulary( object ):
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def char_fofe_of_phrase( self, phrase ):
-        logger.info("Phrase: " + str(phrase))
         cdef int i, n = len(phrase)
         fofe = []
         for w in phrase:
@@ -1245,7 +1244,8 @@ class batch_constructor:
             # character-level fofe of focus word(s)
             if feature_choice & 64 > 0:
                 logger.info(sentence.sentence[begin_idx:end_idx])
-
+                for w in sentence.sentence[begin_idx:end_idx]:
+                    logger.info(w)
                 left_c, right_c = self.numericizer1 \
                                       .char_fofe_of_phrase( sentence.sentence[begin_idx:end_idx] )
                 
