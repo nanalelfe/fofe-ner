@@ -181,8 +181,7 @@ def LoadED( rspecifier, language = 'eng' ):
                 # if language == 'eng':
                 #     for i,w in enumerate( sent ):
                 #         sent[i] = u''.join( c if 0 <= ord(c) < 128 else chr(0) for c in list(w) )
-                for w in sent:
-                    logger.info(w)
+                
                 yield sent, boe, eoe, target, mids, spelling
 
 
