@@ -489,7 +489,9 @@ cdef class vocabulary( object ):
         # iterate through the wordlist (each line contains only 1 word)
         with codecs.open( filename ) as word_file:
             for line in word_file:
+                logger.info(line)
                 word = line.strip().split()[0]
+
                 # assign an index to the word, based on its position in the file list
                 idx = len(self.word2idx)
                 self.word2idx[word] = idx
@@ -1245,9 +1247,9 @@ class batch_constructor:
             if feature_choice & 64 > 0:
                 x = 'Méjico'
                 logger.info(sentence.sentence[begin_idx:end_idx])
-                for w in sentence.sentence[begin_idx:end_idx]:
-                    logger.info(w)
-                    logger.info(x)
+                # for w in sentence.sentence[begin_idx:end_idx]:
+                #     logger.info(w)
+                #     logger.info(x)
                 left_c, right_c = self.numericizer1 \
                                       .char_fofe_of_phrase( sentence.sentence[begin_idx:end_idx] )
                 
