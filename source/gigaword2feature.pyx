@@ -568,8 +568,7 @@ cdef class vocabulary( object ):
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def char_fofe_of_word( self, word ):
-        if word == u'próximo' or word == u'proximo':
-            logger.info("")
+        logger.info(word)
         if len( self.word2fofe ) > 2 * len(self.word2idx):
             self.word2fofe = {}
         if word in self.word2fofe:
@@ -577,6 +576,8 @@ cdef class vocabulary( object ):
         else:
             lfofe, coeff = numpy.zeros((128,), numpy.float32), 1
             for c in reversed(word):
+                logger.info(c)
+                logger.info(ord(c))
                 i = ord(c) if 0 < ord(c) < 128 else 0
                 lfofe[i] += numpy.float32(coeff)
                 coeff *= self.alpha
