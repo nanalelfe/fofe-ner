@@ -1634,6 +1634,8 @@ def PredictionParser1( sample_generator, result, ner_max_length,
     # @xmb 20160717
     lines, cnt = fp.readlines(), 0
 
+    logger.info(lines)
+
     while True:
         s, boe, eoe, cls = sg.next()
         actual = set( zip(boe, eoe, cls) )
@@ -1648,6 +1650,7 @@ def PredictionParser1( sample_generator, result, ner_max_length,
                 if j - i <= ner_max_length:
                     # @xmb 20160717
                     # line = fp.readline()
+
                     line = lines[cnt]
                     cnt += 1
 

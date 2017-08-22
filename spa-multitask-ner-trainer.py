@@ -751,8 +751,8 @@ if __name__ == '__main__':
 
 
             pp = [ p for p in PredictionParser1(source, 
-                                                    curr_task.predicted_files[1], 
-                                                    config.n_window, batch_num = curr_task.batch_num ) ]
+                                                curr_task.predicted_files[1], 
+                                                config.n_window, batch_num = curr_task.batch_num ) ]
 
         _, _, test_fb1, info = evaluation1(pp, curr_task.best_threshold, curr_task.best_algorithm, True, batch_num = curr_task.batch_num)
         logger.info('batch_num ' + str(curr_task.batch_num) + ', validation:\n' + info)
