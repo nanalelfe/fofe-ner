@@ -2019,7 +2019,7 @@ def evaluation1( prediction_parser, threshold, algorithm,
                     'PER_NOM', 'ORG_NOM', 'GPE_NOM', 'LOC_NOM', 'FAC_NOM',
                     'O' ]
 
-    n_label_type = len(idx2ner)
+    n_label_type = len(idx2ner) - 1
 
     # each type maintains its own 'true-positive', 'false-positive' and 'false-negative' counts 
     true_positive, false_positive, false_negative = \
