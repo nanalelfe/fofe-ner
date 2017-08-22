@@ -158,7 +158,7 @@ def LoadED( rspecifier, language = 'eng' ):
                         'LOC_NOMINAL' : 5,
                         'FAC_NOMINAL' : 5,
                         'TITLE_NAME' : 5,
-                        'TITLE_NOMINAL' : 5
+                        'TITLE_NOMINAL' : 5 }
 
     if os.path.isfile( rspecifier ):
         with codecs.open( rspecifier, 'rb', 'utf8' ) as fp:
