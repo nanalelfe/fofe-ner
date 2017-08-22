@@ -689,7 +689,7 @@ cdef class processed_sentence:
 
         if language != 'cmn':
             for w in sentence:
-                logger.info(sentence)
+                logger.info(w)
                 # push_back() is equivalent of append()
                 # convert the non-ascii characters to something (hexadecimal?)
                 self.sentence.push_back( u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) )
