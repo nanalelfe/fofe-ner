@@ -255,7 +255,7 @@ def gazetteer( filename, mode = 'CoNLL2003' ):
 def KBP(filename, iflytek=None, language='eng'):
     generator = imap( lambda x: x[:4], LoadED( filename, language=language ) )
     if iflytek is not None:
-        generator = chain(generator, imap( lambda x: x[:4], LoadED( iflytek ) ))
+        generator = chain(generator, imap( lambda x: x[:4], LoadED( iflytek, language=language ) ))
     for item in generator:
         yield item
 
