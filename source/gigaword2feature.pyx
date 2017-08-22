@@ -967,7 +967,6 @@ class batch_constructor:
 
         # parser is a generator such as OntoNotes()
         for sentence, ner_begin, ner_end, ner_label in parser:
-            logger.info(sentence)
             ner_begin = numpy.asarray(ner_begin, dtype = numpy.int32)
             ner_end = numpy.asarray(ner_end, dtype = numpy.int32)
             ner_label = numpy.asarray(ner_label, dtype = numpy.int32)
