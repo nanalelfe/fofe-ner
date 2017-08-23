@@ -1243,8 +1243,10 @@ class batch_constructor:
                     nb += sentence_full[m.start()]
                     sentence_full.pop(m.start())
                 if int(nb) > 256:
-                    logger.info("PRINT HERE: " + nb)
-                sentence_full.insert(m.start(), chr(int(nb)))
+                    to_add = nb
+                else:
+                    to_add = chr(int(nb))
+                sentence_full.insert(m.start(), to_add)
 
                 sentence_full = ''.join(sentence_full)
                 m = re.search("\d\d\d", sentence_full)
