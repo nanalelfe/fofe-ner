@@ -278,6 +278,7 @@ if __name__ == '__main__':
     light_gazetteer = [set() for _ in xrange( LIGHT_N_LABELS )]
     kbp_gazetteer = [set() for _ in xrange( KBP_N_LABELS )]
 
+
     # ==================================================================================
     # ----------------------------------------------------------------------------------
     # Training set

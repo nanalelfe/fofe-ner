@@ -1202,11 +1202,14 @@ class batch_constructor:
             candidate.sort()
         n = len(candidate)
 
+        write_file = open("write_file.txt", 'w+', 'utf8' )
+
         for i in range( n ):
             # self.example is an array of example objects, sorted fragment id
             # example (sentence id, begin index, end index, label index, gazetteer)
             # 'candidate' contains sentence indices
             next_example = self.example[ candidate[i] ]
+
 
             # begin of fragment
             begin_idx = next_example.begin_idx
@@ -1218,6 +1221,8 @@ class batch_constructor:
             # 'sentence' is a processed_sentence object
             # the sentence of the fragment being evaluated
             sentence = self.sentence1[next_example.sentence_id]
+
+            fragment = sentence[begin_idx:end_idx]
 
             if self.language != 'cmn':
                 phrase = ' '.join( sentence.sentence[begin_idx:end_idx] )
@@ -1326,6 +1331,8 @@ class batch_constructor:
                                 conv_idx[k].resize( 128 )
 
                 # print 'i am right before yield statement, cnt = %d' % cnt
+
+                write_file.write(str(fragment) + " " + str(bow1))
 
                 # yield for every sentence segment:
                 yield   numpy.asarray( l1_values, dtype = numpy.float32 ),\
