@@ -697,7 +697,7 @@ cdef class processed_sentence:
                 # push_back() is equivalent of append()
                 # convert the non-ascii characters to something (hexadecimal?)
                 self.sentence.push_back( u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) )
-                self.sentence_full.push_back(u''.join( c for c in list(w) ).encode('utf-8'))
+                self.sentence_full.push_back(u''.join( c for c in list(w) ).decode('utf-8'))
 
             vocab = numericizer
             # populate the self.numeric vector 
