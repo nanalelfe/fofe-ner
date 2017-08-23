@@ -662,7 +662,7 @@ cdef class processed_sentence:
     cdef readonly vector[string] sentence
 
     # vector of strings 
-    sentence_full
+    cdef readonly vector[char*] sentence_full
 
     # left_context_idx and left_context_data form a sparse tensor 
     # FOFE encoding indices for left context
