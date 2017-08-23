@@ -1321,6 +1321,8 @@ class batch_constructor:
                 sentence.insert_bow( begin_idx, end_idx, cnt, bow2 )
 
             cnt += 1
+            write_file.write(str(fragment) + " " + str(cnt))
+
             if cnt % n_batch_size == 0 or (i + 1) == len(candidate):
                 with nogil:
                     if feature_choice & 512 > 0:
@@ -1331,8 +1333,6 @@ class batch_constructor:
                                 conv_idx[k].resize( 128 )
 
                 # print 'i am right before yield statement, cnt = %d' % cnt
-
-                write_file.write(str(fragment) + " " + str(bow1))
 
                 # yield for every sentence segment:
                 yield   numpy.asarray( l1_values, dtype = numpy.float32 ),\
