@@ -16,6 +16,9 @@ from libcpp.vector cimport vector
 from libcpp.map cimport map as ordered_map
 from cython.operator cimport dereference, preincrement
 import re
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 cdef extern from "<algorithm>" namespace "std" nogil:
     void reverse[Iter] ( Iter first, Iter last ) 
@@ -1213,7 +1216,7 @@ class batch_constructor:
             candidate.sort()
         n = len(candidate)
 
-        write_file = codecs.open("write_file.txt", 'wb', 'utf8' )
+        write_file = codecs.open("write_file.txt", 'wb', 'utf-8' )
 
         for i in range( n ):
             # self.example is an array of example objects, sorted fragment id
