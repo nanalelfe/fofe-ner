@@ -1347,7 +1347,7 @@ class batch_constructor:
             write_file.write(str(fragment_part) + '\n')
             write_file.write(str(sentence_full)+ '\n')
             write_file.write(str(to_print)+ '\n')
-            write_file.write('------------------------------------------------------------')
+            write_file.write('------------------------------------------------------------\n')
 
             if cnt % n_batch_size == 0 or (i + 1) == len(candidate):
                 with nogil:
