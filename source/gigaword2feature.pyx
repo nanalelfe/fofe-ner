@@ -1242,6 +1242,8 @@ class batch_constructor:
                 for i in range(3):
                     nb += sentence_full[m.start()]
                     sentence_full.pop(m.start())
+                if int(nb) > 256:
+                    logger.info("PRINT HERE: " + nb)
                 sentence_full.insert(m.start(), chr(int(nb)))
 
                 sentence_full = ''.join(sentence_full)
