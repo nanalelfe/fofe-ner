@@ -15,6 +15,7 @@ from libcpp.string cimport string
 from libcpp.vector cimport vector
 from libcpp.map cimport map as ordered_map
 from cython.operator cimport dereference, preincrement
+import re
 
 cdef extern from "<algorithm>" namespace "std" nogil:
     void reverse[Iter] ( Iter first, Iter last ) 
@@ -1234,6 +1235,20 @@ class batch_constructor:
 
             fragment_part = ' '.join( sentence.sentence[begin_idx:end_idx] )
             sentence_full = ' '.join( sentence.sentence_full)
+            m = re.search("\d\d\d", sentence_full)
+            while m is not None:
+                n = ''
+                sentence_full = list(sentence_full)
+                for i in range(3):
+                    n += sentence_full[m.start()]
+                    sentence_full.pop(m.start())
+                sentence_full.insert(m.start(), chr(int(n)))
+
+                sentence_full = ''.join(sentence_full)
+                m = re.search("\d\d\d", sentence_full)
+
+
+
             to_print = []
             for i in range(begin_idx, end_idx):
                 to_print.append(sentence.numeric[i])
