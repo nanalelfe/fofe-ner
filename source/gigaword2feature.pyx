@@ -1222,7 +1222,7 @@ class batch_constructor:
             # the sentence of the fragment being evaluated
             sentence = self.sentence1[next_example.sentence_id]
 
-            fragment = sentence[begin_idx:end_idx]
+            fragment = ' '.join( sentence.sentence[begin_idx:end_idx] )
 
             if self.language != 'cmn':
                 phrase = ' '.join( sentence.sentence[begin_idx:end_idx] )
