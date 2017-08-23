@@ -1254,9 +1254,6 @@ class batch_constructor:
                 sentence_full = ''.join(sentence_full)
                 m = re.search("\d\d\d", sentence_full)
 
-            logger.info(sentence_full)
-
-
             to_print = []
             for i in range(begin_idx, end_idx):
                 to_print.append(sentence.numeric[i])
