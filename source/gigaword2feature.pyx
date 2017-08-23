@@ -1342,7 +1342,7 @@ class batch_constructor:
             #     x = numericizer1.word2idx[fragment]
             # else:
             #     x = 99999
-            write_file.write(str(fragment) + '\n')
+            write_file.write(str(fragment_part) + '\n')
             write_file.write(str(sentence_full)+ '\n')
             write_file.write(str(to_print)+ '\n')
             write_file.write('------------------------------------------------------------')
