@@ -1237,10 +1237,10 @@ class batch_constructor:
             sentence_full = ' '.join( sentence.sentence_full)
             m = re.search("\d\d\d", sentence_full)
             while m is not None:
-                nb = []
+                nb = ''
                 sentence_full = list(sentence_full)
                 for i in range(3):
-                    n.append(sentence_full[m.start()])
+                    nb += sentence_full[m.start()]
                     sentence_full.pop(m.start())
                 sentence_full.insert(m.start(), chr(int(nb)))
 
