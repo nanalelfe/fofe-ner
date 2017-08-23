@@ -655,8 +655,13 @@ cdef class processed_sentence:
     """
     cdef public vector[int] numeric
 
+    cdef public vector[int] numeric_full
+
     # vector of strings 
     cdef readonly vector[string] sentence
+
+    # vector of strings 
+    cdef readonly vector[string] sentence_full
 
     # left_context_idx and left_context_data form a sparse tensor 
     # FOFE encoding indices for left context
@@ -691,12 +696,13 @@ cdef class processed_sentence:
             for w in sentence:
                 # push_back() is equivalent of append()
                 # convert the non-ascii characters to something (hexadecimal?)
-                
-                # self.sentence.push_back( u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) )
-                self.sentence.push_back( u''.join( c for c in list(w) ) )
+                self.sentence.push_back( u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) )
+                self.sentence_full.push_back(u''.join( c for c in list(w) ))
+
             vocab = numericizer
             # populate the self.numeric vector 
-            vocab.sentence2indices( self.sentence, self.numeric )
+            vocab.sentence2indices(self.sentence, self.numeric )
+            vocab.sentence2indices(self.sentence_full, self.numeric_full)
         else:
             self.numeric = numericizer.sentence2indices( sentence )
 
@@ -1224,7 +1230,8 @@ class batch_constructor:
             # the sentence of the fragment being evaluated
             sentence = self.sentence1[next_example.sentence_id]
 
-            fragment = ' '.join( sentence.sentence[begin_idx:end_idx] )
+            fragment_part = ' '.join( sentence.sentence[begin_idx:end_idx] )
+            sentence_full = ' '.join( sentence.sentence_full)
             to_print = []
             for i in range(begin_idx, end_idx):
                 to_print.append(sentence.numeric[i])
@@ -1335,7 +1342,10 @@ class batch_constructor:
             #     x = numericizer1.word2idx[fragment]
             # else:
             #     x = 99999
-            write_file.write(str(fragment) + " " + str(to_print) + '\n')
+            write_file.write(str(fragment) + '\n')
+            write_file.write(str(sentence_full)+ '\n')
+            write_file.write(str(to_print)+ '\n')
+            write_file.write('------------------------------------------------------------')
 
             if cnt % n_batch_size == 0 or (i + 1) == len(candidate):
                 with nogil:
