@@ -1251,7 +1251,7 @@ class batch_constructor:
                     to_add = chr(int(nb))
                 sentence_full.insert(m.start(), to_add)
 
-                sentence_full = u''.join(sentence_full.decode('utf-8'))
+                sentence_full = ''.join(sentence_full).decode('utf-8')
                 m = re.search("\d\d\d", sentence_full)
 
 
