@@ -662,7 +662,7 @@ cdef class processed_sentence:
     cdef readonly vector[string] sentence
 
     # vector of strings 
-    cdef readonly vector[char*] sentence_full
+    cdef readonly vector[string] sentence_full
 
     # left_context_idx and left_context_data form a sparse tensor 
     # FOFE encoding indices for left context
@@ -699,7 +699,7 @@ cdef class processed_sentence:
                 # convert the non-ascii characters to something (hexadecimal?)
                 self.sentence.push_back( u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) )
                 # logger.info(w)
-                self.sentence_full.push_back(w)
+                self.sentence.push_back( u''.join( c if ord(c) < 128 else str(ord(c)) for c in list(w) ) )
 
             vocab = numericizer
             # populate the self.numeric vector 
