@@ -1251,9 +1251,10 @@ class batch_constructor:
                     to_add = chr(int(nb))
                 sentence_full.insert(m.start(), to_add)
 
-                sentence_full = ''.join(sentence_full).decode('utf-8')
+                sentence_full = ''.join(sentence_full)
                 m = re.search("\d\d\d", sentence_full)
 
+            logger.info(sentence_full)
 
 
             to_print = []
@@ -1367,7 +1368,6 @@ class batch_constructor:
             # else:
             #     x = 99999
             write_file.write(str(fragment_part) + '\n')
-            write_file.write(sentence_full + u'\n')
             write_file.write(str(to_print)+ '\n')
             write_file.write('------------------------------------------------------------\n')
 
