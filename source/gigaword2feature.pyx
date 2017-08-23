@@ -1321,7 +1321,7 @@ class batch_constructor:
                 sentence.insert_bow( begin_idx, end_idx, cnt, bow2 )
 
             cnt += 1
-            write_file.write(str(fragment) + " " + str(cnt))
+            write_file.write(str(fragment) + " " + str(cnt) + '\n')
 
             if cnt % n_batch_size == 0 or (i + 1) == len(candidate):
                 with nogil:
