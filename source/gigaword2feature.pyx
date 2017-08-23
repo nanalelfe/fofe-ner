@@ -1223,6 +1223,9 @@ class batch_constructor:
             sentence = self.sentence1[next_example.sentence_id]
 
             fragment = ' '.join( sentence.sentence[begin_idx:end_idx] )
+            to_print = []
+            for i in range(begin_idx, end_idx):
+                to_print.append(sentence.numeric[i])
 
             if self.language != 'cmn':
                 phrase = ' '.join( sentence.sentence[begin_idx:end_idx] )
@@ -1330,7 +1333,7 @@ class batch_constructor:
             #     x = numericizer1.word2idx[fragment]
             # else:
             #     x = 99999
-            write_file.write(str(fragment) + " " + str(bow1[cnt * 2]) + '\n')
+            write_file.write(str(fragment) + " " + str(to_print) + '\n')
 
             if cnt % n_batch_size == 0 or (i + 1) == len(candidate):
                 with nogil:
