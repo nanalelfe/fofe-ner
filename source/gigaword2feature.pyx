@@ -1213,7 +1213,7 @@ class batch_constructor:
             candidate.sort()
         n = len(candidate)
 
-        write_file = codecs.open("write_file.txt", 'w+', 'utf8' )
+        write_file = codecs.open("write_file.txt", 'wb', 'utf8' )
 
         for i in range( n ):
             # self.example is an array of example objects, sorted fragment id
