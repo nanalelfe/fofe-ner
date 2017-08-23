@@ -1320,17 +1320,17 @@ class batch_constructor:
             if feature_choice & 32 > 0:
                 sentence.insert_bow( begin_idx, end_idx, cnt, bow2 )
 
-            numericizer1 = vocabulary("/eecs/research/asr/mingbin/cleaner/word2vec/gigaword/spa-gw" + '-case-insensitive.wordlist',
-                             0.8, False,
-                              n_label_type=0)
+            # numericizer1 = vocabulary("/eecs/research/asr/mingbin/cleaner/word2vec/gigaword/spa-gw" + '-case-insensitive.wordlist',
+            #                  0.8, False,
+            #                   n_label_type=0)
 
             cnt += 1
 
-            if fragment in numericizer1.word2idx:
-                x = numericizer1.word2idx[fragment]
-            else:
-                x = 99999
-            write_file.write(str(fragment) + " " + str(x) + '\n')
+            # if fragment in numericizer1.word2idx:
+            #     x = numericizer1.word2idx[fragment]
+            # else:
+            #     x = 99999
+            write_file.write(str(fragment) + " " + str(bow1[cnt * 2]) + '\n')
 
             if cnt % n_batch_size == 0 or (i + 1) == len(candidate):
                 with nogil:
