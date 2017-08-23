@@ -1325,7 +1325,13 @@ class batch_constructor:
                               n_label_type=0)
 
             cnt += 1
-            write_file.write(str(fragment) + " " + str(numericizer1.word2idx[fragment]) + '\n')
+
+            if fragment in numericizer1.word2idx:
+                x = numericizer1.word2idx[fragment]
+            else:
+                x = 99999
+
+            write_file.write(str(fragment) + " " + str(x) + '\n')
 
             if cnt % n_batch_size == 0 or (i + 1) == len(candidate):
                 with nogil:
