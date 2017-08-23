@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Author      : Mingbin Xu (mingbin.xu@gmail.com)
 Filename    : gigaword2feature.pyx
