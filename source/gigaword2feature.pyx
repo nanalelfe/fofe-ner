@@ -1216,7 +1216,7 @@ class batch_constructor:
             candidate.sort()
         n = len(candidate)
 
-        write_file = codecs.open("write_file.txt", 'w', 'utf-8' )
+        write_file = codecs.open("write_file.txt", 'w')
 
         for i in range( n ):
             # self.example is an array of example objects, sorted fragment id
@@ -1365,7 +1365,7 @@ class batch_constructor:
             # else:
             #     x = 99999
             write_file.write(str(fragment_part) + '\n')
-            write_file.write(sentence_full.decode("UTF-8") + '\n')
+            write_file.write(sentence_full + '\n')
             write_file.write(str(to_print)+ '\n')
             write_file.write('------------------------------------------------------------\n')
 
