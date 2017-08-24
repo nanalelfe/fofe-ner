@@ -1266,7 +1266,7 @@ class batch_constructor:
 
             whole_print = []
             for i in range(begin_idx, end_idx):
-                whole_print.append(numeric_whole[i])
+                whole_print.append(sentence.numeric_whole[i])
 
             #=====================================================================
 
