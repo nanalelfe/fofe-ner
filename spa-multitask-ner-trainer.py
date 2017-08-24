@@ -335,6 +335,8 @@ if __name__ == '__main__':
                               n_label_type = LIGHT_N_LABELS,
                               is2ndPass=args.is_2nd_pass)
 
+    logger.info('============== train KBP batch constructor')
+
     train_kbp = batch_constructor( 
                     kbp_source, 
                     numericizer1, 
