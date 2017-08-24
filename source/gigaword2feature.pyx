@@ -40,7 +40,7 @@ from LinkingUtil import LoadED
 logger = logging.getLogger()
 
 numeric_full = {}
-sentence_whole = {}
+sentence_whole = []
 ################################################################################
 
 
