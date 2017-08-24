@@ -259,7 +259,7 @@ if __name__ == '__main__':
 
     RICH_N_LABELS = 10
     LIGHT_N_LABELS = 11
-    KBP_N_LABELS = 5
+    KBP_N_LABELS = 10
 
     # there are 2 sets of vocabulary, case-insensitive and case sensitive
     nt = 0
