@@ -39,8 +39,7 @@ from LinkingUtil import LoadED
 
 logger = logging.getLogger()
 
-numeric_full = {}
-sentence_whole = []
+
 ################################################################################
 
 
@@ -669,6 +668,8 @@ cdef class processed_sentence:
     # vector of strings 
     cdef readonly vector[string] sentence_full
 
+    cdef readonly vector[string] sentence_whole
+
     # left_context_idx and left_context_data form a sparse tensor 
     # FOFE encoding indices for left context
     cdef readonly vector[vector[int]] left_context_idx
@@ -704,13 +705,13 @@ cdef class processed_sentence:
                 self.sentence.push_back( u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) )
                 # logger.info(w)
                 self.sentence_full.push_back( u''.join( c if ord(c) < 128 else unicode(str(ord(c))) for c in list(w) ) )
-                sentence_whole.append(u''.join(c for c in list(w)))
+                self.sentence_whole.push_back(u''.join(c for c in list(w)))
                 
 
             vocab = numericizer
             # populate the self.numeric vector 
             vocab.sentence2indices(self.sentence, self.numeric )
-            vocab.sentence2indices(sentence_whole, self.numeric_whole)
+            vocab.sentence2indices(self.sentence_whole, self.numeric_whole)
         else:
             self.numeric = numericizer.sentence2indices( sentence )
 
@@ -1242,8 +1243,7 @@ class batch_constructor:
 
             fragment_part = ' '.join( sentence.sentence[begin_idx:end_idx] )
             sentence_full = u' '.join(sentence.sentence_full[begin_idx:end_idx])
-            logger.info(sentence_full)
-            logger.info(sentence_full)
+
             m = re.search(u"\d\d\d", sentence_full)
             while m is not None:
                 nb = u''
@@ -1381,7 +1381,6 @@ class batch_constructor:
             write_file.write(str(to_print)+ '\n')
             write_file.write(str(whole_print) + '\n')
             write_file.write('------------------------------------------------------------\n')
-            write_file.close()
 
             if cnt % n_batch_size == 0 or (i + 1) == len(candidate):
                 with nogil:
@@ -1700,8 +1699,6 @@ def PredictionParser1( sample_generator, result, ner_max_length,
 
     # @xmb 20160717
     lines, cnt = fp.readlines(), 0
-
-    logger.info(lines)
 
     while True:
         s, boe, eoe, cls = sg.next()

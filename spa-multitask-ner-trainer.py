@@ -1,4 +1,6 @@
-#!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
+#!/home/chwang/anaconda2/envs/tensorflow/bin/python
+
+#/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 
 import matplotlib
 matplotlib.use('Agg')
@@ -231,7 +233,8 @@ if __name__ == '__main__':
 
     ################################################################################
 
-    from spa_multi_fofe_mention_net import *
+    # from spa_multi_fofe_mention_net import *
+    from fofe_mention_net import *
     # from fofe_mention_net import *
     config = mention_config(args)
     from pprint import pprint
@@ -252,7 +255,7 @@ if __name__ == '__main__':
     ################################################################################
 
     # mention_net = multi_fofe_mention_net(config, args.gpu_fraction)
-    mention_net = multi_fofe_mention_net(config, args.gpu_fraction)
+    mention_net = fofe_mention_net(config, args.gpu_fraction)
     mention_net.tofile('./multitask-model/' + args.model)
 
     ################################################################################
@@ -335,7 +338,7 @@ if __name__ == '__main__':
                               n_label_type = LIGHT_N_LABELS,
                               is2ndPass=args.is_2nd_pass)
 
-    logger.info('============== train KBP batch constructor')
+    logger.info('============== train KBP batch constructor ===============')
 
     train_kbp = batch_constructor( 
                     kbp_source, 
@@ -519,7 +522,7 @@ if __name__ == '__main__':
             logger.info("Epoch " + str(n_epoch) + ", random: " + str(pick))
             f_num = 256
 
-        pick = random.choice([0, 1, 2])
+        # pick = random.choice([0, 1, 2])
 
         if n_epoch + 1 == config.max_iter:
             pick = 2
@@ -550,7 +553,8 @@ if __name__ == '__main__':
                             ):
                 
                
-                c = mention_net.train( example, curr_task)
+                # c = mention_net.train( example, curr_task)
+                c = mention_net.train( example)
 
                 cost += c * len(target(example))
                 cnt += len(target(example))
@@ -596,7 +600,8 @@ if __name__ == '__main__':
                 f_num if config.feature_choice & (1 << 9) > 0 else 1024,
                 False, 1, 1, config.feature_choice):
 
-            c, pi, pv = mention_net.eval(example, curr_task)
+            # c, pi, pv = mention_net.eval(example, curr_task)
+            c, pi, pv = mention_net.eval(example)
 
             cost += c * len(target(example))
             cnt += len(target(example))
@@ -622,7 +627,8 @@ if __name__ == '__main__':
                 f_num if config.feature_choice & (1 << 9) > 0 else 1024,
                 False, 1, 1, config.feature_choice):
 
-            c, pi, pv = mention_net.eval(example, curr_task)
+            # c, pi, pv = mention_net.eval(example, curr_task)
+            c, pi, pv = mention_net.eval(example)
 
             cost += c * len(target(example))
             cnt += len(target(example))

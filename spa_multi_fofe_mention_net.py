@@ -1,4 +1,6 @@
-#!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
+#!/home/chwang/anaconda2/envs/tensorflow/bin/python
+
+#/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 
 import numpy, logging, time, copy, os, cPickle
 
@@ -17,7 +19,7 @@ logger = logging.getLogger( __name__ )
 
 RICH_N_LABELS = 10
 LIGHT_N_LABELS = 11
-KBP_N_LABELS = 5
+KBP_N_LABELS = 10
 
 ########################################################################
 
