@@ -1237,10 +1237,10 @@ class batch_constructor:
             sentence = self.sentence1[next_example.sentence_id]
 
             fragment_part = ' '.join( sentence.sentence[begin_idx:end_idx] )
-            sentence_full = u' '.join( sentence.sentence_full)
+            sentence_full = u' '.join(sentence.sentence_full)
             logger.info(sentence_full)
             logger.info(sentence_full)
-            m = re.search("\d\d\d", sentence_full)
+            m = re.search(u"\d\d\d", sentence_full)
             while m is not None:
                 nb = u''
                 sentence_full = list(sentence_full)
@@ -1250,11 +1250,11 @@ class batch_constructor:
                 if int(nb) > 256:
                     to_add = nb
                 else:
-                    to_add = chr(int(nb))
+                    to_add = unichr(int(nb))
                 sentence_full.insert(m.start(), to_add)
 
                 sentence_full = u''.join(sentence_full)
-                m = re.search("\d\d\d", sentence_full)
+                m = re.search(u"\d\d\d", sentence_full)
 
             to_print = []
             for i in range(begin_idx, end_idx):
@@ -1367,8 +1367,7 @@ class batch_constructor:
             # else:
             #     x = 99999
             write_file.write(str(fragment_part) + '\n')
-            write_file.write(sentence_full)
-            write_file.write('\n')
+            write_file.write(sentence_full + u'\n')
             write_file.write(str(to_print)+ '\n')
             write_file.write('------------------------------------------------------------\n')
 
