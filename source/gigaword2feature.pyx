@@ -1237,7 +1237,7 @@ class batch_constructor:
             sentence = self.sentence1[next_example.sentence_id]
 
             fragment_part = ' '.join( sentence.sentence[begin_idx:end_idx] )
-            sentence_full = u' '.join(sentence.sentence_full)
+            sentence_full = u' '.join(sentence.sentence_full[begin_idx:end_idx])
             logger.info(sentence_full)
             logger.info(sentence_full)
             m = re.search(u"\d\d\d", sentence_full)
