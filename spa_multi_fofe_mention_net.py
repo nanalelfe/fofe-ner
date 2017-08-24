@@ -1,4 +1,3 @@
-
 #!/eecs/research/asr/mingbin/python-workspace/hopeless/bin/python
 
 import numpy, logging, time, copy, os, cPickle

@@ -704,6 +704,7 @@ cdef class processed_sentence:
                 self.sentence.push_back( u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) )
                 # logger.info(w)
                 self.sentence_full.push_back( u''.join( c if ord(c) < 128 else unicode(str(ord(c))) for c in list(w) ) )
+                logger.info("I am here\n")
                 sentence_whole.append(u''.join(c for c in list(w)))
 
 
