@@ -703,7 +703,7 @@ cdef class processed_sentence:
                 # convert the non-ascii characters to something (hexadecimal?)
                 self.sentence.push_back( u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) )
                 # logger.info(w)
-                self.sentence_full.push_back( u''.join( c if ord(c) < 128 else str(ord(c)) for c in list(w) ) )
+                self.sentence_full.push_back( u''.join( c if ord(c) < 128 else unicode(str(ord(c))) for c in list(w) ) )
 
             vocab = numericizer
             # populate the self.numeric vector 
@@ -1237,10 +1237,12 @@ class batch_constructor:
             sentence = self.sentence1[next_example.sentence_id]
 
             fragment_part = ' '.join( sentence.sentence[begin_idx:end_idx] )
-            sentence_full = ' '.join( sentence.sentence_full)
+            sentence_full = u' '.join( sentence.sentence_full)
+            logger.info(sentence_full)
+            logger.info(sentence_full)
             m = re.search("\d\d\d", sentence_full)
             while m is not None:
-                nb = ''
+                nb = u''
                 sentence_full = list(sentence_full)
                 for i in range(3):
                     nb += sentence_full[m.start()]
@@ -1251,7 +1253,7 @@ class batch_constructor:
                     to_add = chr(int(nb))
                 sentence_full.insert(m.start(), to_add)
 
-                sentence_full = ''.join(sentence_full)
+                sentence_full = u''.join(sentence_full)
                 m = re.search("\d\d\d", sentence_full)
 
             to_print = []
@@ -1365,7 +1367,8 @@ class batch_constructor:
             # else:
             #     x = 99999
             write_file.write(str(fragment_part) + '\n')
-            write_file.write(sentence_full + '\n')
+            write_file.write(sentence_full)
+            write_file.write('\n')
             write_file.write(str(to_print)+ '\n')
             write_file.write('------------------------------------------------------------\n')
 
