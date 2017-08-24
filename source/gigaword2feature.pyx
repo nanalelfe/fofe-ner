@@ -39,7 +39,8 @@ from LinkingUtil import LoadED
 
 logger = logging.getLogger()
 
-
+numeric_full = {}
+sentence_whole = {}
 ################################################################################
 
 
@@ -660,7 +661,7 @@ cdef class processed_sentence:
     """
     cdef public vector[int] numeric
 
-    cdef public vector[int] numeric_full
+    cdef public vector[int] numeric_whole
 
     # vector of strings 
     cdef readonly vector[string] sentence
@@ -700,15 +701,16 @@ cdef class processed_sentence:
         if language != 'cmn':
             for w in sentence:
                 # push_back() is equivalent of append()
-                # convert the non-ascii characters to something (hexadecimal?)
                 self.sentence.push_back( u''.join( c if ord(c) < 128 else chr(ord(c) % 32) for c in list(w) ) )
                 # logger.info(w)
                 self.sentence_full.push_back( u''.join( c if ord(c) < 128 else unicode(str(ord(c))) for c in list(w) ) )
+                sentence_whole.append(u''.join(c for c in list(w)))
+
 
             vocab = numericizer
             # populate the self.numeric vector 
             vocab.sentence2indices(self.sentence, self.numeric )
-            vocab.sentence2indices(self.sentence_full, self.numeric_full)
+            vocab.sentence2indices(sentence_whole, self.numeric_whole)
         else:
             self.numeric = numericizer.sentence2indices( sentence )
 
@@ -1236,6 +1238,8 @@ class batch_constructor:
             # the sentence of the fragment being evaluated
             sentence = self.sentence1[next_example.sentence_id]
 
+            #=====================================================================
+
             fragment_part = ' '.join( sentence.sentence[begin_idx:end_idx] )
             sentence_full = u' '.join(sentence.sentence_full[begin_idx:end_idx])
             logger.info(sentence_full)
@@ -1259,6 +1263,12 @@ class batch_constructor:
             to_print = []
             for i in range(begin_idx, end_idx):
                 to_print.append(sentence.numeric[i])
+
+            whole_print = []
+            for i in range(begin_idx, end_idx):
+                whole_print.append(numeric_whole[i])
+
+            #=====================================================================
 
             if self.language != 'cmn':
                 phrase = ' '.join( sentence.sentence[begin_idx:end_idx] )
@@ -1369,7 +1379,9 @@ class batch_constructor:
             write_file.write(str(fragment_part) + '\n')
             write_file.write(sentence_full + u'\n')
             write_file.write(str(to_print)+ '\n')
+            write_file.write(str(whole_print) + '\n')
             write_file.write('------------------------------------------------------------\n')
+            write_file.close()
 
             if cnt % n_batch_size == 0 or (i + 1) == len(candidate):
                 with nogil:
