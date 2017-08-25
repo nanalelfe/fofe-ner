@@ -235,7 +235,6 @@ if __name__ == '__main__':
 
     # from spa_multi_fofe_mention_net import *
     from fofe_mention_net import *
-    # from fofe_mention_net import *
     config = mention_config(args)
     from pprint import pprint
     logger.info("Here is config: ")
@@ -538,7 +537,7 @@ if __name__ == '__main__':
                           int(len(curr_task.batch_constructors[0].disjoint) * config.disjoint_rate))
 
         cost, cnt = 0, 0
-
+        it = 1
         if curr_task.batch_num == 2:
             mini_batch_1 = curr_task.batch_constructors[0].mini_batch_multi_thread(
                                     config.n_batch_size,
@@ -552,7 +551,6 @@ if __name__ == '__main__':
                                 mini_batch_1
                             ):
                 
-               
                 # c = mention_net.train( example, curr_task)
                 c = mention_net.train( example)
 

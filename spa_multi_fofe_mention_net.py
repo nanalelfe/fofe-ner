@@ -659,8 +659,8 @@ class multi_fofe_mention_net( object ):
             # all possible features
             feature_list = [ [lwp1, rwp1], [lwp2, rwp2], [bowp1],
                              [lwp3, rwp3], [lwp4, rwp4], [bowp2],
-                             [lcp, rcp], [lip, rip], [ner_projection_rich, ner_projection_light, ner_projection_kbp],
-                             char_conv, [lbcp, rbcp] ]
+                             [lcp, rcp], [lip, rip], [ner_projection_rich,
+                             ner_projection_light, ner_projection_kbp], char_conv, [lbcp, rbcp] ]
 
             # divide up the used and unused features
             used, not_used = [], [] 

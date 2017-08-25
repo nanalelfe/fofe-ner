@@ -706,7 +706,7 @@ cdef class processed_sentence:
                 # logger.info(w)
                 self.sentence_full.push_back( u''.join( c if ord(c) < 128 else unicode(str(ord(c))) for c in list(w) ) )
                 self.sentence_whole.push_back(u''.join(c for c in list(w)))
-                
+
 
             vocab = numericizer
             # populate the self.numeric vector 
@@ -846,7 +846,7 @@ cdef class processed_sentence:
         with nogil:
             for i in range( begin_idx, end_idx ):
                 indices.push_back( row_id )
-                indices.push_back( self.numeric[i] )
+                indices.push_back( self.numeric_whole[i] )
 
 
 ################################################################################
@@ -1219,9 +1219,10 @@ class batch_constructor:
             candidate.sort()
         n = len(candidate)
 
-        write_file = codecs.open("write_file.txt", 'w')
+        # write_file = codecs.open("write_file.txt", 'w')
 
         for i in range( n ):
+            logger.info("N : " + str(i))
             # self.example is an array of example objects, sorted fragment id
             # example (sentence id, begin index, end index, label index, gazetteer)
             # 'candidate' contains sentence indices
@@ -1241,32 +1242,32 @@ class batch_constructor:
 
             #=====================================================================
 
-            fragment_part = ' '.join( sentence.sentence[begin_idx:end_idx] )
-            sentence_full = u' '.join(sentence.sentence_full[begin_idx:end_idx])
+            # fragment_part = ' '.join( sentence.sentence[begin_idx:end_idx] )
+            # sentence_full = u' '.join(sentence.sentence_full[begin_idx:end_idx])
 
-            m = re.search(u"\d\d\d", sentence_full)
-            while m is not None:
-                nb = u''
-                sentence_full = list(sentence_full)
-                for i in range(3):
-                    nb += sentence_full[m.start()]
-                    sentence_full.pop(m.start())
-                if int(nb) > 256:
-                    to_add = nb
-                else:
-                    to_add = unichr(int(nb))
-                sentence_full.insert(m.start(), to_add)
+            # m = re.search(u"\d\d\d", sentence_full)
+            # while m is not None:
+            #     nb = u''
+            #     sentence_full = list(sentence_full)
+            #     for i in range(3):
+            #         nb += sentence_full[m.start()]
+            #         sentence_full.pop(m.start())
+            #     if int(nb) > 256:
+            #         to_add = nb
+            #     else:
+            #         to_add = unichr(int(nb))
+            #     sentence_full.insert(m.start(), to_add)
 
-                sentence_full = u''.join(sentence_full)
-                m = re.search(u"\d\d\d", sentence_full)
+            #     sentence_full = u''.join(sentence_full)
+            #     m = re.search(u"\d\d\d", sentence_full)
 
-            to_print = []
-            for i in range(begin_idx, end_idx):
-                to_print.append(sentence.numeric[i])
+            # to_print = []
+            # for i in range(begin_idx, end_idx):
+            #     to_print.append(sentence.numeric[i])
 
-            whole_print = []
-            for i in range(begin_idx, end_idx):
-                whole_print.append(sentence.numeric_whole[i])
+            # whole_print = []
+            # for i in range(begin_idx, end_idx):
+            #     whole_print.append(sentence.numeric_whole[i])
 
             #=====================================================================
 
@@ -1376,11 +1377,11 @@ class batch_constructor:
             #     x = numericizer1.word2idx[fragment]
             # else:
             #     x = 99999
-            write_file.write(str(fragment_part) + '\n')
-            write_file.write(sentence_full + u'\n')
-            write_file.write(str(to_print)+ '\n')
-            write_file.write(str(whole_print) + '\n')
-            write_file.write('------------------------------------------------------------\n')
+            # write_file.write(str(fragment_part) + '\n')
+            # write_file.write(sentence_full + u'\n')
+            # write_file.write(str(to_print)+ '\n')
+            # write_file.write(str(whole_print) + '\n')
+            # write_file.write('------------------------------------------------------------\n')
 
             if cnt % n_batch_size == 0 or (i + 1) == len(candidate):
                 with nogil:
